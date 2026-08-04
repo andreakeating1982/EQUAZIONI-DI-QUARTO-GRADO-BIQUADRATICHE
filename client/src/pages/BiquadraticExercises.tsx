@@ -715,58 +715,14 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
               </div>
             )}
 
-            {/* Parsed coefficients preview */}
+            {/* Confirm button — shown when expression was parsed successfully */}
             {parsedEq && !parseError && (
-              <>
-                <div className="text-center mt-2">
-                  <span className="text-sm text-muted-foreground tracking-widest font-semibold">
-                    COEFFICIENTI ESTRATTI — VERIFICA E CONFERMA
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 max-w-md mx-auto w-full">
-                  {/* A preview */}
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <span className="text-xs font-bold tracking-widest text-muted-foreground">A (x⁴)</span>
-                    <div className="mt-1">
-                      <FractionDisplay
-                        numerator={parsedEq.a.num}
-                        denominator={parsedEq.a.den}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                  {/* B preview */}
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <span className="text-xs font-bold tracking-widest text-muted-foreground">B (x²)</span>
-                    <div className="mt-1">
-                      <FractionDisplay
-                        numerator={parsedEq.b.num}
-                        denominator={parsedEq.b.den}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                  {/* C preview */}
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <span className="text-xs font-bold tracking-widest text-muted-foreground">C (termine noto)</span>
-                    <div className="mt-1">
-                      <FractionDisplay
-                        numerator={parsedEq.c.num}
-                        denominator={parsedEq.c.den}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Confirm button */}
-                <button
-                  onClick={handleConfirmExpression}
-                  className="max-w-md mx-auto w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
-                >
-                  ✅ CONFERMA E CALCOLA
-                </button>
-              </>
+              <button
+                onClick={handleConfirmExpression}
+                className="max-w-md mx-auto w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
+              >
+                ✅ CONFERMA E CALCOLA
+              </button>
             )}
           </div>
         )}
