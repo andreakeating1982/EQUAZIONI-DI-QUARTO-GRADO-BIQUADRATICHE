@@ -4,6 +4,7 @@ import { FractionDisplay } from "@/components/FractionDisplay";
 import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
 import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
+import katex from "katex";
 
 // ─── Math utilities ───────────────────────────────────────────────
 function gcd(a: number, b: number): number {
@@ -696,15 +697,28 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
               </div>
             </div>
 
-            {/* Recognized LaTeX display */}
+            {/* Recognized LaTeX display — rendered with KaTeX */}
             {recognizedLatex && (
               <div className="rounded-xl border border-border bg-card p-4 animate-pop-in max-w-md mx-auto w-full">
                 <span className="text-sm font-semibold text-muted-foreground tracking-widest">
                   ESPRESSIONE RICONOSCIUTA:
                 </span>
-                <div className="mt-2 p-3 rounded-lg bg-muted font-mono text-base text-center break-all leading-relaxed">
-                  {recognizedLatex}
-                </div>
+                <div
+                  className="mt-2 p-4 rounded-lg bg-muted text-center katex-display overflow-x-auto"
+                  dangerouslySetInnerHTML={{
+                    __html: (() => {
+                      try {
+                        return katex.renderToString(recognizedLatex, {
+                          displayMode: true,
+                          throwOnError: false,
+                          strict: false,
+                        });
+                      } catch {
+                        return recognizedLatex;
+                      }
+                    })(),
+                  }}
+                />
               </div>
             )}
 
