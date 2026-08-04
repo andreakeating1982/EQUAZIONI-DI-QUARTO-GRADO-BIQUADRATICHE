@@ -663,11 +663,6 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
 
             {/* Large expression canvas */}
             <div className="rounded-xl border-2 border-primary/30 bg-card overflow-hidden animate-pop-in max-w-md mx-auto w-full shadow-md">
-              <div className="py-2.5 border-b border-border bg-gradient-to-r from-amber-50 to-amber-100/50">
-                <span className="text-base font-bold text-amber-900 tracking-widest">
-                  SCRIVI L&apos;ESPRESSIONE COMPLETA
-                </span>
-              </div>
               <div className="px-2 py-2">
                 <div className="w-full h-[120px] sm:h-[140px] rounded-lg border border-border overflow-hidden bg-white">
                   <MathDrawCanvas
