@@ -27,9 +27,16 @@ export default defineConfig({
     strictPort: false, // Will find next available port if 3000 is busy
     host: true,
     allowedHosts: true, // Allow all hosts for sandbox preview
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
+  },
+  optimizeDeps: {
+    exclude: ["onnxruntime-web"],
   },
 });
