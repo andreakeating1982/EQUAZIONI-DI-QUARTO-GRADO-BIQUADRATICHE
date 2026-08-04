@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { NumberInputCanvas } from "@/components/NumberInputCanvas";
 import { FractionDisplay } from "@/components/FractionDisplay";
+import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
+import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
 
 // ─── Math utilities ───────────────────────────────────────────────
@@ -75,6 +77,144 @@ function formatFractionDecimal(value: number): string {
   return roundToPrecision(value, DISPLAY_PRECISION).toString();
 }
 
+// ─── LaTeX parser for biquadratic expressions ────────────────────
+
+interface ParsedCoefficient { num: number; den: number; }
+
+interface ParsedBiquadratic {
+  a: ParsedCoefficient;
+  b: ParsedCoefficient;
+  c: ParsedCoefficient;
+  rawLatex: string;
+}
+
+function decimalToFraction(value: number, maxDen: number = 10000): ParsedCoefficient {
+  if (isNaN(value)) return { num: 0, den: 1 };
+  if (value === 0) return { num: 0, den: 1 };
+  const sign = value < 0 ? -1 : 1;
+  const absV = Math.abs(value);
+  // Try to find exact fraction
+  for (let d = 1; d <= maxDen; d++) {
+    const n = Math.round(absV * d);
+    if (Math.abs(absV - n / d) < 1e-9) {
+      return { num: sign * n, den: d };
+    }
+  }
+  // Fallback: use large denominator
+  const d = 1000000;
+  const n = Math.round(absV * d);
+  const c = gcd(n, d);
+  return { num: sign * (n / c), den: d / c };
+}
+
+function parseBiquadraticLaTeX(latex: string): ParsedBiquadratic | null {
+  try {
+    // Normalize
+    let s = latex
+      .replace(/\\displaystyle/g, '')
+      .replace(/\\,/g, '.')
+      .replace(/\s+/g, '')
+      .replace(/=0$/, '')
+      .trim();
+
+    if (!s || s === '0') return null;
+
+    // Ensure starts with sign
+    if (!s.startsWith('-') && !s.startsWith('+')) s = '+' + s;
+
+    // Replace \frac{num}{den} with [FRAC:num/den]
+    const fracs: { num: number; den: number }[] = [];
+    s = s.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (_, num, den) => {
+      const n = parseFloat(num.replace(/,/g, '.'));
+      const d = parseFloat(den.replace(/,/g, '.'));
+      if (isNaN(n) || isNaN(d) || d === 0) return _;
+      fracs.push({ num: n, den: d });
+      return `[FRAC:${fracs.length - 1}]`;
+    });
+
+    // Split into terms (keep signs)
+    const termParts = s.split(/(?=[+-])/).filter(t => t.length > 0);
+
+    let aNum = 0, aDen = 1;
+    let bNum = 0, bDen = 1;
+    let cNum = 0, cDen = 1;
+    let foundX4 = false, foundX2 = false, foundConst = false;
+
+    for (const term of termParts) {
+      const sign = term.startsWith('-') ? -1 : 1;
+      let content = term.replace(/^[+-]/, '');
+
+      if (!content || content === '0') continue;
+
+      // Determine power: x⁴/x^4/x^{4}, x²/x^2/x^{2}, or constant
+      let power = 0;
+      let coeffStr = content;
+
+      if (content.includes('x^{4}') || content.includes('x^4') || content.includes('x⁴')) {
+        power = 4;
+        coeffStr = content
+          .replace(/x\^\{4\}/g, '')
+          .replace(/x\^4/g, '')
+          .replace(/x⁴/g, '');
+      } else if (content.includes('x^{2}') || content.includes('x^2') || content.includes('x²')) {
+        power = 2;
+        coeffStr = content
+          .replace(/x\^\{2\}/g, '')
+          .replace(/x\^2/g, '')
+          .replace(/x²/g, '');
+      }
+
+      // Parse coefficient
+      let num: number, den: number;
+      coeffStr = coeffStr.trim();
+
+      if (coeffStr === '' || coeffStr === '+') {
+        num = 1; den = 1;
+      } else if (coeffStr === '-') {
+        num = -1; den = 1;
+      } else {
+        const fracMatch = coeffStr.match(/\[FRAC:(\d+)\]/);
+        if (fracMatch) {
+          const f = fracs[parseInt(fracMatch[1])];
+          num = f.num; den = f.den;
+        } else {
+          // Parse as decimal
+          coeffStr = coeffStr.replace(/,/g, '.');
+          const val = parseFloat(coeffStr);
+          if (isNaN(val)) continue;
+          const frac = decimalToFraction(val);
+          num = frac.num; den = frac.den;
+        }
+      }
+
+      // Apply sign
+      num = sign * num;
+
+      // Place coefficient in the right slot
+      if (power === 4) {
+        if (foundX4) return null; // duplicate
+        aNum = num; aDen = den;
+        foundX4 = true;
+      } else if (power === 2) {
+        if (foundX2) return null; // duplicate
+        bNum = num; bDen = den;
+        foundX2 = true;
+      } else {
+        if (foundConst) return null; // duplicate
+        cNum = num; cDen = den;
+        foundConst = true;
+      }
+    }
+
+    // At least one coefficient must be non-zero
+    if (!foundX4 && !foundX2 && !foundConst) return null;
+
+    return { a: { num: aNum, den: aDen }, b: { num: bNum, den: bDen }, c: { num: cNum, den: cDen }, rawLatex: latex };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Type definitions ────────────────────────────────────────────
 
 interface BiquadraticComputed {
@@ -119,7 +259,28 @@ export default function BiquadraticExercises() {
   // ─── PDF generation ─────────────────────────────────────────────
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
-  // ─── Coefficient inputs (handwriting) ───────────────────────────
+  // ─── Expression input (NEW: single canvas for full expression) ──
+  const { recognize, isModelReady, isLoading: modelLoading } = useMathRecognition();
+  const [exprStrokes, setExprStrokes] = useState<Stroke[]>([]);
+  const [recognizedLatex, setRecognizedLatex] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+
+  // Parsed coefficients extracted from the full expression
+  const parsedEq = useMemo((): ParsedBiquadratic | null => {
+    if (!recognizedLatex) return null;
+    try {
+      const result = parseBiquadraticLaTeX(recognizedLatex);
+      if (!result) { setParseError("Impossibile interpretare l'espressione. Riprova."); return null; }
+      setParseError(null);
+      return result;
+    } catch {
+      setParseError("Errore nel parsing. Riprova.");
+      return null;
+    }
+  }, [recognizedLatex]);
+
+  // ─── Coefficient inputs (extracted from parsed expression) ──────
   const [aNum, setANum] = useState<number | null>(null);
   const [aDen, setADen] = useState<number | null>(null);
   const [bNum, setBNum] = useState<number | null>(null);
@@ -244,21 +405,45 @@ export default function BiquadraticExercises() {
   }, [aNum, aDen, bNum, bDen, cNum, cDen]);
 
   // ─── Handlers ───────────────────────────────────────────────────
-  const handleCalculate = () => {
-    if (aNum === null || bNum === null || cNum === null) return;
-    const da = aDen ?? 1;
-    const db = bDen ?? 1;
-    const dc = cDen ?? 1;
-    if (da < 1 || db < 1 || dc < 1) return;
-    setSubmitted(true);
-    setPhase("exercise");
-    resetExercise();
-  };
+  const handleRecognize = useCallback(async () => {
+    if (exprStrokes.length === 0 || !isModelReady) return;
+    setIsRecognizing(true);
+    setParseError(null);
+    const result = await recognize(exprStrokes, "expression");
+    setIsRecognizing(false);
+    if (result && result.latex) {
+      setRecognizedLatex(result.latex);
+    } else {
+      setParseError("Nessuna espressione riconosciuta. Riprova a scrivere.");
+    }
+  }, [exprStrokes, isModelReady, recognize]);
+
+  const handleConfirmExpression = useCallback(() => {
+    if (!parsedEq) return;
+    setANum(parsedEq.a.num);
+    setADen(parsedEq.a.den);
+    setBNum(parsedEq.b.num);
+    setBDen(parsedEq.b.den);
+    setCNum(parsedEq.c.num);
+    setCDen(parsedEq.c.den);
+  }, [parsedEq]);
+
+  // Trigger calculate after coefficients are set
+  useEffect(() => {
+    if (aNum !== null && bNum !== null && cNum !== null && phase === "input") {
+      setSubmitted(true);
+      setPhase("exercise");
+      resetExercise();
+    }
+  }, [aNum, bNum, cNum]);
 
   const handleNewExercise = () => {
     setANum(null); setADen(null);
     setBNum(null); setBDen(null);
     setCNum(null); setCDen(null);
+    setExprStrokes([]);
+    setRecognizedLatex(null);
+    setParseError(null);
     setPhase("input");
     setSubmitted(false);
     resetExercise();
@@ -465,66 +650,124 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
           </div>
         </div>
 
-        {/* Input phase */}
+        {/* Input phase — single expression canvas */}
         {phase === "input" && (
           <div className="space-y-4">
             {/* Suggerimento */}
             <div className="text-center">
               <span className="text-base text-muted-foreground tracking-widest font-semibold">
-                SCRIVI IL SEGNO DELLA FRAZIONE AL NUMERATORE
+                SCRIVI L'EQUAZIONE NEL RIQUADRO (ES. 2x⁴−3x²+1=0)
               </span>
             </div>
 
-            {/* Coefficiente A */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden animate-pop-in max-w-xs mx-auto w-full">
-              <div className="py-2.5 border-b border-border bg-secondary/50">
-                <span className="text-base font-bold tracking-widest">Coefficiente A</span>
+            {/* Large expression canvas */}
+            <div className="rounded-xl border-2 border-primary/30 bg-card overflow-hidden animate-pop-in max-w-md mx-auto w-full shadow-md">
+              <div className="py-2.5 border-b border-border bg-gradient-to-r from-amber-50 to-amber-100/50">
+                <span className="text-base font-bold text-amber-900 tracking-widest">
+                  SCRIVI L&apos;ESPRESSIONE COMPLETA
+                </span>
               </div>
-              <div className="px-3 py-2.5 space-y-0.5">
-                <NumberInputCanvas value={aNum} onChange={setANum} label="NUMERATORE" allowNegative />
-                <div className="flex justify-start py-1">
-                  <div className="w-[120px] sm:w-[135px] h-[2px] bg-foreground/80" />
+              <div className="px-2 py-2">
+                <div className="w-full h-[120px] sm:h-[140px] rounded-lg border border-border overflow-hidden bg-white">
+                  <MathDrawCanvas
+                    strokes={exprStrokes}
+                    onStrokesChange={setExprStrokes}
+                    tool="write"
+                    hideWatermark
+                    className="border-0 rounded-none"
+                  />
                 </div>
-                <NumberInputCanvas value={aDen} onChange={setADen} label="DENOMINATORE" />
+              </div>
+              <div className="px-3 pb-3 flex items-center justify-between gap-3">
+                <button
+                  onClick={handleRecognize}
+                  disabled={exprStrokes.length === 0 || !isModelReady || isRecognizing}
+                  className="flex-1 py-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-bold text-base tracking-widest transition-all shadow-sm"
+                >
+                  {isRecognizing ? "RICONOSCIMENTO..." : modelLoading ? "CARICAMENTO..." : "RICONOSCI"}
+                </button>
+                <button
+                  onClick={() => { setExprStrokes([]); setRecognizedLatex(null); setParseError(null); }}
+                  disabled={exprStrokes.length === 0}
+                  className="py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed text-foreground font-bold text-base tracking-widest transition-all"
+                >
+                  CANCELLA
+                </button>
               </div>
             </div>
 
-            {/* Coefficiente B */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden animate-pop-in max-w-xs mx-auto w-full">
-              <div className="py-2.5 border-b border-border bg-secondary/50">
-                <span className="text-base font-bold tracking-widest">Coefficiente B</span>
-              </div>
-              <div className="px-3 py-2.5 space-y-0.5">
-                <NumberInputCanvas value={bNum} onChange={setBNum} label="NUMERATORE" allowNegative />
-                <div className="flex justify-start py-1">
-                  <div className="w-[120px] sm:w-[135px] h-[2px] bg-foreground/80" />
+            {/* Recognized LaTeX display */}
+            {recognizedLatex && (
+              <div className="rounded-xl border border-border bg-card p-4 animate-pop-in max-w-md mx-auto w-full">
+                <span className="text-sm font-semibold text-muted-foreground tracking-widest">
+                  ESPRESSIONE RICONOSCIUTA:
+                </span>
+                <div className="mt-2 p-3 rounded-lg bg-muted font-mono text-base text-center break-all leading-relaxed">
+                  {recognizedLatex}
                 </div>
-                <NumberInputCanvas value={bDen} onChange={setBDen} label="DENOMINATORE" />
               </div>
-            </div>
+            )}
 
-            {/* Termine noto C */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden animate-pop-in max-w-xs mx-auto w-full">
-              <div className="py-2.5 border-b border-border bg-secondary/50">
-                <span className="text-base font-bold tracking-widest">Termine noto C</span>
+            {/* Parsing error */}
+            {parseError && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 animate-pop-in max-w-md mx-auto w-full text-center">
+                <span className="text-base font-semibold text-destructive">{parseError}</span>
               </div>
-              <div className="px-3 py-2.5 space-y-0.5">
-                <NumberInputCanvas value={cNum} onChange={setCNum} label="NUMERATORE" allowNegative />
-                <div className="flex justify-start py-1">
-                  <div className="w-[120px] sm:w-[135px] h-[2px] bg-foreground/80" />
+            )}
+
+            {/* Parsed coefficients preview */}
+            {parsedEq && !parseError && (
+              <>
+                <div className="text-center mt-2">
+                  <span className="text-sm text-muted-foreground tracking-widest font-semibold">
+                    COEFFICIENTI ESTRATTI — VERIFICA E CONFERMA
+                  </span>
                 </div>
-                <NumberInputCanvas value={cDen} onChange={setCDen} label="DENOMINATORE" />
-              </div>
-            </div>
+                <div className="grid grid-cols-3 gap-2 max-w-md mx-auto w-full">
+                  {/* A preview */}
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <span className="text-xs font-bold tracking-widest text-muted-foreground">A (x⁴)</span>
+                    <div className="mt-1">
+                      <FractionDisplay
+                        numerator={parsedEq.a.num}
+                        denominator={parsedEq.a.den}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  {/* B preview */}
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <span className="text-xs font-bold tracking-widest text-muted-foreground">B (x²)</span>
+                    <div className="mt-1">
+                      <FractionDisplay
+                        numerator={parsedEq.b.num}
+                        denominator={parsedEq.b.den}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  {/* C preview */}
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <span className="text-xs font-bold tracking-widest text-muted-foreground">C (termine noto)</span>
+                    <div className="mt-1">
+                      <FractionDisplay
+                        numerator={parsedEq.c.num}
+                        denominator={parsedEq.c.den}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            {/* Calculate button */}
-            <button
-              onClick={handleCalculate}
-              disabled={!allFilled}
-              className="max-w-xs mx-auto w-full py-3.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed text-primary-foreground font-bold text-base tracking-widest transition-all duration-200 shadow-md"
-            >
-              CALCOLA
-            </button>
+                {/* Confirm button */}
+                <button
+                  onClick={handleConfirmExpression}
+                  className="max-w-md mx-auto w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
+                >
+                  ✅ CONFERMA E CALCOLA
+                </button>
+              </>
+            )}
           </div>
         )}
 
