@@ -16,7 +16,23 @@ async function startServer() {
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
-  app.use(express.static(staticPath));
+  // COOP/COEP headers required by ONNX Runtime Web for SharedArrayBuffer
+  app.use((_req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+  });
+
+  // Ensure .wasm files are served with the correct MIME type
+  app.use(
+    express.static(staticPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".wasm")) {
+          res.setHeader("Content-Type", "application/wasm");
+        }
+      },
+    })
+  );
 
   // Handle client-side routing - serve index.html for all routes
   app.get("*", (_req, res) => {
