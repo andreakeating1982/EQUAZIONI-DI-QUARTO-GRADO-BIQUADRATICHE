@@ -176,15 +176,18 @@ function evaluateLatex(latex: string): number | null {
 }
 
 /** Estrai la forma radicale visiva dal LaTeX riconosciuto.
- *  Restituisce una stringa leggibile oppure null. */
+ *  Restituisce una stringa leggibile e pulita (senza parentesi inutili). */
 function extractRadicalForm(latex: string): string | null {
   const s = latex.trim().replace(/\s+/g, '');
   if (!s.includes('\\sqrt')) return null;
-  // Sostituisci \frac{a}{b} → a/b per compattezza
-  let out = s.replace(/\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '($1)/($2)');
-  // Sostituisci \sqrt{x} → √(x)
-  out = out.replace(/\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '√($1)');
-  // Pulisci caratteri residui
+  // Sostituisci \frac{a}{b} → a/b (SENZA parentesi esterne)
+  let out = s.replace(/\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '$1/$2');
+  // Sostituisci \sqrt{x} → √x (solo se x è semplice), altrimenti √(x)
+  out = out.replace(/\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, (_m, inner: string) => {
+    if (/^[0-9a-zA-Z.]+$/.test(inner)) return `√${inner}`;
+    return `√(${inner})`;
+  });
+  // Pulisci graffe residue
   out = out.replace(/[{}]/g, '');
   return out;
 }
@@ -443,10 +446,17 @@ export function NumberInputCanvas({
           {isRecognizing ? "..." : "RICONOSCI"}
         </button>
 
-        {/* Display del valore riconosciuto — tre forme: frazione · decimale · radicale */}
+        {/* Display del valore riconosciuto */}
         <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
-          {/* Frazione (con decimale solo se risultato razionale, senza √) */}
-          {showFraction && (
+          {/* Risultato INTERO: solo il numero */}
+          {showFraction && fracDen === 1 && (
+            <span className="inline-block px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
+              {fracNeg ? `−${fracNum}` : fracNum}
+            </span>
+          )}
+
+          {/* Risultato FRAZIONARIO senza radice: frazione + decimale */}
+          {showFraction && fracDen !== 1 && !radicalForm && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
               {fracNeg && <span className="mr-0.5">−</span>}
               <FractionDisplay
@@ -454,7 +464,7 @@ export function NumberInputCanvas({
                 denominator={fracDen!}
                 size="sm"
               />
-              {!radicalForm && decimalStr && (
+              {decimalStr && (
                 <>
                   <span className="mx-0.5 opacity-60">→</span>
                   <span className="font-mono">{decimalStr}</span>
@@ -463,11 +473,21 @@ export function NumberInputCanvas({
             </span>
           )}
 
-          {/* Forma radicale (se presente) */}
-          {radicalForm && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-base font-bold font-mono">
-              {radicalForm}
-            </span>
+          {/* Risultato con RADICE: frazione + radicale, NO decimale */}
+          {showFraction && fracDen !== 1 && radicalForm && (
+            <>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
+                {fracNeg && <span className="mr-0.5">−</span>}
+                <FractionDisplay
+                  numerator={fracNum!}
+                  denominator={fracDen!}
+                  size="sm"
+                />
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-base font-bold font-mono">
+                {radicalForm}
+              </span>
+            </>
           )}
 
           {/* Text fallback */}

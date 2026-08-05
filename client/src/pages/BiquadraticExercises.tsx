@@ -1171,14 +1171,14 @@ function BiquadraticExercise({
                 if (match) {
                   setFeedbackFinale({
                     testo: `Corretto! ✅ Le soluzioni sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFraction(r)}`
+                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
                     ).join(", ")}`,
                     corretto: true,
                   });
                 } else {
                   setFeedbackFinale({
                     testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFraction(r)}`
+                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
                     ).join(", ")}`,
                     corretto: false,
                   });
@@ -1197,7 +1197,7 @@ function BiquadraticExercise({
                   ? "bg-success/10 text-success border border-success/30"
                   : "bg-destructive/10 text-destructive border border-destructive/20",
               )}>
-                <span>{feedbackFinale.testo}</span>
+                <span dangerouslySetInnerHTML={{ __html: feedbackFinale.testo }} />
               </div>
             )}
           </div>
@@ -1206,13 +1206,14 @@ function BiquadraticExercise({
             visible={feedbackFinale?.corretto === true}
             forceOpen={feedbackFinale?.corretto === true || generatingPdf}
           >
-            <p className="font-mono text-base font-bold text-primary">
-              Soluzioni finali: {computed.positiveRoots.map(r =>
+            <p
+              className="text-base font-bold text-primary"
+              dangerouslySetInnerHTML={{ __html: `Soluzioni finali: ${computed.positiveRoots.map(r =>
                 areNumbersApproximatelyEqual(r, 0, 1e-10)
                   ? "0"
-                  : `±${formatFraction(r)}`
-              ).join(", ")}
-            </p>
+                  : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
+              ).join(", ")}` }}
+            />
           </NotebookGuide>
         </div>
       )}
