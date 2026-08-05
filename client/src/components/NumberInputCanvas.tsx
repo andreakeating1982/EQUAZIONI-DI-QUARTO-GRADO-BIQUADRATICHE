@@ -445,8 +445,8 @@ export function NumberInputCanvas({
 
         {/* Display del valore riconosciuto — tre forme: frazione · decimale · radicale */}
         <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
-          {/* Frazione + decimale */}
-          {showFraction && decimalStr && (
+          {/* Frazione (con decimale solo se risultato razionale, senza √) */}
+          {showFraction && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
               {fracNeg && <span className="mr-0.5">−</span>}
               <FractionDisplay
@@ -454,8 +454,12 @@ export function NumberInputCanvas({
                 denominator={fracDen!}
                 size="sm"
               />
-              <span className="mx-0.5 opacity-60">→</span>
-              <span className="font-mono">{decimalStr}</span>
+              {!radicalForm && decimalStr && (
+                <>
+                  <span className="mx-0.5 opacity-60">→</span>
+                  <span className="font-mono">{decimalStr}</span>
+                </>
+              )}
             </span>
           )}
 
