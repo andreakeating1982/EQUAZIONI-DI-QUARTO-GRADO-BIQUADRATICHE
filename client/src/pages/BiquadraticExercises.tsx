@@ -49,6 +49,39 @@ function areNumbersApproximatelyEqual(num1: number, num2: number, epsilon = EPSI
   return Math.abs(num1 - num2) < epsilon;
 }
 
+/** Convert a number to its LaTeX representation (fraction or decimal, max 2 digits) */
+function numberToLatex(value: number): string {
+  if (isNaN(value)) return "?";
+  if (areNumbersApproximatelyEqual(value, 0, 1e-10)) return "0";
+  const f = formatFraction(value);
+  if (f.includes("/")) {
+    const parts = f.replace(/^-/, "").split("/");
+    const sign = f.startsWith("-") ? "-" : "";
+    return `${sign}\\frac{${parts[0]}}{${parts[1]}}`;
+  }
+  return f;
+}
+
+/** Format a positive number (no sign) for LaTeX inline use */
+function numberToLatexAbs(value: number): string {
+  if (isNaN(value)) return "?";
+  const v = Math.abs(value);
+  if (areNumbersApproximatelyEqual(v, 0, 1e-10)) return "0";
+  const f = formatFraction(v);
+  if (f.includes("/")) {
+    const parts = f.split("/");
+    return `\\frac{${parts[0]}}{${parts[1]}}`;
+  }
+  return f;
+}
+
+/** Quick KaTeX render for inline display-mode formulas */
+function renderKatex(latex: string): string {
+  try {
+    return katex.renderToString(latex, { displayMode: true, throwOnError: false, strict: false });
+  } catch { return latex; }
+}
+
 function formatFraction(value: number): string {
   if (isNaN(value)) return "?";
   if (areNumbersApproximatelyEqual(value, 0, 1e-10)) return "0";
@@ -535,15 +568,23 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
   // ─── Render ─────────────────────────────────────────────────────
   const allFilled = aNum !== null && bNum !== null && cNum !== null;
 
-  // Format coefficient with sign for equation display
-  function formatCoefficientInline(num: number, den: number): { html: string; numAbs: number; denAbs: number } {
-    const absNum = Math.abs(num);
-    const absDen = Math.abs(den);
-    return { html: absDen === 1 ? `${absNum}` : `<span style="display:inline-block;text-align:center;vertical-align:middle"><span>${absNum}</span><div style="border-top:1px solid black;margin:1px 0;min-width:20px"></div><span>${absDen}</span></span>`, numAbs: absNum, denAbs: absDen };
+  // ─── KaTeX-safe HTML render helper ─────────────────────────────
+  function katexHtml(latex: string, displayMode = true): string {
+    try {
+      return katex.renderToString(latex, { displayMode, throwOnError: false, strict: false });
+    } catch { return latex; }
   }
 
-  // Build equation display string
-  function buildEquationDisplay(): string {
+  // Format a single coefficient as LaTeX (e.g. "\frac{3}{4}" or "2")
+  function formatCoefficientLatex(num: number, den: number): string {
+    const absNum = Math.abs(num);
+    const absDen = Math.abs(den);
+    if (absDen === 1) return `${absNum}`;
+    return `\\frac{${absNum}}{${absDen}}`;
+  }
+
+  // Build equation display as KaTeX LaTeX string
+  function buildEquationLatex(): string {
     if (!computed) return "";
     const { aNum: an, aDen: ad, bNum: bn, bDen: bd, cNum: cn, cDen: cd, nda, ndb, ndc } = computed;
     const effA = an / nda;
@@ -554,42 +595,34 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
     let isFirst = true;
 
     if (!areNumbersApproximatelyEqual(effA, 0, 1e-10)) {
-      let sign = "";
-      if (effA < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(an, nda);
-      const coeff = Math.abs(round2(effA)) === 1 ? "" : f.html;
-      result += sign + coeff + "x⁴ ";
+      const sign = effA < 0 ? "-" : (isFirst ? "" : "+");
+      const absVal = Math.abs(round2(effA));
+      const coeffLatex = absVal === 1 ? "" : formatCoefficientLatex(an, nda);
+      result += sign + coeffLatex + "x^{4}";
       isFirst = false;
     }
 
     if (!areNumbersApproximatelyEqual(effB, 0, 1e-10)) {
-      let sign = "";
-      if (effB < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(bn, ndb);
-      const coeff = Math.abs(round2(effB)) === 1 ? "" : f.html;
-      result += sign + coeff + "x² ";
+      const sign = effB < 0 ? "-" : (isFirst ? "" : "+");
+      const absVal = Math.abs(round2(effB));
+      const coeffLatex = absVal === 1 ? "" : formatCoefficientLatex(bn, ndb);
+      result += sign + coeffLatex + "x^{2}";
       isFirst = false;
     }
 
     if (!areNumbersApproximatelyEqual(effC, 0, 1e-10)) {
-      let sign = "";
-      if (effC < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(cn, ndc);
-      result += sign + f.html + " = 0";
-    } else if (result === "") {
-      result = "0 = 0";
-    } else {
-      result += " = 0";
+      const sign = effC < 0 ? "-" : (isFirst ? "" : "+");
+      result += sign + formatCoefficientLatex(cn, ndc);
     }
 
-    return result;
+    if (result === "") return "0=0";
+    // Fix leading "+"
+    if (result.startsWith("+")) result = result.slice(1);
+    return result + "=0";
   }
 
-  // Build t-equation display
-  function buildTEquationDisplay(): string {
+  // Build t-equation display as KaTeX LaTeX string
+  function buildTEquationLatex(): string {
     if (!computed) return "";
     const { aNum: an, aDen: nda, bNum: bn, bDen: ndb, cNum: cn, cDen: ndc } = computed;
     const effA = an / nda;
@@ -600,38 +633,29 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
     let isFirst = true;
 
     if (!areNumbersApproximatelyEqual(effA, 0, 1e-10)) {
-      let sign = "";
-      if (effA < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(an, nda);
-      const coeff = Math.abs(round2(effA)) === 1 ? "" : f.html;
-      result += sign + coeff + "t² ";
+      const sign = effA < 0 ? "-" : (isFirst ? "" : "+");
+      const absVal = Math.abs(round2(effA));
+      const coeffLatex = absVal === 1 ? "" : formatCoefficientLatex(an, nda);
+      result += sign + coeffLatex + "t^{2}";
       isFirst = false;
     }
 
     if (!areNumbersApproximatelyEqual(effB, 0, 1e-10)) {
-      let sign = "";
-      if (effB < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(bn, ndb);
-      const coeff = Math.abs(round2(effB)) === 1 ? "" : f.html;
-      result += sign + coeff + "t ";
+      const sign = effB < 0 ? "-" : (isFirst ? "" : "+");
+      const absVal = Math.abs(round2(effB));
+      const coeffLatex = absVal === 1 ? "" : formatCoefficientLatex(bn, ndb);
+      result += sign + coeffLatex + "t";
       isFirst = false;
     }
 
     if (!areNumbersApproximatelyEqual(effC, 0, 1e-10)) {
-      let sign = "";
-      if (effC < 0) sign = (isFirst ? "-" : " - ");
-      else sign = (isFirst ? "" : " + ");
-      const f = formatCoefficientInline(cn, ndc);
-      result += sign + f.html + " = 0";
-    } else if (result === "") {
-      result = "0 = 0";
-    } else {
-      result += " = 0";
+      const sign = effC < 0 ? "-" : (isFirst ? "" : "+");
+      result += sign + formatCoefficientLatex(cn, ndc);
     }
 
-    return result;
+    if (result === "") return "0=0";
+    if (result.startsWith("+")) result = result.slice(1);
+    return result + "=0";
   }
 
   return (
@@ -754,8 +778,8 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
             setFeedbackFinale={setFeedbackFinale}
             onNew={handleNewExercise}
             generatingPdf={generatingPdf}
-            equationDisplay={buildEquationDisplay()}
-            tEquationDisplay={buildTEquationDisplay()}
+            equationDisplay={katexHtml(buildEquationLatex())}
+            tEquationDisplay={katexHtml(buildTEquationLatex())}
           />
         )}
 
@@ -895,10 +919,8 @@ function BiquadraticExercise({
       <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
         <p className="text-base font-bold text-primary">3. Calcolo delta Δ:</p>
         <div className="space-y-3">
-          <p className="font-mono text-base">Δ = b² − 4ac</p>
-          <p className="font-mono text-base opacity-80">
-            Δ = ({formatFraction(computed.b)})² − 4 · ({formatFraction(computed.a)}) · ({formatFraction(computed.c)})
-          </p>
+          <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = b^{2} - 4ac`) }} />
+          <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = (${numberToLatex(computed.b)})^{2} - 4 \\cdot (${numberToLatex(computed.a)}) \\cdot (${numberToLatex(computed.c)})`) }} />
           {computed.solutionType === "delta_negative" && (
             <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
           )}
@@ -927,10 +949,8 @@ function BiquadraticExercise({
               visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
               forceOpen={generatingPdf}
             >
-              <p className="font-mono text-base">
-                Δ = ({formatFraction(computed.b)})² − 4 · ({formatFraction(computed.a)}) · ({formatFraction(computed.c)})
-              </p>
-              <p className="font-mono text-base">Δ = {formatFraction(computed.delta)}</p>
+              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = (${numberToLatex(computed.b)})^{2} - 4 \\cdot (${numberToLatex(computed.a)}) \\cdot (${numberToLatex(computed.c)})`) }} />
+              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
               {computed.hasOneDoubleSolution
                 ? <p className="font-mono text-base">Δ = 0 → due soluzioni reali e coincidenti per t</p>
                 : <p className="font-mono text-base">Δ &gt; 0 → due soluzioni reali e distinte per t</p>
@@ -945,10 +965,8 @@ function BiquadraticExercise({
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
           <p className="text-base font-bold text-primary">4. Calcolo t₁:</p>
           <div className="space-y-3">
-            <p className="font-mono text-base">t₁ = (−b + √Δ) / (2a)</p>
-            <p className="font-mono text-base opacity-80">
-              t₁ = (−({formatFraction(computed.b)}) + √{formatFraction(computed.delta)}) / (2 · ({formatFraction(computed.a)}))
-            </p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-(${numberToLatexAbs(computed.b)}) + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
           </div>
           <NumberInputCanvas
             value={t1Utente}
@@ -972,13 +990,9 @@ function BiquadraticExercise({
             visible={t1Utente !== null && areNumbersApproximatelyEqual(t1Utente, computed.t1!, 1e-3)}
             forceOpen={generatingPdf}
           >
-            <p className="font-mono text-base">
-              t₁ = (−({formatFraction(computed.b)}) + √{formatFraction(computed.delta)}) / (2 · ({formatFraction(computed.a)}))
-            </p>
-            <p className="font-mono text-base">
-              t₁ = ({formatFraction(-computed.b)} + {formatFractionDecimal(Math.sqrt(Math.max(0, computed.delta)))}) / {formatFraction(2 * computed.a)}
-            </p>
-            <p className="font-mono text-base font-bold text-primary">t₁ = {formatFraction(computed.t1!)}</p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-(${numberToLatexAbs(computed.b)}) + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
             {computed.t1! >= -EPSILON
               ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
               : <p className="font-mono text-base text-destructive">t₁ &lt; 0 → impossibile nei reali ✗</p>
@@ -992,10 +1006,8 @@ function BiquadraticExercise({
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
           <p className="text-base font-bold text-primary">5. Calcolo t₂:</p>
           <div className="space-y-3">
-            <p className="font-mono text-base">t₂ = (−b − √Δ) / (2a)</p>
-            <p className="font-mono text-base opacity-80">
-              t₂ = (−({formatFraction(computed.b)}) − √{formatFraction(computed.delta)}) / (2 · ({formatFraction(computed.a)}))
-            </p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-(${numberToLatexAbs(computed.b)}) - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
           </div>
           <NumberInputCanvas
             value={t2Utente}
@@ -1019,13 +1031,9 @@ function BiquadraticExercise({
             visible={t2Utente !== null && areNumbersApproximatelyEqual(t2Utente, computed.t2!, 1e-3)}
             forceOpen={generatingPdf}
           >
-            <p className="font-mono text-base">
-              t₂ = (−({formatFraction(computed.b)}) − √{formatFraction(computed.delta)}) / (2 · ({formatFraction(computed.a)}))
-            </p>
-            <p className="font-mono text-base">
-              t₂ = ({formatFraction(-computed.b)} − {formatFractionDecimal(Math.sqrt(Math.max(0, computed.delta)))}) / {formatFraction(2 * computed.a)}
-            </p>
-            <p className="font-mono text-base font-bold text-primary">t₂ = {formatFraction(computed.t2!)}</p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-(${numberToLatexAbs(computed.b)}) - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
             {computed.t2! >= -EPSILON
               ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
               : <p className="font-mono text-base text-destructive">t₂ &lt; 0 → impossibile nei reali ✗</p>
@@ -1039,10 +1047,10 @@ function BiquadraticExercise({
         <p className="text-base font-bold text-primary">6. Calcolo di x₁ e x₂:</p>
         <div className="space-y-2">
           {computed.t1 !== null && computed.t1 >= -EPSILON && (
-            <p className="font-mono text-base">x₁ = ±√t₁ = ±√{formatFraction(computed.t1)}</p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
           )}
           {computed.t2 !== null && computed.t2 >= -EPSILON && (
-            <p className="font-mono text-base">x₂ = ±√t₂ = ±√{formatFraction(computed.t2)}</p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
           )}
           {!computed.hasRealSolutions && (
             <p className="text-destructive font-semibold text-base">
@@ -1067,14 +1075,10 @@ function BiquadraticExercise({
         </div>
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
           {computed.t1 !== null && computed.t1 >= -EPSILON && (
-            <p className="font-mono text-base">
-              x₁ = ±√{formatFraction(computed.t1)} = ±{formatFractionDecimal(Math.sqrt(computed.t1))}
-            </p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}} = \\pm${numberToLatexAbs(Math.sqrt(computed.t1))}`) }} />
           )}
           {computed.t2 !== null && computed.t2 >= -EPSILON && (
-            <p className="font-mono text-base">
-              x₂ = ±√{formatFraction(computed.t2)} = ±{formatFractionDecimal(Math.sqrt(computed.t2))}
-            </p>
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}} = \\pm${numberToLatexAbs(Math.sqrt(computed.t2))}`) }} />
           )}
           {computed.hasRealSolutions && (
             <p className="font-mono text-base font-bold text-primary">
@@ -1098,13 +1102,13 @@ function BiquadraticExercise({
             <NumberInputCanvas
               value={x1Utente}
               onChange={(v) => setX1Utente(v)}
-              label="VALORE ASSOLUTO X₁:"
+              label="VALORE ASSOLUTO x₁:"
               colorClass="text-primary"
             />
             <NumberInputCanvas
               value={x2Utente}
               onChange={(v) => setX2Utente(v)}
-              label="VALORE ASSOLUTO X₂:"
+              label="VALORE ASSOLUTO x₂:"
               colorClass="text-primary"
             />
 

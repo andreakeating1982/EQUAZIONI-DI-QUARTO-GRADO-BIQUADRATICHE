@@ -94,7 +94,7 @@ export function NumberInputCanvas({
 
   const displayValue =
     value !== null && !isNaN(value)
-      ? value.toString()
+      ? (() => { const s = value.toFixed(2); return parseFloat(s).toString(); })()
       : recognizedText || "";
 
   const hasContent = strokes.length > 0;
