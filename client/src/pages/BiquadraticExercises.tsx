@@ -985,38 +985,36 @@ function BiquadraticExercise({
           )}
         </div>
 
-        {computed.solutionType !== "delta_negative" && (
-          <>
-            <NumberInputCanvas
-              value={deltaUtente}
-              onChange={(v) => { setDeltaUtente(v); }}
-              label="Inserisci il tuo Δ:"
-              colorClass="text-primary"
-            />
-            {deltaUtente !== null && (
-              <p className={cn(
-                "text-base font-bold text-center mt-2",
-                areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) ? "text-success" : "text-destructive",
-              )}>
-                {areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)
-                  ? "CORRETTO"
-                  : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
-              </p>
-            )}
-            <NotebookGuide
-              title="RICOPIA SUL QUADERNO:"
-              visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
-              forceOpen={generatingPdf}
-            >
-              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
-              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
-              {computed.hasOneDoubleSolution
-                ? <p className="font-mono text-base">Δ = 0 → due soluzioni reali e coincidenti per t</p>
-                : <p className="font-mono text-base">Δ &gt; 0 → due soluzioni reali e distinte per t</p>
-              }
-            </NotebookGuide>
-          </>
+        <NumberInputCanvas
+          value={deltaUtente}
+          onChange={(v) => { setDeltaUtente(v); }}
+          label="Inserisci il tuo Δ:"
+          colorClass="text-primary"
+        />
+        {deltaUtente !== null && (
+          <p className={cn(
+            "text-base font-bold text-center mt-2",
+            areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) ? "text-success" : "text-destructive",
+          )}>
+            {areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)
+              ? "CORRETTO"
+              : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
+          </p>
         )}
+        <NotebookGuide
+          title="RICOPIA SUL QUADERNO:"
+          visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
+          forceOpen={generatingPdf}
+        >
+          <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
+          <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
+          {computed.solutionType === "delta_negative"
+            ? <p className="font-mono text-base text-destructive">Δ &lt; 0 → nessuna soluzione reale</p>
+            : computed.hasOneDoubleSolution
+              ? <p className="font-mono text-base">Δ = 0 → due soluzioni reali e coincidenti per t</p>
+              : <p className="font-mono text-base">Δ &gt; 0 → due soluzioni reali e distinte per t</p>
+          }
+        </NotebookGuide>
       </div>
 
       {/* Step 4: Calculate t₁ */}
@@ -1101,6 +1099,44 @@ function BiquadraticExercise({
         </div>
       )}
 
+      {/* Step 5-bis: Delta negativo — inserisci comunque il Δ */}
+      {computed.solutionType === "delta_negative" && (
+        <div className="p-4 rounded-xl bg-card/40 border border-destructive/30 space-y-4 leading-loose">
+          <p className="text-base font-bold text-primary">5. CALCOLO Δ:</p>
+          <div className="space-y-3">
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = b^{2} - 4ac`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
+            <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
+          </div>
+          <NumberInputCanvas
+            value={deltaUtente}
+            onChange={(v) => { setDeltaUtente(v); }}
+            label="Inserisci il tuo Δ:"
+            colorClass="text-primary"
+            allowNegative
+          />
+          {deltaUtente !== null && (
+            <p className={cn(
+              "text-base font-bold text-center mt-2",
+              areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) ? "text-success" : "text-destructive",
+            )}>
+              {areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)
+                ? "CORRETTO"
+                : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
+            </p>
+          )}
+          <NotebookGuide
+            title="RICOPIA SUL QUADERNO:"
+            visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
+            forceOpen={generatingPdf}
+          >
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
+            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
+            <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
+          </NotebookGuide>
+        </div>
+      )}
+
       {/* Step 6: Extract x from t */}
       <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
         <p className="text-base font-bold text-primary">6. CALCOLO DI <span className="math-var">x₁</span> E <span className="math-var">x₂</span>:</p>
@@ -1119,15 +1155,23 @@ function BiquadraticExercise({
 
         </div>
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
-          {computed.t1 !== null && computed.t1 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+          {computed.hasRealSolutions ? (
+            <>
+              {computed.t1 !== null && computed.t1 >= -EPSILON && (
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+              )}
+              {computed.t2 !== null && computed.t2 >= -EPSILON && (
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+              )}
+              <p className="text-base lowercase text-primary">
+                calcolo la radice quadrata di t
+              </p>
+            </>
+          ) : (
+            <p className="text-base text-primary">
+              Il delta è negativo, quindi l&apos;equazione non ha soluzioni nell&apos;insieme dei numeri reali.
+            </p>
           )}
-          {computed.t2 !== null && computed.t2 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
-          )}
-          <p className="text-base">
-            CALCOLO LA RADICE QUADRATA DI t
-          </p>
         </NotebookGuide>
       </div>
 
@@ -1215,18 +1259,6 @@ function BiquadraticExercise({
               ).join(", ")}` }}
             />
           </NotebookGuide>
-        </div>
-      )}
-
-      {/* Negative delta: no real solutions */}
-      {computed.solutionType === "delta_negative" && (
-        <div className="p-4 rounded-xl bg-card/40 border border-destructive/30 space-y-3 leading-loose">
-          <p className="text-base font-bold text-destructive">
-            Δ &lt; 0: NESSUNA SOLUZIONE REALE
-          </p>
-          <p className="text-base opacity-80">
-            Il delta è negativo, quindi l&apos;equazione non ha soluzioni nell&apos;insieme dei numeri reali.
-          </p>
         </div>
       )}
 
