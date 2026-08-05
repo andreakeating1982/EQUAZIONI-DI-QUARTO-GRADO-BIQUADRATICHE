@@ -49,6 +49,13 @@ function areNumbersApproximatelyEqual(num1: number, num2: number, epsilon = EPSI
   return Math.abs(num1 - num2) < epsilon;
 }
 
+/** Confronta due numeri arrotondandoli a `decimals` cifre decimali.
+ *  Serve per accettare sia frazioni (1/3) che decimali (0,33) come equivalenti. */
+function areNumbersRoundedEqual(a: number, b: number, decimals = 2): boolean {
+  const m = Math.pow(10, decimals);
+  return Math.round(a * m) === Math.round(b * m);
+}
+
 /** Convert a number to its LaTeX representation (fraction or decimal, max 2 digits) */
 function numberToLatex(value: number): string {
   if (isNaN(value)) return "?";
@@ -600,10 +607,10 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
     areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100);
 
   const t1Correct = computed && computed.t1 !== null && t1Utente !== null &&
-    areNumbersApproximatelyEqual(t1Utente, computed.t1, 1e-3);
+    areNumbersRoundedEqual(t1Utente, computed.t1);
 
   const t2Correct = computed && computed.t2 !== null && t2Utente !== null &&
-    areNumbersApproximatelyEqual(t2Utente, computed.t2, 1e-3);
+    areNumbersRoundedEqual(t2Utente, computed.t2);
 
   // ─── Render ─────────────────────────────────────────────────────
   const allFilled = aNum !== null && bNum !== null && cNum !== null;
@@ -1030,16 +1037,16 @@ function BiquadraticExercise({
           {t1Utente !== null && (
             <p className={cn(
               "text-base font-bold text-center mt-2",
-              areNumbersApproximatelyEqual(t1Utente, computed.t1!, 1e-3) ? "text-success" : "text-destructive",
+              areNumbersRoundedEqual(t1Utente, computed.t1!) ? "text-success" : "text-destructive",
             )}>
-              {areNumbersApproximatelyEqual(t1Utente, computed.t1!, 1e-3)
+              {areNumbersRoundedEqual(t1Utente, computed.t1!)
                 ? "CORRETTO"
                 : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
             </p>
           )}
           <NotebookGuide
             title="RICOPIA SUL QUADERNO:"
-            visible={t1Utente !== null && areNumbersApproximatelyEqual(t1Utente, computed.t1!, 1e-3)}
+            visible={t1Utente !== null && areNumbersRoundedEqual(t1Utente, computed.t1!)}
             forceOpen={generatingPdf}
           >
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
@@ -1071,16 +1078,16 @@ function BiquadraticExercise({
           {t2Utente !== null && (
             <p className={cn(
               "text-base font-bold text-center mt-2",
-              areNumbersApproximatelyEqual(t2Utente, computed.t2!, 1e-3) ? "text-success" : "text-destructive",
+              areNumbersRoundedEqual(t2Utente, computed.t2!) ? "text-success" : "text-destructive",
             )}>
-              {areNumbersApproximatelyEqual(t2Utente, computed.t2!, 1e-3)
+              {areNumbersRoundedEqual(t2Utente, computed.t2!)
                 ? "CORRETTO"
                 : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
             </p>
           )}
           <NotebookGuide
             title="RICOPIA SUL QUADERNO:"
-            visible={t2Utente !== null && areNumbersApproximatelyEqual(t2Utente, computed.t2!, 1e-3)}
+            visible={t2Utente !== null && areNumbersRoundedEqual(t2Utente, computed.t2!)}
             forceOpen={generatingPdf}
           >
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
@@ -1159,7 +1166,7 @@ function BiquadraticExercise({
                 )].sort((a, b) => a - b);
 
                 const match = userAbsVals.length === correctAbsVals.length &&
-                  userAbsVals.every((v, i) => areNumbersApproximatelyEqual(v, correctAbsVals[i], 1e-3));
+                  userAbsVals.every((v, i) => areNumbersRoundedEqual(v, correctAbsVals[i]));
 
                 if (match) {
                   setFeedbackFinale({
