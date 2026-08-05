@@ -166,6 +166,16 @@ function parseBiquadraticLaTeX(latex: string): ParsedBiquadratic | null {
       return `[FRAC:${fracs.length - 1}]`;
     });
 
+    // Also replace inline fractions like "3/4" that appear as coefficients
+    // E.g. "3/4x^{4}" → "[FRAC:N]x^{4}"
+    s = s.replace(/(\d+)\/(\d+)/g, (_, num, den) => {
+      const n = parseInt(num, 10);
+      const d = parseInt(den, 10);
+      if (isNaN(n) || isNaN(d) || d === 0) return _;
+      fracs.push({ num: n, den: d });
+      return `[FRAC:${fracs.length - 1}]`;
+    });
+
     // Split into terms (keep signs)
     const termParts = s.split(/(?=[+-])/).filter(t => t.length > 0);
 
