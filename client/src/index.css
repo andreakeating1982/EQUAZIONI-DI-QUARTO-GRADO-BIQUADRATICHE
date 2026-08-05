@@ -136,7 +136,6 @@
   body *:not(input):not(textarea):not(select) {
     text-align: center !important;
     text-transform: uppercase !important;
-    font-family: Cambria, Georgia, "Times New Roman", serif !important;
   }
 
   /* Variabili matematiche: MAI forzare maiuscole */

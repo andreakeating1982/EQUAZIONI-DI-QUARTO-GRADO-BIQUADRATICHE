@@ -940,7 +940,7 @@ function BiquadraticExercise({
         <div className="flex justify-center">
           <div className="inline-block px-4 py-2 rounded-lg bg-muted font-mono text-base" dangerouslySetInnerHTML={{ __html: tEquationDisplay }} />
         </div>
-        <p className="text-base text-center opacity-80">Sostituendo x² = t e x⁴ = t²</p>
+        <p className="text-base text-center opacity-80">SOSTITUENDO <span className="math-var">x² = t</span> E <span className="math-var">x⁴ = t²</span></p>
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
           <p className="font-mono text-base">t = x²</p>
           <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: tEquationDisplay }} />
