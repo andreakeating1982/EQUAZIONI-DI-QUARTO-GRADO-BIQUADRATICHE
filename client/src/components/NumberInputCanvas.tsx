@@ -47,34 +47,54 @@ export function NumberInputCanvas({
       result = await recognize(strokes, "expression");
     }
     if (result) {
-      // 1. Rimuovi spazi bianchi (causa principale del bug multi-cifra)
+      // 1. Rimuovi spazi bianchi
       let numStr = result.latex.replace(/\s+/g, "");
       // 2. Sostituisci virgole decimali con punti
       numStr = numStr.replace(/,/g, ".");
-      // 3. Rimuovi comandi LaTeX e parentesi
+      // 3. Converti \frac{num}{den} → num/den (PRIMA di rimuovere comandi LaTeX)
+      numStr = numStr.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "$1/$2");
+      // 4. Rimuovi altri comandi LaTeX e parentesi
       numStr = numStr
         .replace(/\\mathrm\{([^}]*)\}/g, "$1")
         .replace(/\\[a-zA-Z]+(\{[^}]*\})?/g, "")
         .replace(/[{}]/g, "");
-      // 4. Tieni solo cifre, punto decimale e segno meno (se consentito)
+      // 5. Pulisci tenendo cifre, punto, meno E slash (per frazioni)
       if (allowNegative) {
-        numStr = numStr.replace(/[^0-9.\-]/g, "");
+        numStr = numStr.replace(/[^0-9.\-\/]/g, "");
         // Gestisci eventuali meno multipli: tieni solo il primo
         const minusCount = (numStr.match(/-/g) || []).length;
         if (minusCount > 1) {
           numStr = "-" + numStr.replace(/-/g, "");
         }
       } else {
-        numStr = numStr.replace(/[^0-9.]/g, "");
+        numStr = numStr.replace(/[^0-9.\/]/g, "");
       }
-      // 5. Gestisci edge case: stringa vuota o solo un meno
+      // 6. Gestisci edge case: stringa vuota o solo un meno
       if (!numStr || numStr === "-" || numStr === ".") {
         setRecognizedText("?");
         setIsRecognizing(false);
         return;
       }
 
-      const parsed = parseFloat(numStr);
+      // 7. Parsing: gestisci frazioni (es. "1/4" → 0.25) oltre ai decimali
+      let parsed: number;
+      if (numStr.includes("/")) {
+        const parts = numStr.split("/");
+        if (parts.length === 2) {
+          const num = parseFloat(parts[0]);
+          const den = parseFloat(parts[1]);
+          if (!isNaN(num) && !isNaN(den) && den !== 0) {
+            parsed = num / den;
+          } else {
+            parsed = NaN;
+          }
+        } else {
+          parsed = NaN;
+        }
+      } else {
+        parsed = parseFloat(numStr);
+      }
+
       if (!isNaN(parsed)) {
         setRecognizedText(parsed.toString());
         onChange(parsed);
