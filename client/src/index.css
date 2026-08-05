@@ -130,7 +130,6 @@
 
   html, body, #root {
     text-align: center !important;
-    text-transform: uppercase !important;
     font-family: Cambria, Georgia, "Times New Roman", serif !important;
   }
 
