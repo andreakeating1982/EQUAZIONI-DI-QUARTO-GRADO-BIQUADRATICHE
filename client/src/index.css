@@ -130,7 +130,7 @@
 
   html, body, #root {
     text-align: center !important;
-    font-family: Cambria, Georgia, "Times New Roman", serif !important;
+    font-family: 'Cambria Math', Cambria, serif !important;
   }
 
   body *:not(input):not(textarea):not(select) {

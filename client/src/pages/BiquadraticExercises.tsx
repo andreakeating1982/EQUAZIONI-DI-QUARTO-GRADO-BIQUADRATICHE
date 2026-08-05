@@ -1086,7 +1086,7 @@ function BiquadraticExercise({
           )}
           {!computed.hasRealSolutions && (
             <p className="text-destructive font-semibold text-base">
-              NESSUNA SOLUZIONE REALE: t₁ e t₂ sono negativi
+              NESSUNA SOLUZIONE REALE: <span className="math-var">t₁</span> E <span className="math-var">t₂</span> SONO NEGATIVI
             </p>
           )}
 
