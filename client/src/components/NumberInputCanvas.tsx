@@ -52,6 +52,143 @@ function toDecimalString(value: number): string {
   return str.replace(".", ",");
 }
 
+// ─── LaTeX expression evaluator ───────────────────────────────────
+// Valuta espressioni LaTeX con \frac, \sqrt, divisioni e numeri.
+
+/** Estrai il contenuto tra graffe bilanciate a partire da pos */
+function extractBraced(s: string, pos: number): { inner: string; end: number } | null {
+  if (pos >= s.length || s[pos] !== '{') return null;
+  let depth = 0;
+  let i = pos;
+  while (i < s.length) {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') {
+      depth--;
+      if (depth === 0) return { inner: s.slice(pos + 1, i), end: i + 1 };
+    }
+    i++;
+  }
+  return null;
+}
+
+/** Valuta ricorsivamente una stringa LaTeX → numero */
+function evaluateLatex(latex: string): number | null {
+  let s = latex.trim().replace(/\s+/g, '');
+  if (!s) return null;
+
+  // ── 1. Leading minus ───────────────────────────────────────────
+  if (s.startsWith('-')) {
+    const inner = evaluateLatex(s.slice(1));
+    return inner !== null ? -inner : null;
+  }
+
+  // ── 2. Outermost \frac{num}{den} ──────────────────────────────
+  if (s.startsWith('\\frac{')) {
+    const numBrace = extractBraced(s, 5); // after \frac
+    if (!numBrace) return null;
+    const denBrace = extractBraced(s, numBrace.end);
+    if (!denBrace) return null;
+    // Ensure nothing follows the second brace (or only whitespace)
+    const rest = s.slice(denBrace.end).trim();
+    if (rest && !rest.startsWith('/')) {
+      // Extra stuff after \frac{}{} — not a pure fraction
+    }
+    const num = evaluateLatex(numBrace.inner);
+    const den = evaluateLatex(denBrace.inner);
+    if (num !== null && den !== null && den !== 0) {
+      const val = num / den;
+      // If there's trailing /something, continue
+      if (rest.startsWith('/')) {
+        const restVal = evaluateLatex(rest.slice(1));
+        if (restVal !== null && restVal !== 0) return val / restVal;
+        return null;
+      }
+      return val;
+    }
+    return null;
+  }
+
+  // ── 3. Outermost \sqrt{expr} ──────────────────────────────────
+  if (s.startsWith('\\sqrt{')) {
+    const br = extractBraced(s, 5);
+    if (!br) return null;
+    const rest = s.slice(br.end).trim();
+    const inner = evaluateLatex(br.inner);
+    if (inner !== null && inner >= 0) {
+      const val = Math.sqrt(inner);
+      if (rest.startsWith('/')) {
+        const restVal = evaluateLatex(rest.slice(1));
+        if (restVal !== null && restVal !== 0) return val / restVal;
+        return null;
+      }
+      return val;
+    }
+    return null;
+  }
+
+  // ── 4. Inline division a/b (only at top level, NOT inside braces) ─
+  // Cerca '/' non racchiuso tra graffe
+  let braceDepth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '{') braceDepth++;
+    else if (s[i] === '}') braceDepth--;
+    else if (s[i] === '/' && braceDepth === 0 && i > 0 && i < s.length - 1) {
+      const a = evaluateLatex(s.slice(0, i));
+      const b = evaluateLatex(s.slice(i + 1));
+      if (a !== null && b !== null && b !== 0) return a / b;
+      // If division fails, fall through to try plain number
+      break;
+    }
+  }
+
+  // ── 5. sqrt(…) — plain text format ──────────────────────────────
+  if (s.startsWith('sqrt(')) {
+    let depth2 = 0;
+    for (let i = 4; i < s.length; i++) {
+      if (s[i] === '(') depth2++;
+      else if (s[i] === ')') {
+        if (depth2 === 0) {
+          const inner = evaluateLatex(s.slice(5, i));
+          if (inner !== null && inner >= 0) {
+            const val = Math.sqrt(inner);
+            const rest = s.slice(i + 1).trim();
+            if (rest.startsWith('/')) {
+              const restVal = evaluateLatex(rest.slice(1));
+              if (restVal !== null && restVal !== 0) return val / restVal;
+              return null;
+            }
+            return val;
+          }
+          return null;
+        }
+        depth2--;
+      }
+    }
+    return null;
+  }
+
+  // ── 6. Plain number ────────────────────────────────────────────
+  s = s.replace(/,/g, '.');
+  const num = parseFloat(s);
+  if (!isNaN(num)) return num;
+
+  return null;
+}
+
+/** Estrai la forma radicale visiva dal LaTeX riconosciuto.
+ *  Restituisce una stringa leggibile oppure null. */
+function extractRadicalForm(latex: string): string | null {
+  const s = latex.trim().replace(/\s+/g, '');
+  if (!s.includes('\\sqrt')) return null;
+  // Sostituisci \frac{a}{b} → a/b per compattezza
+  let out = s.replace(/\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '($1)/($2)');
+  // Sostituisci \sqrt{x} → √(x)
+  out = out.replace(/\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '√($1)');
+  // Pulisci caratteri residui
+  out = out.replace(/[{}]/g, '');
+  return out;
+}
+
 // ─── Fraction from LaTeX ──────────────────────────────────────────
 // Extract a \frac{num}{den} from LaTeX and return numerator/denominator.
 // Returns null if the LaTeX does not represent a simple fraction.
@@ -121,6 +258,7 @@ export function NumberInputCanvas({
   const [fracDen, setFracDen] = useState<number | null>(null);
   const [fracNeg, setFracNeg] = useState(false);
   const [decimalStr, setDecimalStr] = useState<string | null>(null);
+  const [radicalForm, setRadicalForm] = useState<string | null>(null);
 
   const { recognize, isModelReady, isLoading } = useMathRecognition();
 
@@ -146,29 +284,48 @@ export function NumberInputCanvas({
     }
 
     if (result) {
-      // ── Attempt fraction extraction directly from LaTeX ──
-      const frac = extractFractionFromLatex(result.latex);
-      if (frac) {
-        const numericValue = frac.isNegative
-          ? -(frac.numerator / frac.denominator)
-          : frac.numerator / frac.denominator;
+      // ── 1. Valuta l'espressione LaTeX completa (supporta √, \frac, /) ──
+      const evaluated = evaluateLatex(result.latex);
 
-        setFracNum(frac.numerator);
-        setFracDen(frac.denominator);
-        setFracNeg(frac.isNegative);
-        setDecimalStr(toDecimalString(numericValue));
+      if (evaluated !== null && isFinite(evaluated)) {
+        // Controlla se c'è una frazione LaTeX pura (per il display preferito)
+        const frac = extractFractionFromLatex(result.latex);
+        if (frac && !result.latex.includes('\\sqrt')) {
+          // Frazione semplice senza radice: usa num/den estratti
+          setFracNum(frac.numerator);
+          setFracDen(frac.denominator);
+          setFracNeg(frac.isNegative);
+        } else {
+          // Calcola la frazione dal valore numerico
+          const fp = numberToFractionParts(evaluated);
+          if (fp) {
+            setFracNum(Math.abs(fp.num));
+            setFracDen(fp.den);
+            setFracNeg(evaluated < 0);
+          } else {
+            resetFraction();
+          }
+        }
+
+        // Forma decimale
+        setDecimalStr(toDecimalString(evaluated));
+
+        // Forma radicale (se presente nel LaTeX originale)
+        const rad = extractRadicalForm(result.latex);
+        setRadicalForm(rad);
+
         setRecognizedText("");
-        onChange(numericValue);
+        onChange(evaluated);
         setTimeout(() => setStrokes([]), 1400);
         setIsRecognizing(false);
         return;
       }
 
-      // ── Fallback: plain number parsing ──
+      // ── 2. Fallback: plain number parsing (come prima) ──
       let numStr = result.latex.replace(/\s+/g, "");
       numStr = numStr.replace(/,/g, ".");
 
-      // Convert \frac{num}{den} → num/den  (belt-and-suspenders)
+      // Convert \frac{num}{den} → num/den
       numStr = numStr.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "$1/$2");
 
       // Strip remaining LaTeX commands and braces
@@ -191,14 +348,11 @@ export function NumberInputCanvas({
       if (!numStr || numStr === "-" || numStr === ".") {
         setRecognizedText("?");
         resetFraction();
-        setDecimalStr(null);
         setIsRecognizing(false);
         return;
       }
 
-      // Parse: detect fraction pattern "num/den"
       let parsed: number;
-
       if (numStr.includes("/")) {
         const parts = numStr.split("/");
         if (parts.length === 2) {
@@ -217,7 +371,6 @@ export function NumberInputCanvas({
       }
 
       if (!isNaN(parsed)) {
-        // Compute fraction parts from the numeric value
         const fp = numberToFractionParts(parsed);
         if (fp) {
           setFracNum(Math.abs(fp.num));
@@ -227,12 +380,12 @@ export function NumberInputCanvas({
           resetFraction();
         }
         setDecimalStr(toDecimalString(parsed));
+        setRadicalForm(null);
         setRecognizedText("");
         onChange(parsed);
         setTimeout(() => setStrokes([]), 1400);
       } else {
         resetFraction();
-        setDecimalStr(null);
         setRecognizedText(numStr || "?");
       }
     }
@@ -244,6 +397,7 @@ export function NumberInputCanvas({
     setFracDen(null);
     setFracNeg(false);
     setDecimalStr(null);
+    setRadicalForm(null);
   }, []);
 
   const handleClear = () => {
@@ -289,11 +443,11 @@ export function NumberInputCanvas({
           {isRecognizing ? "..." : "RICONOSCI"}
         </button>
 
-        {/* Display del valore riconosciuto — frazione + decimale */}
-        <div className="flex items-center gap-2 min-h-[32px]">
-          {/* Fraction + decimal display */}
+        {/* Display del valore riconosciuto — tre forme: frazione · decimale · radicale */}
+        <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
+          {/* Frazione + decimale */}
           {showFraction && decimalStr && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
               {fracNeg && <span className="mr-0.5">−</span>}
               <FractionDisplay
                 numerator={fracNum!}
@@ -301,11 +455,18 @@ export function NumberInputCanvas({
                 size="sm"
               />
               <span className="mx-0.5 opacity-60">→</span>
-              <span>{decimalStr}</span>
+              <span className="font-mono">{decimalStr}</span>
             </span>
           )}
 
-          {/* Text fallback (when no fraction/decimal computed) */}
+          {/* Forma radicale (se presente) */}
+          {radicalForm && (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-base font-bold font-mono">
+              {radicalForm}
+            </span>
+          )}
+
+          {/* Text fallback */}
           {!showFraction && recognizedText && (
             <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {recognizedText}
