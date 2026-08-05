@@ -147,6 +147,13 @@
     text-align: center !important;
   }
 
+  /* KaTeX: MAI forzare maiuscole sulla notazione matematica */
+  .katex,
+  .katex *,
+  .font-mono {
+    text-transform: none !important;
+  }
+
   input,
   textarea,
   select {
