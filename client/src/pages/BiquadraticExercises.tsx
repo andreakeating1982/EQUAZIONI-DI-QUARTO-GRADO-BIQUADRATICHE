@@ -1076,21 +1076,7 @@ function BiquadraticExercise({
               NESSUNA SOLUZIONE REALE: t₁ e t₂ sono negativi
             </p>
           )}
-          {computed.hasRealSolutions && (
-            <div className="text-base space-y-1 mt-3">
-              <p className="font-semibold">
-                Soluzioni reali:
-                {computed.positiveRoots.map((root, i) => (
-                  <span key={i} className="font-mono ml-1">
-                    {areNumbersApproximatelyEqual(root, 0, 1e-10)
-                      ? "0"
-                      : `±${formatFractionDecimal(root)}`}
-                    {i < computed.positiveRoots.length - 1 ? "," : ""}
-                  </span>
-                ))}
-              </p>
-            </div>
-          )}
+
         </div>
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
           {computed.t1 !== null && computed.t1 >= -EPSILON && (
@@ -1104,7 +1090,7 @@ function BiquadraticExercise({
               Soluzioni: {computed.positiveRoots.map(r =>
                 areNumbersApproximatelyEqual(r, 0, 1e-10)
                   ? "0"
-                  : `±${formatFractionDecimal(r)}`
+                  : `±${formatFraction(r)}`
               ).join(", ")}
             </p>
           )}
@@ -1151,14 +1137,14 @@ function BiquadraticExercise({
                 if (match) {
                   setFeedbackFinale({
                     testo: `Corretto! ✅ Le soluzioni sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFractionDecimal(r)}`
+                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFraction(r)}`
                     ).join(", ")}`,
                     corretto: true,
                   });
                 } else {
                   setFeedbackFinale({
                     testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFractionDecimal(r)}`
+                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : `±${formatFraction(r)}`
                     ).join(", ")}`,
                     corretto: false,
                   });
@@ -1190,7 +1176,7 @@ function BiquadraticExercise({
               Soluzioni finali: {computed.positiveRoots.map(r =>
                 areNumbersApproximatelyEqual(r, 0, 1e-10)
                   ? "0"
-                  : `±${formatFractionDecimal(r)}`
+                  : `±${formatFraction(r)}`
               ).join(", ")}
             </p>
           </NotebookGuide>

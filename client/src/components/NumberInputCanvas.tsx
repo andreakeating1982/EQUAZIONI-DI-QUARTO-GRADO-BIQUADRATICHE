@@ -3,6 +3,30 @@ import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
 import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
 
+// ─── Fraction display helpers ────────────────────────────────────
+function gcd(a: number, b: number): number {
+  if (b === 0) return a;
+  return gcd(b, a % b);
+}
+
+function numberToFractionDisplay(value: number): string {
+  if (isNaN(value)) return "?";
+  if (Math.abs(value) < 1e-10) return "0";
+  const sign = value < 0 ? "-" : "";
+  const absValue = Math.abs(value);
+  for (let denominator = 1; denominator <= 1000; denominator++) {
+    const numerator = Math.round(absValue * denominator);
+    if (Math.abs(absValue - numerator / denominator) < 1e-6) {
+      const g = gcd(numerator, denominator);
+      const fn = numerator / g;
+      const fd = denominator / g;
+      if (fd === 1) return `${sign}${fn}`;
+      return `${sign}${fn}/${fd}`;
+    }
+  }
+  return `${sign}${absValue.toFixed(2)}`;
+}
+
 interface NumberInputCanvasProps {
   value: number | null;
   onChange: (value: number | null) => void;
@@ -96,7 +120,8 @@ export function NumberInputCanvas({
       }
 
       if (!isNaN(parsed)) {
-        setRecognizedText(parsed.toString());
+        // Mostra come frazione invece di decimale (es. "1/4" invece di "0.25")
+        setRecognizedText(numberToFractionDisplay(parsed));
         onChange(parsed);
         setTimeout(() => setStrokes([]), 1200);
       } else {
