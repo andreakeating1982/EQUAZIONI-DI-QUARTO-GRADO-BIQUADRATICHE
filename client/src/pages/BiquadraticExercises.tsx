@@ -75,6 +75,26 @@ function numberToLatexAbs(value: number): string {
   return f;
 }
 
+/** Format -b in numerator: "-2" for b=2, "+3" for b=-3 — NO extra parens */
+function formatNegatedCoeff(value: number): string {
+  const abs = numberToLatexAbs(value);
+  return value >= 0 ? `-${abs}` : `+${abs}`;
+}
+
+/** Format coefficient wrapping in ( ) only when negative or a fraction */
+function formatCoeffWithParens(value: number): string {
+  const latex = numberToLatex(value);
+  if (latex.startsWith('-') || latex.includes('frac')) return `(${latex})`;
+  return latex;
+}
+
+/** Format denominator coefficient: just the value without extra parens unless negative */
+function formatDenomCoeff(value: number): string {
+  const latex = numberToLatex(value);
+  if (value < 0) return `(${latex})`;
+  return latex;
+}
+
 /** Quick KaTeX render for inline display-mode formulas */
 function renderKatex(latex: string): string {
   try {
@@ -952,7 +972,7 @@ function BiquadraticExercise({
         <p className="text-base font-bold text-primary">3. Calcolo delta Δ:</p>
         <div className="space-y-3">
           <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = b^{2} - 4ac`) }} />
-          <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = (${numberToLatex(computed.b)})^{2} - 4 \\cdot (${numberToLatex(computed.a)}) \\cdot (${numberToLatex(computed.c)})`) }} />
+          <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
           {computed.solutionType === "delta_negative" && (
             <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
           )}
@@ -981,7 +1001,7 @@ function BiquadraticExercise({
               visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
               forceOpen={generatingPdf}
             >
-              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = (${numberToLatex(computed.b)})^{2} - 4 \\cdot (${numberToLatex(computed.a)}) \\cdot (${numberToLatex(computed.c)})`) }} />
+              <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
               <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
               {computed.hasOneDoubleSolution
                 ? <p className="font-mono text-base">Δ = 0 → due soluzioni reali e coincidenti per t</p>
@@ -998,7 +1018,7 @@ function BiquadraticExercise({
           <p className="text-base font-bold text-primary">4. CALCOLO <span className="math-var">t₁</span>:</p>
           <div className="space-y-3">
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
-            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-(${numberToLatexAbs(computed.b)}) + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
           </div>
           <NumberInputCanvas
             value={t1Utente}
@@ -1022,7 +1042,7 @@ function BiquadraticExercise({
             visible={t1Utente !== null && areNumbersApproximatelyEqual(t1Utente, computed.t1!, 1e-3)}
             forceOpen={generatingPdf}
           >
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-(${numberToLatexAbs(computed.b)}) + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
             <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
             {computed.t1! >= -EPSILON
@@ -1039,7 +1059,7 @@ function BiquadraticExercise({
           <p className="text-base font-bold text-primary">5. CALCOLO <span className="math-var">t₂</span>:</p>
           <div className="space-y-3">
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
-            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-(${numberToLatexAbs(computed.b)}) - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
           </div>
           <NumberInputCanvas
             value={t2Utente}
@@ -1063,7 +1083,7 @@ function BiquadraticExercise({
             visible={t2Utente !== null && areNumbersApproximatelyEqual(t2Utente, computed.t2!, 1e-3)}
             forceOpen={generatingPdf}
           >
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-(${numberToLatexAbs(computed.b)}) - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
             <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
             {computed.t2! >= -EPSILON
@@ -1093,12 +1113,12 @@ function BiquadraticExercise({
         </div>
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
           {computed.t1 !== null && computed.t1 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}} = \\pm${numberToLatexAbs(Math.sqrt(computed.t1))}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
           )}
           {computed.t2 !== null && computed.t2 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}} = \\pm${numberToLatexAbs(Math.sqrt(computed.t2))}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
           )}
-          <p className="text-base font-bold">
+          <p className="text-base">
             CALCOLO LA RADICE QUADRATA DI t
           </p>
         </NotebookGuide>
