@@ -29,6 +29,29 @@ function numberToFractionDisplay(value: number): string {
   return `${sign}${absValue.toFixed(2)}`;
 }
 
+/** Scomponi un numero in {num, den} per FractionDisplay (null se non trovata) */
+function numberToFractionParts(value: number): { num: number; den: number } | null {
+  if (isNaN(value)) return null;
+  if (Math.abs(value) < 1e-10) return { num: 0, den: 1 };
+  const sign = value < 0 ? -1 : 1;
+  const absValue = Math.abs(value);
+  for (let denominator = 1; denominator <= 1000; denominator++) {
+    const numerator = Math.round(absValue * denominator);
+    if (Math.abs(absValue - numerator / denominator) < 1e-6) {
+      const g = gcd(numerator, denominator);
+      return { num: sign * (numerator / g), den: denominator / g };
+    }
+  }
+  return null;
+}
+
+/** Converte un numero in stringa decimale con virgola, arrotondato a 2 cifre */
+function toDecimalString(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  const str = rounded.toFixed(2);
+  return str.replace(".", ",");
+}
+
 // ─── Fraction from LaTeX ──────────────────────────────────────────
 // Extract a \frac{num}{den} from LaTeX and return numerator/denominator.
 // Returns null if the LaTeX does not represent a simple fraction.
@@ -97,6 +120,7 @@ export function NumberInputCanvas({
   const [fracNum, setFracNum] = useState<number | null>(null);
   const [fracDen, setFracDen] = useState<number | null>(null);
   const [fracNeg, setFracNeg] = useState(false);
+  const [decimalStr, setDecimalStr] = useState<string | null>(null);
 
   const { recognize, isModelReady, isLoading } = useMathRecognition();
 
@@ -132,7 +156,8 @@ export function NumberInputCanvas({
         setFracNum(frac.numerator);
         setFracDen(frac.denominator);
         setFracNeg(frac.isNegative);
-        setRecognizedText("");  // we use fraction display instead
+        setDecimalStr(toDecimalString(numericValue));
+        setRecognizedText("");
         onChange(numericValue);
         setTimeout(() => setStrokes([]), 1400);
         setIsRecognizing(false);
@@ -166,15 +191,13 @@ export function NumberInputCanvas({
       if (!numStr || numStr === "-" || numStr === ".") {
         setRecognizedText("?");
         resetFraction();
+        setDecimalStr(null);
         setIsRecognizing(false);
         return;
       }
 
       // Parse: detect fraction pattern "num/den"
       let parsed: number;
-      let isFraction = false;
-      let pNum = 0;
-      let pDen = 0;
 
       if (numStr.includes("/")) {
         const parts = numStr.split("/");
@@ -183,9 +206,6 @@ export function NumberInputCanvas({
           const d = parseFloat(parts[1]);
           if (!isNaN(n) && !isNaN(d) && d !== 0) {
             parsed = n / d;
-            pNum = Math.abs(n);
-            pDen = Math.abs(d);
-            isFraction = true;
           } else {
             parsed = NaN;
           }
@@ -197,21 +217,22 @@ export function NumberInputCanvas({
       }
 
       if (!isNaN(parsed)) {
-        if (isFraction) {
-          // Show as a visual fraction via FractionDisplay
-          setFracNum(pNum);
-          setFracDen(pDen);
+        // Compute fraction parts from the numeric value
+        const fp = numberToFractionParts(parsed);
+        if (fp) {
+          setFracNum(Math.abs(fp.num));
+          setFracDen(fp.den);
           setFracNeg(parsed < 0);
-          setRecognizedText("");
         } else {
-          // Plain number — show text representation
           resetFraction();
-          setRecognizedText(numberToFractionDisplay(parsed));
         }
+        setDecimalStr(toDecimalString(parsed));
+        setRecognizedText("");
         onChange(parsed);
         setTimeout(() => setStrokes([]), 1400);
       } else {
         resetFraction();
+        setDecimalStr(null);
         setRecognizedText(numStr || "?");
       }
     }
@@ -222,6 +243,7 @@ export function NumberInputCanvas({
     setFracNum(null);
     setFracDen(null);
     setFracNeg(false);
+    setDecimalStr(null);
   }, []);
 
   const handleClear = () => {
@@ -267,31 +289,26 @@ export function NumberInputCanvas({
           {isRecognizing ? "..." : "RICONOSCI"}
         </button>
 
-        {/* Display del valore riconosciuto */}
+        {/* Display del valore riconosciuto — frazione + decimale */}
         <div className="flex items-center gap-2 min-h-[32px]">
-          {/* Fraction display */}
-          {showFraction && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
+          {/* Fraction + decimal display */}
+          {showFraction && decimalStr && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {fracNeg && <span className="mr-0.5">−</span>}
               <FractionDisplay
                 numerator={fracNum!}
                 denominator={fracDen!}
                 size="sm"
               />
+              <span className="mx-0.5 opacity-60">→</span>
+              <span>{decimalStr}</span>
             </span>
           )}
 
-          {/* Text display (decimal recovered as fraction string) */}
+          {/* Text fallback (when no fraction/decimal computed) */}
           {!showFraction && recognizedText && (
             <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {recognizedText}
-            </span>
-          )}
-
-          {/* Numeric value from parent — shown ONLY when no recognized text or fraction */}
-          {!showFraction && !recognizedText && value !== null && !isNaN(value) && (
-            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
-              {(() => { const s = value.toFixed(2); return parseFloat(s).toString(); })()}
             </span>
           )}
 
