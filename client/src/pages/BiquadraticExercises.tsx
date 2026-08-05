@@ -936,7 +936,7 @@ function BiquadraticExercise({
 
       {/* Step 2: Variable substitution t = x² */}
       <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-        <p className="text-base font-bold text-primary">2. Variabile ausiliaria t = x²:</p>
+        <p className="text-base font-bold text-primary">2. VARIABILE AUSILIARIA <span className="math-var">t = x²</span>:</p>
         <div className="flex justify-center">
           <div className="inline-block px-4 py-2 rounded-lg bg-muted font-mono text-base" dangerouslySetInnerHTML={{ __html: tEquationDisplay }} />
         </div>
@@ -995,7 +995,7 @@ function BiquadraticExercise({
       {/* Step 4: Calculate t₁ */}
       {computed.solutionType !== "delta_negative" && computed.t1 !== null && (
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">4. Calcolo t₁:</p>
+          <p className="text-base font-bold text-primary">4. CALCOLO <span className="math-var">t₁</span>:</p>
           <div className="space-y-3">
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
             <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-(${numberToLatexAbs(computed.b)}) + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
@@ -1003,7 +1003,7 @@ function BiquadraticExercise({
           <NumberInputCanvas
             value={t1Utente}
             onChange={(v) => setT1Utente(v)}
-            label="Inserisci il tuo t₁:"
+            label={<>INSERISCI IL TUO <span className="math-var">t₁</span>:</>}
             colorClass="text-primary"
             allowNegative
           />
@@ -1036,7 +1036,7 @@ function BiquadraticExercise({
       {/* Step 5: Calculate t₂ */}
       {computed.solutionType !== "delta_negative" && computed.t2 !== null && (
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">5. Calcolo t₂:</p>
+          <p className="text-base font-bold text-primary">5. CALCOLO <span className="math-var">t₂</span>:</p>
           <div className="space-y-3">
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
             <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-(${numberToLatexAbs(computed.b)}) - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot (${numberToLatexAbs(computed.a)})}`) }} />
@@ -1044,7 +1044,7 @@ function BiquadraticExercise({
           <NumberInputCanvas
             value={t2Utente}
             onChange={(v) => setT2Utente(v)}
-            label="Inserisci il tuo t₂:"
+            label={<>INSERISCI IL TUO <span className="math-var">t₂</span>:</>}
             colorClass="text-primary"
             allowNegative
           />
@@ -1076,7 +1076,7 @@ function BiquadraticExercise({
 
       {/* Step 6: Extract x from t */}
       <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-        <p className="text-base font-bold text-primary">6. Calcolo di x₁ e x₂:</p>
+        <p className="text-base font-bold text-primary">6. CALCOLO DI <span className="math-var">x₁</span> E <span className="math-var">x₂</span>:</p>
         <div className="space-y-2">
           {computed.t1 !== null && computed.t1 >= -EPSILON && (
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
@@ -1115,18 +1115,18 @@ function BiquadraticExercise({
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
           <p className="text-base font-bold text-primary">7. Verifica del risultato:</p>
           <div className="space-y-3">
-            <p className="text-base font-semibold">INSERISCI I VALORI ASSOLUTI DI x:</p>
+            <p className="text-base font-semibold">INSERISCI I VALORI ASSOLUTI DI <span className="math-var">x</span>:</p>
 
             <NumberInputCanvas
               value={x1Utente}
               onChange={(v) => setX1Utente(v)}
-              label="VALORE ASSOLUTO x₁:"
+              label={<>VALORE ASSOLUTO <span className="math-var">x₁</span>:</>}
               colorClass="text-primary"
             />
             <NumberInputCanvas
               value={x2Utente}
               onChange={(v) => setX2Utente(v)}
-              label="VALORE ASSOLUTO x₂:"
+              label={<>VALORE ASSOLUTO <span className="math-var">x₂</span>:</>}
               colorClass="text-primary"
             />
 

@@ -30,7 +30,7 @@ function numberToFractionDisplay(value: number): string {
 interface NumberInputCanvasProps {
   value: number | null;
   onChange: (value: number | null) => void;
-  label: string;
+  label: React.ReactNode;
   hint?: string;
   colorClass?: string;
   className?: string;

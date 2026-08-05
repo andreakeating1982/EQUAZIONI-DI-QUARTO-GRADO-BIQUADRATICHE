@@ -135,14 +135,13 @@
 
   body *:not(input):not(textarea):not(select) {
     text-align: center !important;
+    text-transform: uppercase !important;
     font-family: Cambria, Georgia, "Times New Roman", serif !important;
   }
 
-  /* Solo bottoni e heading principale in maiuscolo */
-  button,
-  .btn,
-  [class*="tracking-widest"] {
-    text-transform: uppercase !important;
+  /* Variabili matematiche: MAI forzare maiuscole */
+  .math-var {
+    text-transform: none !important;
   }
 
   /* NotebookGuide: testo normale, tutto centrato (non maiuscolo) */
