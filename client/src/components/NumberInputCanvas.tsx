@@ -271,7 +271,7 @@ export function NumberInputCanvas({
         <div className="flex items-center gap-2 min-h-[32px]">
           {/* Fraction display */}
           {showFraction && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {fracNeg && <span className="mr-0.5">−</span>}
               <FractionDisplay
                 numerator={fracNum!}
@@ -283,14 +283,14 @@ export function NumberInputCanvas({
 
           {/* Text display (decimal recovered as fraction string) */}
           {!showFraction && recognizedText && (
-            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {recognizedText}
             </span>
           )}
 
           {/* Numeric value from parent — shown ONLY when no recognized text or fraction */}
           {!showFraction && !recognizedText && value !== null && !isNaN(value) && (
-            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
               {(() => { const s = value.toFixed(2); return parseFloat(s).toString(); })()}
             </span>
           )}

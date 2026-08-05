@@ -143,6 +143,17 @@
     text-transform: none !important;
   }
 
+  /* Pedici ed esponenti: rimpiccioliti al 70% */
+  .math-var sub,
+  .math-var sup {
+    font-size: 0.7em !important;
+  }
+
+  sub,
+  sup {
+    font-size: 0.75em;
+  }
+
   /* NotebookGuide: testo normale, tutto centrato (non maiuscolo) */
   body .notebook-content,
   body .notebook-content * {
