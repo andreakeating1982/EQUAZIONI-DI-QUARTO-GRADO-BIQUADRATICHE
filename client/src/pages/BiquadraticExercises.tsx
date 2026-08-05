@@ -1098,15 +1098,9 @@ function BiquadraticExercise({
           {computed.t2 !== null && computed.t2 >= -EPSILON && (
             <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}} = \\pm${numberToLatexAbs(Math.sqrt(computed.t2))}`) }} />
           )}
-          {computed.hasRealSolutions && (
-            <p className="font-mono text-base font-bold text-primary">
-              Soluzioni: {computed.positiveRoots.map(r =>
-                areNumbersApproximatelyEqual(r, 0, 1e-10)
-                  ? "0"
-                  : `±${formatFraction(r)}`
-              ).join(", ")}
-            </p>
-          )}
+          <p className="text-base font-bold">
+            CALCOLO LA RADICE QUADRATA DI t
+          </p>
         </NotebookGuide>
       </div>
 
