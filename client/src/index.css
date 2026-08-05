@@ -133,6 +133,13 @@
     font-family: 'Cambria Math', Cambria, serif !important;
   }
 
+  /* Forza TUTTE le classi font di Tailwind a usare Cambria Math */
+  .font-sans,
+  .font-serif,
+  .font-mono {
+    font-family: 'Cambria Math', Cambria, serif !important;
+  }
+
   body *:not(input):not(textarea):not(select) {
     text-align: center !important;
     text-transform: uppercase !important;
