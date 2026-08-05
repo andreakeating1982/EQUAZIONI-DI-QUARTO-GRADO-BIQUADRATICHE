@@ -57,7 +57,7 @@ function numberToLatex(value: number): string {
   if (f.includes("/")) {
     const parts = f.replace(/^-/, "").split("/");
     const sign = f.startsWith("-") ? "-" : "";
-    return `${sign}\\frac{${parts[0]}}{${parts[1]}}`;
+    return `${sign}\\dfrac{${parts[0]}}{${parts[1]}}`;
   }
   return f;
 }
@@ -70,7 +70,7 @@ function numberToLatexAbs(value: number): string {
   const f = formatFraction(v);
   if (f.includes("/")) {
     const parts = f.split("/");
-    return `\\frac{${parts[0]}}{${parts[1]}}`;
+    return `\\dfrac{${parts[0]}}{${parts[1]}}`;
   }
   return f;
 }
@@ -194,18 +194,21 @@ function parseBiquadraticLaTeX(latex: string): ParsedBiquadratic | null {
       let power = 0;
       let coeffStr = content;
 
-      if (content.includes('x^{4}') || content.includes('x^4') || content.includes('x⁴')) {
+      // Case-insensitive: handle both 'x' and 'X' (ONNX may return uppercase)
+      if (content.includes('x^{4}') || content.includes('x^4') || content.includes('x⁴') ||
+          content.includes('X^{4}') || content.includes('X^4') || content.includes('X⁴')) {
         power = 4;
         coeffStr = content
-          .replace(/x\^\{4\}/g, '')
-          .replace(/x\^4/g, '')
-          .replace(/x⁴/g, '');
-      } else if (content.includes('x^{2}') || content.includes('x^2') || content.includes('x²')) {
+          .replace(/[xX]\^\{4\}/g, '')
+          .replace(/[xX]\^4/g, '')
+          .replace(/[xX]⁴/g, '');
+      } else if (content.includes('x^{2}') || content.includes('x^2') || content.includes('x²') ||
+                 content.includes('X^{2}') || content.includes('X^2') || content.includes('X²')) {
         power = 2;
         coeffStr = content
-          .replace(/x\^\{2\}/g, '')
-          .replace(/x\^2/g, '')
-          .replace(/x²/g, '');
+          .replace(/[xX]\^\{2\}/g, '')
+          .replace(/[xX]\^2/g, '')
+          .replace(/[xX]²/g, '');
       }
 
       // Parse coefficient
@@ -456,7 +459,13 @@ export default function BiquadraticExercises() {
     const result = await recognize(exprStrokes, "expression");
     setIsRecognizing(false);
     if (result && result.latex) {
-      setRecognizedLatex(result.latex);
+      // Normalize: force lowercase variable names (ONNX may return uppercase X, Y, etc.)
+      let normalized = result.latex
+        .replace(/X(?=\^|\{|\s|[0-9]|[+-]|=|$|\)|\/)/g, 'x')
+        .replace(/\bX\b/g, 'x');
+      // Also normalize A, B, C, T used as standalone variables
+      normalized = normalized.replace(/\bA\b/g, 'a').replace(/\bB\b/g, 'b').replace(/\bC\b/g, 'c').replace(/\bT\b/g, 't');
+      setRecognizedLatex(normalized);
     } else {
       setParseError("Nessuna espressione riconosciuta. Riprova a scrivere.");
     }
@@ -590,7 +599,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
     const absNum = Math.abs(num);
     const absDen = Math.abs(den);
     if (absDen === 1) return `${absNum}`;
-    return `\\frac{${absNum}}{${absDen}}`;
+    return `\\dfrac{${absNum}}{${absDen}}`;
   }
 
   // Build equation display as KaTeX LaTeX string
@@ -1107,7 +1116,7 @@ function BiquadraticExercise({
         <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
           <p className="text-base font-bold text-primary">7. Verifica del risultato:</p>
           <div className="space-y-3">
-            <p className="text-base font-semibold">INSERISCI I VALORI ASSOLUTI DI X:</p>
+            <p className="text-base font-semibold">INSERISCI I VALORI ASSOLUTI DI x:</p>
 
             <NumberInputCanvas
               value={x1Utente}
