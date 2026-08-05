@@ -312,6 +312,7 @@ export default function BiquadraticExercises() {
   const [recognizedLatex, setRecognizedLatex] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [eraserMode, setEraserMode] = useState(false);
 
   // Parsed coefficients extracted from the full expression
   const parsedEq = useMemo((): ParsedBiquadratic | null => {
@@ -711,7 +712,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
                   <MathDrawCanvas
                     strokes={exprStrokes}
                     onStrokesChange={setExprStrokes}
-                    tool="write"
+                    tool={eraserMode ? "erase" : "write"}
                     hideWatermark
                     className="border-0 rounded-none"
                   />
@@ -726,7 +727,19 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
                   {isRecognizing ? "RICONOSCIMENTO..." : modelLoading ? "CARICAMENTO..." : "RICONOSCI"}
                 </button>
                 <button
-                  onClick={() => { setExprStrokes([]); setRecognizedLatex(null); setParseError(null); }}
+                  onClick={() => setEraserMode(!eraserMode)}
+                  disabled={exprStrokes.length === 0 && !eraserMode}
+                  className={`py-3 px-4 rounded-xl font-bold text-base tracking-widest transition-all ${
+                    eraserMode
+                      ? "bg-destructive text-destructive-foreground shadow-sm"
+                      : "bg-secondary hover:bg-secondary/80 text-foreground"
+                  } disabled:opacity-30 disabled:cursor-not-allowed`}
+                  title={eraserMode ? "Modalità gomma attiva — clicca per tornare a scrivere" : "Attiva la gomma per cancellare parti del disegno"}
+                >
+                  {eraserMode ? "✕ GOMMA" : "GOMMA"}
+                </button>
+                <button
+                  onClick={() => { setExprStrokes([]); setRecognizedLatex(null); setParseError(null); setEraserMode(false); }}
                   disabled={exprStrokes.length === 0}
                   className="py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed text-foreground font-bold text-base tracking-widest transition-all"
                 >
