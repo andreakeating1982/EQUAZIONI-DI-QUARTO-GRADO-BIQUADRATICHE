@@ -1,9 +1,11 @@
 import { useCallback, useState } from "react";
 import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
+import { FractionDisplay } from "@/components/FractionDisplay";
 import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
 
-// ─── Fraction display helpers ────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────
+
 function gcd(a: number, b: number): number {
   if (b === 0) return a;
   return gcd(b, a % b);
@@ -27,6 +29,43 @@ function numberToFractionDisplay(value: number): string {
   return `${sign}${absValue.toFixed(2)}`;
 }
 
+// ─── Fraction from LaTeX ──────────────────────────────────────────
+// Extract a \frac{num}{den} from LaTeX and return numerator/denominator.
+// Returns null if the LaTeX does not represent a simple fraction.
+
+interface ExtractedFraction {
+  numerator: number;
+  denominator: number;
+  isNegative: boolean;
+}
+
+function extractFractionFromLatex(latex: string): ExtractedFraction | null {
+  let s = latex.replace(/\s+/g, "");
+  s = s.replace(/,/g, ".");
+
+  // Match \frac{num}{den}
+  const fracMatch = s.match(/\\frac\{([^{}]+)\}\{([^{}]+)\}/);
+  if (!fracMatch) return null;
+
+  const numStr = fracMatch[1].replace(/[{}]/g, "").trim();
+  const denStr = fracMatch[2].replace(/[{}]/g, "").trim();
+
+  // Check for negative sign
+  let isNegative = false;
+  let numClean = numStr;
+  let denClean = denStr;
+  if (numClean.startsWith("-")) { isNegative = true; numClean = numClean.slice(1); }
+  if (!isNegative && denClean.startsWith("-")) { isNegative = true; denClean = denClean.slice(1); }
+
+  const num = parseFloat(numClean);
+  const den = parseFloat(denClean);
+  if (isNaN(num) || isNaN(den) || den === 0) return null;
+
+  return { numerator: num, denominator: den, isNegative };
+}
+
+// ─── Props ────────────────────────────────────────────────────────
+
 interface NumberInputCanvasProps {
   value: number | null;
   onChange: (value: number | null) => void;
@@ -36,6 +75,10 @@ interface NumberInputCanvasProps {
   className?: string;
   allowNegative?: boolean;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// NumberInputCanvas — handwriting canvas → fraction-aware number
+// ═══════════════════════════════════════════════════════════════════
 
 export function NumberInputCanvas({
   value,
@@ -49,6 +92,12 @@ export function NumberInputCanvas({
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [recognizedText, setRecognizedText] = useState<string>("");
   const [isRecognizing, setIsRecognizing] = useState(false);
+
+  // Fraction state — preserved even after canvas clears
+  const [fracNum, setFracNum] = useState<number | null>(null);
+  const [fracDen, setFracDen] = useState<number | null>(null);
+  const [fracNeg, setFracNeg] = useState(false);
+
   const { recognize, isModelReady, isLoading } = useMathRecognition();
 
   const handleStrokesChange = useCallback(
@@ -64,28 +113,48 @@ export function NumberInputCanvas({
   const handleManualRecognize = useCallback(async () => {
     if (strokes.length === 0 || !isModelReady) return;
     setIsRecognizing(true);
-    // Prima prova la modalità "number" (ottimizzata per cifre 0-9, include il 9)
-    let result = await recognize(strokes, "number");
-    // Fallback: se "number" non produce risultati, prova "expression"
+
+    // Try "expression" FIRST — better at capturing fraction structure
+    let result = await recognize(strokes, "expression");
+    // Fallback: "number" mode for pure digits
     if (!result) {
-      result = await recognize(strokes, "expression");
+      result = await recognize(strokes, "number");
     }
+
     if (result) {
-      // 1. Rimuovi spazi bianchi
+      // ── Attempt fraction extraction directly from LaTeX ──
+      const frac = extractFractionFromLatex(result.latex);
+      if (frac) {
+        const numericValue = frac.isNegative
+          ? -(frac.numerator / frac.denominator)
+          : frac.numerator / frac.denominator;
+
+        setFracNum(frac.numerator);
+        setFracDen(frac.denominator);
+        setFracNeg(frac.isNegative);
+        setRecognizedText("");  // we use fraction display instead
+        onChange(numericValue);
+        setTimeout(() => setStrokes([]), 1400);
+        setIsRecognizing(false);
+        return;
+      }
+
+      // ── Fallback: plain number parsing ──
       let numStr = result.latex.replace(/\s+/g, "");
-      // 2. Sostituisci virgole decimali con punti
       numStr = numStr.replace(/,/g, ".");
-      // 3. Converti \frac{num}{den} → num/den (PRIMA di rimuovere comandi LaTeX)
-      numStr = numStr.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "$1/$2");
-      // 4. Rimuovi altri comandi LaTeX e parentesi
+
+      // Convert \frac{num}{den} → num/den  (belt-and-suspenders)
+      numStr = numStr.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "$1/$2");
+
+      // Strip remaining LaTeX commands and braces
       numStr = numStr
-        .replace(/\\mathrm\{([^}]*)\}/g, "$1")
-        .replace(/\\[a-zA-Z]+(\{[^}]*\})?/g, "")
+        .replace(/\\mathrm\{([^{}]*)\}/g, "$1")
+        .replace(/\\[a-zA-Z]+(\{[^{}]*\})?/g, "")
         .replace(/[{}]/g, "");
-      // 5. Pulisci tenendo cifre, punto, meno E slash (per frazioni)
+
+      // Clean to digits, dot, minus, slash
       if (allowNegative) {
         numStr = numStr.replace(/[^0-9.\-\/]/g, "");
-        // Gestisci eventuali meno multipli: tieni solo il primo
         const minusCount = (numStr.match(/-/g) || []).length;
         if (minusCount > 1) {
           numStr = "-" + numStr.replace(/-/g, "");
@@ -93,22 +162,30 @@ export function NumberInputCanvas({
       } else {
         numStr = numStr.replace(/[^0-9.\/]/g, "");
       }
-      // 6. Gestisci edge case: stringa vuota o solo un meno
+
       if (!numStr || numStr === "-" || numStr === ".") {
         setRecognizedText("?");
+        resetFraction();
         setIsRecognizing(false);
         return;
       }
 
-      // 7. Parsing: gestisci frazioni (es. "1/4" → 0.25) oltre ai decimali
+      // Parse: detect fraction pattern "num/den"
       let parsed: number;
+      let isFraction = false;
+      let pNum = 0;
+      let pDen = 0;
+
       if (numStr.includes("/")) {
         const parts = numStr.split("/");
         if (parts.length === 2) {
-          const num = parseFloat(parts[0]);
-          const den = parseFloat(parts[1]);
-          if (!isNaN(num) && !isNaN(den) && den !== 0) {
-            parsed = num / den;
+          const n = parseFloat(parts[0]);
+          const d = parseFloat(parts[1]);
+          if (!isNaN(n) && !isNaN(d) && d !== 0) {
+            parsed = n / d;
+            pNum = Math.abs(n);
+            pDen = Math.abs(d);
+            isFraction = true;
           } else {
             parsed = NaN;
           }
@@ -120,48 +197,60 @@ export function NumberInputCanvas({
       }
 
       if (!isNaN(parsed)) {
-        // Mostra come frazione invece di decimale (es. "1/4" invece di "0.25")
-        setRecognizedText(numberToFractionDisplay(parsed));
+        if (isFraction) {
+          // Show as a visual fraction via FractionDisplay
+          setFracNum(pNum);
+          setFracDen(pDen);
+          setFracNeg(parsed < 0);
+          setRecognizedText("");
+        } else {
+          // Plain number — show text representation
+          resetFraction();
+          setRecognizedText(numberToFractionDisplay(parsed));
+        }
         onChange(parsed);
-        setTimeout(() => setStrokes([]), 1200);
+        setTimeout(() => setStrokes([]), 1400);
       } else {
+        resetFraction();
         setRecognizedText(numStr || "?");
       }
     }
     setIsRecognizing(false);
   }, [strokes, recognize, isModelReady, onChange, allowNegative]);
 
+  const resetFraction = useCallback(() => {
+    setFracNum(null);
+    setFracDen(null);
+    setFracNeg(false);
+  }, []);
+
   const handleClear = () => {
     setStrokes([]);
     setRecognizedText("");
+    resetFraction();
     onChange(null);
   };
 
-  const displayValue =
-    value !== null && !isNaN(value)
-      ? (() => { const s = value.toFixed(2); return parseFloat(s).toString(); })()
-      : recognizedText || "";
-
   const hasContent = strokes.length > 0;
+  const showFraction = fracNum !== null && fracDen !== null;
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      {/* Quadratino del canvas */}
+      {/* Canvas quadratino */}
       <div className="flex-shrink-0 w-[120px] sm:w-[135px] h-[75px] sm:h-[85px] rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <MathDrawCanvas
           strokes={strokes}
           onStrokesChange={handleStrokesChange}
           tool="write"
-          
           className="border-0 rounded-none shadow-none ring-0"
           disabled={isLoading || isRecognizing}
           hideWatermark
         />
       </div>
 
-      {/* Colonna destra: label + Riconosci + valore */}
+      {/* Colonna destra */}
       <div className="flex flex-col items-center gap-1.5 flex-1">
-        {/* Label sopra il pulsante */}
+        {/* Label */}
         <span className={cn(
           "text-base tracking-widest text-amber-900",
           colorClass,
@@ -169,7 +258,7 @@ export function NumberInputCanvas({
           {label}
         </span>
 
-        {/* Pulsante Riconosci — compatto */}
+        {/* Riconosci */}
         <button
           onClick={handleManualRecognize}
           disabled={!hasContent || !isModelReady || isRecognizing}
@@ -178,13 +267,35 @@ export function NumberInputCanvas({
           {isRecognizing ? "..." : "RICONOSCI"}
         </button>
 
-        {/* Valore riconosciuto + cancella */}
-        <div className="flex items-center gap-2">
-          {displayValue && (
-            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
-              {displayValue}
+        {/* Display del valore riconosciuto */}
+        <div className="flex items-center gap-2 min-h-[32px]">
+          {/* Fraction display */}
+          {showFraction && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+              {fracNeg && <span className="mr-0.5">−</span>}
+              <FractionDisplay
+                numerator={fracNum!}
+                denominator={fracDen!}
+                size="sm"
+              />
             </span>
           )}
+
+          {/* Text display (decimal recovered as fraction string) */}
+          {!showFraction && recognizedText && (
+            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+              {recognizedText}
+            </span>
+          )}
+
+          {/* Numeric value from parent — shown ONLY when no recognized text or fraction */}
+          {!showFraction && !recognizedText && value !== null && !isNaN(value) && (
+            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-serif font-bold">
+              {(() => { const s = value.toFixed(2); return parseFloat(s).toString(); })()}
+            </span>
+          )}
+
+          {/* CANCELLA */}
           {hasContent && (
             <button
               onClick={handleClear}
