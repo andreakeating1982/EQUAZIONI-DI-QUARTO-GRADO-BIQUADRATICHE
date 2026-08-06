@@ -314,17 +314,23 @@ interface BiquadraticComputed {
   t1: number | null;
   t2: number | null;
   xValues: number[];
-  positiveRoots: number[];
-  /** Per ogni radice positiva: LaTeX della forma radicale (es. "\\sqrt{2}") */
-  positiveRootRadicals: string[];
-  /** Per ogni radice positiva: il valore ESATTO sqrt(t) è razionale? (calcolato sui t NON arrotondati) */
-  positiveRootIsRational: boolean[];
-  /** Per ogni radice positiva: il valore ESATTO sqrt(t) è un intero? */
-  positiveRootIsInteger: boolean[];
+  /** Radici positive con tutte le proprietà abbinate (radicale, intero/razionale, valore) */
+  positiveRootEntries: PositiveRootEntry[];
   hasRealSolutions: boolean;
   hasOneDoubleSolution: boolean;
   solutionType: string;
   nda: number; ndb: number; ndc: number;
+}
+
+interface PositiveRootEntry {
+  /** Valore numerico della radice positiva (arrotondato) */
+  value: number;
+  /** LaTeX della forma radicale (es. "\\sqrt{1}", "\\sqrt{\\dfrac{9}{4}}") */
+  radicalLatex: string;
+  /** Il valore esatto sqrt(t) è razionale? */
+  isRational: boolean;
+  /** Il valore esatto sqrt(t) è un intero? */
+  isInteger: boolean;
 }
 
 // ─── Main component ───────────────────────────────────────────────
@@ -473,35 +479,28 @@ export default function BiquadraticExercises() {
       solutionType = "delta_negative";
     }
 
-    // Get unique positive roots for display
-    const positiveRoots = [...new Set(
-      xValues
-        .map(Math.abs)
-        .map(v => roundToPrecision(v, DISPLAY_PRECISION))
-        .filter(v => v > -EPSILON)
-    )].sort((a, b) => a - b);
-
-    // Radical LaTeX per ogni radice positiva (es. "\\sqrt{2}", "\\sqrt{\\dfrac{9}{4}}")
-    const positiveRootRadicals: string[] = [];
-    // Per ogni radice: il valore ESATTO sqrt(t) è razionale? è intero?
-    // Li calcoliamo sui t NON arrotondati per evitare falsi positivi (es. √2→1.41 sembrerebbe razionale)
-    const positiveRootIsRational: boolean[] = [];
-    const positiveRootIsInteger: boolean[] = [];
+    // Costruisci PositiveRootEntry: associa ogni radice al proprio radicale e flag
+    // (ordinato per valore crescente, così l'indice è coerente)
+    const positiveRootEntries: PositiveRootEntry[] = [];
     const seenRadicals = new Set<string>();
     const addRadicalInfo = (t: number) => {
       if (t >= -EPSILON) {
         const rLatex = `\\sqrt{${numberToLatex(t)}}`;
         if (!seenRadicals.has(rLatex)) {
           seenRadicals.add(rLatex);
-          positiveRootRadicals.push(rLatex);
           const sqrtT = Math.sqrt(Math.max(0, t));
-          positiveRootIsRational.push(isRootRational(sqrtT));
-          positiveRootIsInteger.push(Math.abs(sqrtT - Math.round(sqrtT)) < 1e-9);
+          positiveRootEntries.push({
+            value: roundToPrecision(sqrtT, DISPLAY_PRECISION),
+            radicalLatex: rLatex,
+            isRational: isRootRational(sqrtT),
+            isInteger: Math.abs(sqrtT - Math.round(sqrtT)) < 1e-9,
+          });
         }
       }
     };
     if (t1 !== null) addRadicalInfo(t1);
     if (t2 !== null) addRadicalInfo(t2);
+    positiveRootEntries.sort((a, b) => a.value - b.value);
 
     return {
       a, b, c,
@@ -511,10 +510,7 @@ export default function BiquadraticExercises() {
       delta,
       t1, t2,
       xValues,
-      positiveRoots,
-      positiveRootRadicals,
-      positiveRootIsRational,
-      positiveRootIsInteger,
+      positiveRootEntries,
       hasRealSolutions,
       hasOneDoubleSolution,
       solutionType,
@@ -1231,16 +1227,16 @@ function BiquadraticExercise({
               {computed.hasOneDoubleSolution ? (
                 <>
                   {computed.t1 !== null && computed.t1 >= -EPSILON && (
-                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = x_{2} = \\pm\\sqrt{t} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${computed.positiveRootIsInteger[0] ? ` = \\pm ${Math.round(computed.positiveRoots[0])}` : ''}`) }} />
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = x_{2} = \\pm\\sqrt{t} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t1!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) }} />
                   )}
                 </>
               ) : (
                 <>
                   {computed.t1 !== null && computed.t1 >= -EPSILON && (
-                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${computed.positiveRootIsInteger[0] ? ` = \\pm ${Math.round(computed.positiveRoots[0])}` : ''}`) }} />
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t1!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) }} />
                   )}
                   {computed.t2 !== null && computed.t2 >= -EPSILON && (
-                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}${computed.positiveRootIsInteger[1] ? ` = \\pm ${Math.round(computed.positiveRoots[1])}` : ''}`) }} />
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t2!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) }} />
                   )}
                 </>
               )}
@@ -1302,30 +1298,28 @@ function BiquadraticExercise({
                 )].sort((a, b) => a - b);
 
                 const correctAbsVals = [...new Set(
-                  computed.positiveRoots
+                  computed.positiveRootEntries.map(e => e.value)
                 )].sort((a, b) => a - b);
 
                 const match = userAbsVals.length === correctAbsVals.length &&
                   userAbsVals.every((v, i) => areNumbersRoundedEqual(v, correctAbsVals[i]));
 
-                // Costruisci la stringa con le 3 forme per ogni radice
-                const buildRootLine = (r: number, i: number): string => {
-                  if (areNumbersApproximatelyEqual(r, 0, 1e-10)) return "0";
-                  const radLatex = computed.positiveRootRadicals[i] ?? numberToLatexAbs(r);
-                  const radicalHtml = renderKatex(`\\pm ${radLatex}`);
-                  const rootRational = computed.positiveRootIsRational[i] ?? false;
-                  const rootInteger = computed.positiveRootIsInteger[i] ?? false;
+                // Costruisci la stringa con le forme per ogni radice
+                const buildRootLine = (entry: PositiveRootEntry): string => {
+                  if (areNumbersApproximatelyEqual(entry.value, 0, 1e-10)) return "0";
+                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`);
 
-                  // Intero razionale → solo l'intero, senza decimali né frazioni
-                  if (rootInteger) {
-                    return radicalHtml;
+                  // Intero → radicale + intero (NO decimale!)
+                  if (entry.isInteger) {
+                    const intVal = Math.round(entry.value);
+                    return `${radicalHtml} \\rightarrow ${renderKatex(`\\pm ${intVal}`)}`;
                   }
 
-                  const decimal = "±" + roundToPrecision(r, 2).toFixed(2).replace(".", ",");
+                  const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
 
                   // Razionale non intero → radicale + decimale + frazione semplificata
-                  if (rootRational) {
-                    const rounded = Math.round(r * 100) / 100;
+                  if (entry.isRational) {
+                    const rounded = Math.round(entry.value * 100) / 100;
                     const absR = Math.abs(rounded);
                     const fNum = Math.round(absR * 100);
                     const fDen = 100;
@@ -1333,21 +1327,21 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} &rarr; ${decimal} &rarr; ${fracWithSign}`;
+                    return `${radicalHtml} \\rightarrow ${decimal} \\rightarrow ${fracWithSign}`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} &rarr; ${decimal}`;
+                  return `${radicalHtml} \\rightarrow ${decimal}`;
                 };
 
                 if (match) {
                   setFeedbackFinale({
-                    testo: `Corretto! ✅ Le soluzioni sono:<br>${computed.positiveRoots.map((r, i) => buildRootLine(r, i)).join("<br>")}`,
+                    testo: `Corretto! ✅ Le soluzioni sono:<br>${computed.positiveRootEntries.map(e => buildRootLine(e)).join("<br>")}`,
                     corretto: true,
                   });
                 } else {
                   setFeedbackFinale({
-                    testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono:<br>${computed.positiveRoots.map((r, i) => buildRootLine(r, i)).join("<br>")}`,
+                    testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono:<br>${computed.positiveRootEntries.map(e => buildRootLine(e)).join("<br>")}`,
                     corretto: false,
                   });
                 }
@@ -1377,23 +1371,21 @@ function BiquadraticExercise({
             <p
               className="text-base font-bold text-primary"
               dangerouslySetInnerHTML={{ __html: (() => {
-                const lines = computed.positiveRoots.map((r, i) => {
-                  if (areNumbersApproximatelyEqual(r, 0, 1e-10)) return "0";
-                  const radLatex = computed.positiveRootRadicals[i] ?? numberToLatexAbs(r);
-                  const radicalHtml = renderKatex(`\\pm ${radLatex}`);
-                  const rootRational = computed.positiveRootIsRational[i] ?? false;
-                  const rootInteger = computed.positiveRootIsInteger[i] ?? false;
+                const lines = computed.positiveRootEntries.map((entry) => {
+                  if (areNumbersApproximatelyEqual(entry.value, 0, 1e-10)) return "0";
+                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`);
 
-                  // Intero razionale → solo l'intero
-                  if (rootInteger) {
-                    return radicalHtml;
+                  // Intero → radicale + intero (NO decimale!)
+                  if (entry.isInteger) {
+                    const intVal = Math.round(entry.value);
+                    return `${radicalHtml} \\rightarrow ${renderKatex(`\\pm ${intVal}`)}`;
                   }
 
-                  const decimal = "±" + roundToPrecision(r, 2).toFixed(2).replace(".", ",");
+                  const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
 
                   // Razionale non intero → radicale + decimale + frazione semplificata
-                  if (rootRational) {
-                    const rounded = Math.round(r * 100) / 100;
+                  if (entry.isRational) {
+                    const rounded = Math.round(entry.value * 100) / 100;
                     const absR = Math.abs(rounded);
                     const fNum = Math.round(absR * 100);
                     const fDen = 100;
@@ -1401,11 +1393,11 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} &rarr; ${decimal} &rarr; ${fracWithSign}`;
+                    return `${radicalHtml} \\rightarrow ${decimal} \\rightarrow ${fracWithSign}`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} &rarr; ${decimal}`;
+                  return `${radicalHtml} \\rightarrow ${decimal}`;
                 });
                 return `Soluzioni finali:<br>${lines.join("<br>")}`;
               })() }}
