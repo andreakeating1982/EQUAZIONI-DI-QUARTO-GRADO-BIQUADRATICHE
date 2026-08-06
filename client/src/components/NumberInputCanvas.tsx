@@ -47,10 +47,10 @@ function numberToFractionParts(value: number): { num: number; den: number } | nu
 }
 
 /** Converte un numero in stringa decimale con virgola, arrotondato a 2 cifre */
-/** Quick KaTeX render for inline display-mode formulas */
-function renderKatex(latex: string): string {
+/** Quick KaTeX render — default displayMode:true per una resa corretta delle frazioni */
+function renderKatex(latex: string, displayMode: boolean = true): string {
   try {
-    return katex.renderToString(latex, { displayMode: false, throwOnError: false, strict: false });
+    return katex.renderToString(latex, { displayMode, throwOnError: false, strict: false });
   } catch { return latex; }
 }
 
@@ -684,7 +684,7 @@ export function NumberInputCanvas({
             {/* 1. FORMA ESATTA */}
             {radicalLatex ? (
               <span
-                className="inline-flex items-center px-4 py-1.5 rounded-xl bg-amber-100 text-amber-900 text-lg sm:text-xl font-bold [&_.katex]:text-amber-900"
+                className="inline-flex items-center px-4 py-1.5 rounded-xl bg-amber-100 text-amber-900 text-lg sm:text-xl font-bold [&_.katex]:text-amber-900 [&_.katex-display]:!m-0 [&_.katex-display]:!inline"
                 dangerouslySetInnerHTML={{ __html: renderKatex(radicalLatex) }}
               />
             ) : showFraction ? (
