@@ -610,6 +610,13 @@ export function NumberInputCanvas({
   /** Se il valore è un intero esatto, mostriamo solo il badge intero senza decimali */
   const valueIsInteger = value !== null && Math.abs(value - Math.round(value)) < 1e-9;
 
+  // Frazione semplificata (solo se riducibile)
+  const simplificationGcd = showFraction && fracDen && fracDen > 1 ? gcd(fracNum!, fracDen!) : 1;
+  const isSimplifiable = simplificationGcd > 1;
+  const simplifiedFracLatex = isSimplifiable
+    ? `${fracNeg ? '-' : ''}\\frac{${fracNum! / simplificationGcd}}{${fracDen! / simplificationGcd}}`
+    : null;
+
   return (
     <div className={cn("flex flex-col gap-2.5", className)}>
       {/* Label (sopra il canvas) */}
@@ -722,6 +729,17 @@ export function NumberInputCanvas({
                 <span className="inline-block px-3 py-1 rounded-xl bg-blue-50 text-blue-800 font-mono text-base sm:text-lg font-bold">
                   {decimalStr}
                 </span>
+              </>
+            )}
+
+            {/* 3. FRAZIONE SEMPLIFICATA (solo se la frazione è riducibile) */}
+            {showFraction && fracDen && fracDen > 1 && isSimplifiable && simplifiedFracLatex && !valueIsInteger && (
+              <>
+                <span className="text-muted-foreground text-lg">→</span>
+                <span
+                  className="inline-flex items-center px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-lg sm:text-xl font-bold [&_.katex]:text-emerald-800 [&_.katex-display]:!m-0 [&_.katex-display]:!inline"
+                  dangerouslySetInnerHTML={{ __html: renderKatex(simplifiedFracLatex) }}
+                />
               </>
             )}
 
