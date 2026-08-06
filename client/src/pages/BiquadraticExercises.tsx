@@ -392,40 +392,34 @@ export default function BiquadraticExercises() {
   const [cNum, setCNum] = useState<number | null>(null);
   const [cDen, setCDen] = useState<number | null>(null);
 
-  // ─── Read coefficients from URL hash (from WelcomePage) ────────
-  const urlCoefficients = useMemo(() => {
+  // ─── Read student info from URL hash (from WelcomePage) ─────────
+  const studentInfo = useMemo(() => {
     const hash = window.location.hash;
     const qIdx = hash.indexOf('?');
     if (qIdx === -1) return null;
     const params = new URLSearchParams(hash.slice(qIdx + 1));
-    const a = parseInt(params.get('a') || '');
-    const b = parseInt(params.get('b') || '');
-    const c = parseInt(params.get('c') || '');
-    if (isNaN(a) || isNaN(b) || isNaN(c) || a === 0) return null;
-    return { a, b, c, nome: params.get('nome') || '' };
+    const cognome = params.get('cognome')?.trim() || '';
+    const nome = params.get('nome')?.trim() || '';
+    const data = params.get('data')?.trim() || '';
+    const classe = params.get('classe')?.trim() || '';
+    if (!cognome && !nome && !data && !classe) return null;
+    return { cognome, nome, data, classe };
   }, []);
 
-  const [studentName] = useState<string>(urlCoefficients?.nome || '');
-
-  // ─── Initialize coefficients from URL─────────────────────────────
-  const [coefficientsFromUrl, setCoefficientsFromUrl] = useState(false);
-  useEffect(() => {
-    if (urlCoefficients && !coefficientsFromUrl) {
-      setCoefficientsFromUrl(true);
-      setANum(urlCoefficients.a);
-      setADen(1);
-      setBNum(urlCoefficients.b);
-      setBDen(1);
-      setCNum(urlCoefficients.c);
-      setCDen(1);
-    }
-  }, [urlCoefficients, coefficientsFromUrl]);
+  const studentLabel = useMemo(() => {
+    if (!studentInfo) return '';
+    const parts = [];
+    if (studentInfo.cognome && studentInfo.nome) parts.push(`${studentInfo.cognome} ${studentInfo.nome}`);
+    else if (studentInfo.cognome) parts.push(studentInfo.cognome);
+    else if (studentInfo.nome) parts.push(studentInfo.nome);
+    if (studentInfo.classe) parts.push(`Classe ${studentInfo.classe}`);
+    if (studentInfo.data) parts.push(studentInfo.data);
+    return parts.join(' — ');
+  }, [studentInfo]);
 
   // ─── Phase tracking ─────────────────────────────────────────────
-  const [phase, setPhase] = useState<"input" | "exercise">(
-    urlCoefficients ? "exercise" : "input"
-  );
-  const [submitted, setSubmitted] = useState(urlCoefficients ? true : false);
+  const [phase, setPhase] = useState<"input" | "exercise">("input");
+  const [submitted, setSubmitted] = useState(false);
 
   // ─── Exercise state ─────────────────────────────────────────────
   const [deltaUtente, setDeltaUtente] = useState<number | null>(null);
@@ -595,16 +589,16 @@ export default function BiquadraticExercises() {
 
   // Trigger calculate after coefficients are set
   useEffect(() => {
-    if (aNum !== null && bNum !== null && cNum !== null && !submitted) {
+    if (aNum !== null && bNum !== null && cNum !== null && phase === "input") {
       setSubmitted(true);
-      if (phase === "input") setPhase("exercise");
+      setPhase("exercise");
       resetExercise();
     }
   }, [aNum, bNum, cNum]);
 
   const handleNewExercise = () => {
-    if (urlCoefficients) {
-      // Torna alla pagina iniziale per inserire nuovi coefficienti
+    if (studentInfo) {
+      // Torna alla pagina iniziale per inserire nuovi dati
       window.location.href = '/#/';
       return;
     }
@@ -627,8 +621,8 @@ export default function BiquadraticExercises() {
       if (notebookContents.length === 0) { setGeneratingPdf(false); return; }
 
       let bodyHtml = '';
-      if (studentName) {
-        bodyHtml += `<div style="text-align:center;margin-bottom:12px;font-family:'Cambria Math',Cambria,serif;font-size:16px;color:#92400e;font-weight:bold">Studente: ${studentName}</div>`;
+      if (studentLabel) {
+        bodyHtml += `<div style="text-align:center;margin-bottom:12px;font-family:'Cambria Math',Cambria,serif;font-size:16px;color:#92400e;font-weight:bold">${studentLabel}</div>`;
       }
       notebookContents.forEach((el) => {
         bodyHtml += `<div style="margin-bottom:8px;text-align:center;page-break-inside:avoid">${el.innerHTML}</div>`;
@@ -804,12 +798,12 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
         <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground text-center">
           EQUAZIONI DI QUARTO GRADO<br />TRINOMIE BIQUADRATICHE
         </h1>
-        {studentName && (
+        {studentLabel && (
           <p className="text-center text-sm text-muted-foreground mt-2">
-            Studente: <span className="font-semibold text-foreground">{studentName}</span>
+            <span className="font-medium text-foreground">{studentLabel}</span>
           </p>
         )}
-        {urlCoefficients && (
+        {studentInfo && (
           <div className="text-center mt-3">
             <a
               href="/#/"
