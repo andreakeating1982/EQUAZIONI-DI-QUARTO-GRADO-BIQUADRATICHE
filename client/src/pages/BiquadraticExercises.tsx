@@ -366,6 +366,9 @@ export default function BiquadraticExercises() {
   const [parseError, setParseError] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [eraserMode, setEraserMode] = useState(false);
+  const [isEditingExpr, setIsEditingExpr] = useState(false);
+  const [editExprString, setEditExprString] = useState('');
+  const editExprInputRef = useRef<HTMLInputElement>(null);
 
   // Parsed coefficients extracted from the full expression
   const parsedEq = useMemo((): ParsedBiquadratic | null => {
@@ -539,6 +542,15 @@ export default function BiquadraticExercises() {
       setParseError("Nessuna espressione riconosciuta. Riprova a scrivere.");
     }
   }, [exprStrokes, isModelReady, recognize]);
+
+  /** Valuta l'equazione inserita manualmente via tastiera */
+  const handleEditExprSubmit = useCallback(() => {
+    if (!editExprString.trim()) { setIsEditingExpr(false); return; }
+    setRecognizedLatex(editExprString.trim());
+    setParseError(null);
+    setIsEditingExpr(false);
+    setEditExprString('');
+  }, [editExprString]);
 
   const handleConfirmExpression = useCallback(() => {
     if (!parsedEq) return;
@@ -786,34 +798,75 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
                   />
                 </div>
               </div>
-              <div className="px-3 pb-3 flex items-center justify-between gap-3">
+              {/* Pulsanti: su mobile RICONOSCI in riga propria, GOMMA e CANCELLA affiancati */}
+              <div className="px-3 pb-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <button
                   onClick={handleRecognize}
                   disabled={exprStrokes.length === 0 || !isModelReady || isRecognizing}
-                  className="flex-1 py-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-bold text-base tracking-widest transition-all shadow-sm"
+                  className="flex-1 py-3 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-bold text-sm sm:text-base tracking-widest transition-all shadow-sm"
                 >
                   {isRecognizing ? "RICONOSCIMENTO..." : modelLoading ? "CARICAMENTO..." : "RICONOSCI"}
                 </button>
-                <button
-                  onClick={() => setEraserMode(!eraserMode)}
-                  disabled={exprStrokes.length === 0 && !eraserMode}
-                  className={`py-3 px-4 rounded-xl font-bold text-base tracking-widest transition-all ${
-                    eraserMode
-                      ? "bg-destructive text-destructive-foreground shadow-sm"
-                      : "bg-secondary hover:bg-secondary/80 text-foreground"
-                  } disabled:opacity-30 disabled:cursor-not-allowed`}
-                  title={eraserMode ? "Modalità gomma attiva — clicca per tornare a scrivere" : "Attiva la gomma per cancellare parti del disegno"}
-                >
-                  {eraserMode ? "✕ GOMMA" : "GOMMA"}
-                </button>
-                <button
-                  onClick={() => { setExprStrokes([]); setRecognizedLatex(null); setParseError(null); setEraserMode(false); }}
-                  disabled={exprStrokes.length === 0}
-                  className="py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed text-foreground font-bold text-base tracking-widest transition-all"
-                >
-                  CANCELLA
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button
+                    onClick={() => setEraserMode(!eraserMode)}
+                    disabled={exprStrokes.length === 0 && !eraserMode}
+                    className={`flex-1 sm:flex-none py-3 px-4 rounded-xl font-bold text-sm sm:text-base tracking-widest transition-all ${
+                      eraserMode
+                        ? "bg-destructive text-destructive-foreground shadow-sm"
+                        : "bg-secondary hover:bg-secondary/80 text-foreground"
+                    } disabled:opacity-30 disabled:cursor-not-allowed`}
+                    title={eraserMode ? "Modalità gomma attiva — clicca per tornare a scrivere" : "Attiva la gomma per cancellare parti del disegno"}
+                  >
+                    {eraserMode ? "✕ GOMMA" : "GOMMA"}
+                  </button>
+                  <button
+                    onClick={() => { setExprStrokes([]); setRecognizedLatex(null); setParseError(null); setEraserMode(false); }}
+                    disabled={exprStrokes.length === 0}
+                    className="flex-1 sm:flex-none py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed text-foreground font-bold text-sm sm:text-base tracking-widest transition-all"
+                  >
+                    CANCELLA
+                  </button>
+                </div>
               </div>
+            </div>
+
+            {/* ── Correzione manuale via tastiera ── */}
+            <div className="max-w-2xl mx-auto w-full text-center">
+              {isEditingExpr ? (
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <input
+                    ref={editExprInputRef}
+                    type="text"
+                    value={editExprString}
+                    onChange={(e) => setEditExprString(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleEditExprSubmit(); if (e.key === 'Escape') { setIsEditingExpr(false); setEditExprString(''); } }}
+                    placeholder="es. 2x^4-3x^2+1=0"
+                    className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-mono w-56 text-center focus:outline-none"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleEditExprSubmit}
+                    className="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-colors"
+                  >
+                    OK
+                  </button>
+                  <button
+                    onClick={() => { setIsEditingExpr(false); setEditExprString(''); }}
+                    className="h-9 w-9 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-bold transition-colors flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setIsEditingExpr(true); setEditExprString(recognizedLatex || ''); }}
+                  className="text-muted-foreground hover:text-primary transition-colors text-xs tracking-wide"
+                  title="Inserisci manualmente l'equazione"
+                >
+                  ✎ digita l'equazione
+                </button>
+              )}
             </div>
 
             {/* Recognized LaTeX display — rendered with KaTeX */}
