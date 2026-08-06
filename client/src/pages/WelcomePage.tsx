@@ -1,5 +1,4 @@
-import { BookOpen } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 
 /** Formatta la data di oggi in formato italiano gg/mm/aaaa */
@@ -19,86 +18,87 @@ export default function WelcomePage() {
   const [data, setData] = useState(getOggi());
   const [classe, setClasse] = useState("");
 
-  const handleEntra = useCallback(() => {
+  const entra = () => {
     const params = new URLSearchParams();
     if (cognome.trim()) params.set("cognome", cognome.trim());
     if (nome.trim()) params.set("nome", nome.trim());
     if (data.trim()) params.set("data", data.trim());
     if (classe.trim()) params.set("classe", classe.trim());
     navigate(`/esercizio?${params.toString()}`);
-  }, [cognome, nome, data, classe, navigate]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") handleEntra();
-    },
-    [handleEntra],
-  );
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F5F2EC] p-4">
-      <div className="w-full max-w-md bg-[#FAF8F5] rounded-[20px] shadow-lg px-10 pt-12 pb-8">
-        {/* Icona libro */}
-        <div className="flex justify-center mb-5">
-          <div className="w-[60px] h-[60px] rounded-xl bg-[#EEDDD6] flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-[#7A3E2A]" strokeWidth={1.8} />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-[20px] p-5 md:p-6 w-full max-w-[400px] shadow-[0_8px_25px_rgba(43,36,33,0.06)] flex flex-col items-center text-center">
+        {/* Book icon — identico a Mappa Concettuale */}
+        <div className="bg-[#F0E5DF] p-2.5 rounded-[12px] mb-3">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#8B3A1A"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <line x1="12" y1="6" x2="12" y2="18" />
+          </svg>
         </div>
 
-        {/* Titolo */}
-        <h1 className="text-center font-serif text-[26px] font-bold tracking-[0.08em] text-[#2C221E] mb-1.5">
-          EQUAZIONI<br />BIQUADRATICHE
-        </h1>
-
-        {/* Sottotitolo */}
-        <p className="text-center text-[13px] tracking-[0.05em] text-[#2C221E] mb-8">
+        {/* Main heading */}
+        <h2 className="text-base font-bold text-foreground tracking-wide mb-1">
+          EQUAZIONI BIQUADRATICHE
+        </h2>
+        <p className="text-[11px] text-muted-foreground mb-4 tracking-wide">
           RISOLVI LE EQUAZIONI IN{" "}
-          <span className="text-[#A04830] font-semibold">7 PASSI</span>
+          <span style={{ color: "#8B3A1A", fontWeight: 600 }}>7 PASSI</span>
         </p>
 
-        {/* Griglia input 2×2 */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {/* Cognome */}
+        {/* Name inputs */}
+        <div className="grid grid-cols-2 gap-2 w-full mb-2">
           <input
-            type="text"
             value={cognome}
             onChange={(e) => setCognome(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="Cognome"
-            className="h-[46px] px-3.5 rounded-lg border border-[#D3C7BD] bg-white text-[#2C221E] text-sm font-medium placeholder:text-[#7A7570] focus:outline-none focus:ring-2 focus:ring-[#D5B5A3]/40 focus:border-[#D5B5A3] transition-all"
+            className="flex-1 bg-[#FAF8F5] border border-[#D6CEC4] rounded-[10px] px-3 py-2.5 text-sm text-foreground placeholder:text-[#8C827A] outline-none text-center font-[Cambria,Georgia,serif] focus:border-[#D4B2A0] focus:ring-2 focus:ring-[#D4B2A0]/20 transition-all"
           />
-          {/* Nome */}
           <input
-            type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="Nome"
-            className="h-[46px] px-3.5 rounded-lg border border-[#D3C7BD] bg-white text-[#2C221E] text-sm font-medium placeholder:text-[#7A7570] focus:outline-none focus:ring-2 focus:ring-[#D5B5A3]/40 focus:border-[#D5B5A3] transition-all"
-          />
-          {/* Data */}
-          <input
-            type="text"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="h-[46px] px-3.5 rounded-lg border border-[#D3C7BD] bg-white text-[#2C221E] text-sm font-medium placeholder:text-[#7A7570] focus:outline-none focus:ring-2 focus:ring-[#D5B5A3]/40 focus:border-[#D5B5A3] transition-all"
-          />
-          {/* Classe */}
-          <input
-            type="text"
-            value={classe}
-            onChange={(e) => setClasse(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Classe (es. 2A)"
-            className="h-[46px] px-3.5 rounded-lg border border-[#D3C7BD] bg-white text-[#2C221E] text-sm font-medium placeholder:text-[#7A7570] focus:outline-none focus:ring-2 focus:ring-[#D5B5A3]/40 focus:border-[#D5B5A3] transition-all"
+            className="flex-1 bg-[#FAF8F5] border border-[#D6CEC4] rounded-[10px] px-3 py-2.5 text-sm text-foreground placeholder:text-[#8C827A] outline-none text-center font-[Cambria,Georgia,serif] focus:border-[#D4B2A0] focus:ring-2 focus:ring-[#D4B2A0]/20 transition-all"
           />
         </div>
 
-        {/* Pulsante ENTRA */}
+        {/* Data e Classe */}
+        <div className="grid grid-cols-2 gap-2 w-full mb-2">
+          <input
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            placeholder="Data (es. 31/07/2026)"
+            className="flex-1 bg-[#FAF8F5] border border-[#D6CEC4] rounded-[10px] px-3 py-2.5 text-sm text-foreground placeholder:text-[#8C827A] outline-none text-center font-[Cambria,Georgia,serif] focus:border-[#D4B2A0] focus:ring-2 focus:ring-[#D4B2A0]/20 transition-all"
+          />
+          <input
+            value={classe}
+            onChange={(e) => setClasse(e.target.value)}
+            placeholder="Classe (es. 2A)"
+            className="flex-1 bg-[#FAF8F5] border border-[#D6CEC4] rounded-[10px] px-3 py-2.5 text-sm text-foreground placeholder:text-[#8C827A] outline-none text-center font-[Cambria,Georgia,serif] focus:border-[#D4B2A0] focus:ring-2 focus:ring-[#D4B2A0]/20 transition-all"
+          />
+        </div>
+
+        {/* ENTRA button */}
         <button
-          onClick={handleEntra}
-          className="w-full h-[46px] rounded-lg bg-[#D5B5A3] hover:bg-[#C9A591] text-white font-bold text-sm tracking-[0.1em] transition-all shadow-sm"
+          onClick={entra}
+          disabled={!nome.trim() || !cognome.trim()}
+          className="w-full py-2.5 rounded-[10px] text-sm font-bold tracking-wider transition-all duration-200"
+          style={{
+            backgroundColor: "#B8846A",
+            color: "#FFFFFF",
+            opacity: nome.trim() && cognome.trim() ? 1 : 0.55,
+          }}
         >
           ENTRA
         </button>
