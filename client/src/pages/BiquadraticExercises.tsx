@@ -826,20 +826,13 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
       </header>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pb-6">
-        {/* Formula display */}
-        <div className="text-center mb-4">
-          <div className="inline-block px-5 py-2 rounded-xl bg-primary/10 border border-primary/25">
-            <span className="text-lg font-bold font-mono">± ax⁴ ± bx² ± c = 0</span>
-          </div>
-        </div>
-
         {/* Input phase — single expression canvas */}
         {phase === "input" && (
           <div className="space-y-4">
             {/* Suggerimento */}
             <div className="text-center">
               <span className="text-[13px] sm:text-sm text-muted-foreground tracking-wider font-medium">
-                SCRIVI L'EQUAZIONE NEL RIQUADRO (AD ESEMPIO 2x⁴−3x²+1=0)
+                SCRIVI L'EQUAZIONE NEL RIQUADRO (AD ESEMPIO <span className="text-[#8B3A1A] font-semibold">2x⁴−3x²+1=0</span>)
               </span>
             </div>
 
