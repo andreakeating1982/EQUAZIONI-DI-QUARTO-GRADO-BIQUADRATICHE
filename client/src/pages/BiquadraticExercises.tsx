@@ -14,6 +14,20 @@ function gcd(a: number, b: number): number {
 
 function round2(n: number): number { return Math.round(n * 100) / 100; }
 
+/** Un numero è razionale (decimale finito o periodico)?
+ *  Cerca una frazione con denominatore ≤ 100 che lo rappresenti esattamente.
+ *  Per numeri irrazionali (es. √2≈1,4142...) nessuna frazione semplice corrisponde. */
+function isRootRational(value: number): boolean {
+  if (isNaN(value)) return false;
+  if (Math.abs(value) < 1e-10) return true;
+  const absV = Math.abs(value);
+  for (let den = 1; den <= 100; den++) {
+    const num = Math.round(absV * den);
+    if (Math.abs(absV - num / den) < 1e-9) return true;
+  }
+  return false;
+}
+
 function semplificaFrazione(num: number, den: number): { num: number; den: number } {
   if (den === 0) return { num, den: 0 };
   if (num === 0) return { num: 0, den: 1 };
@@ -301,6 +315,12 @@ interface BiquadraticComputed {
   t2: number | null;
   xValues: number[];
   positiveRoots: number[];
+  /** Per ogni radice positiva: LaTeX della forma radicale (es. "\\sqrt{2}") */
+  positiveRootRadicals: string[];
+  /** Per ogni radice positiva: il valore ESATTO sqrt(t) è razionale? (calcolato sui t NON arrotondati) */
+  positiveRootIsRational: boolean[];
+  /** Per ogni radice positiva: il valore ESATTO sqrt(t) è un intero? */
+  positiveRootIsInteger: boolean[];
   hasRealSolutions: boolean;
   hasOneDoubleSolution: boolean;
   solutionType: string;
@@ -461,6 +481,28 @@ export default function BiquadraticExercises() {
         .filter(v => v > -EPSILON)
     )].sort((a, b) => a - b);
 
+    // Radical LaTeX per ogni radice positiva (es. "\\sqrt{2}", "\\sqrt{\\dfrac{9}{4}}")
+    const positiveRootRadicals: string[] = [];
+    // Per ogni radice: il valore ESATTO sqrt(t) è razionale? è intero?
+    // Li calcoliamo sui t NON arrotondati per evitare falsi positivi (es. √2→1.41 sembrerebbe razionale)
+    const positiveRootIsRational: boolean[] = [];
+    const positiveRootIsInteger: boolean[] = [];
+    const seenRadicals = new Set<string>();
+    const addRadicalInfo = (t: number) => {
+      if (t >= -EPSILON) {
+        const rLatex = `\\sqrt{${numberToLatex(t)}}`;
+        if (!seenRadicals.has(rLatex)) {
+          seenRadicals.add(rLatex);
+          positiveRootRadicals.push(rLatex);
+          const sqrtT = Math.sqrt(Math.max(0, t));
+          positiveRootIsRational.push(isRootRational(sqrtT));
+          positiveRootIsInteger.push(Math.abs(sqrtT - Math.round(sqrtT)) < 1e-9);
+        }
+      }
+    };
+    if (t1 !== null) addRadicalInfo(t1);
+    if (t2 !== null) addRadicalInfo(t2);
+
     return {
       a, b, c,
       aNum: aNum!, aDen: Math.abs(da),
@@ -470,6 +512,9 @@ export default function BiquadraticExercises() {
       t1, t2,
       xValues,
       positiveRoots,
+      positiveRootRadicals,
+      positiveRootIsRational,
+      positiveRootIsInteger,
       hasRealSolutions,
       hasOneDoubleSolution,
       solutionType,
@@ -539,7 +584,7 @@ export default function BiquadraticExercises() {
 
       let bodyHtml = '';
       notebookContents.forEach((el) => {
-        bodyHtml += `<div style="margin-bottom:48px;text-align:center">${el.innerHTML}</div>`;
+        bodyHtml += `<div style="margin-bottom:8px;text-align:center;page-break-inside:avoid">${el.innerHTML}</div>`;
       });
 
       const printHtml = `<!DOCTYPE html>
@@ -547,7 +592,7 @@ export default function BiquadraticExercises() {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;max-width:800px;margin:0 auto;text-align:center;line-height:2.3}
+body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;max-width:100%;margin:0 auto;text-align:center;line-height:1.65}
 .text-primary,.text-primary *{color:#92400e!important;font-weight:bold!important}
 .text-success{color:#16a34a!important}
 .text-destructive,.text-destructive *{color:#dc2626!important}
@@ -563,36 +608,36 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
 .items-center{align-items:center!important}
 .justify-center{justify-content:center!important}
 .flex-col{flex-direction:column!important}
-.gap-2{gap:8px!important}.gap-3{gap:12px!important}.gap-4{gap:16px!important}
+.gap-2{gap:4px!important}.gap-3{gap:6px!important}.gap-4{gap:8px!important}
 .border-t{border-top:1px solid #000!important}
 .border-black{border-color:#000!important}
 .text-center{text-align:center!important}
 .block{display:block!important}
 .inline-block{display:inline-block!important}
-.mt-1{margin-top:8px!important}.mt-2{margin-top:14px!important}.mt-3{margin-top:20px!important}.mt-4{margin-top:24px!important}
+.mt-1{margin-top:4px!important}.mt-2{margin-top:6px!important}.mt-3{margin-top:10px!important}.mt-4{margin-top:14px!important}
 .pt-1{padding-top:8px!important}
 .px-3{padding-left:12px!important;padding-right:12px!important}
 .px-4{padding-left:16px!important;padding-right:16px!important}
-.py-1{padding-top:8px!important;padding-bottom:8px!important}
-.py-2{padding-top:14px!important;padding-bottom:14px!important}
+.py-1{padding-top:4px!important;padding-bottom:4px!important}
+.py-2{padding-top:7px!important;padding-bottom:7px!important}
 .my-2{margin-top:14px!important;margin-bottom:14px!important}
-.mb-2{margin-bottom:14px!important}.mb-3{margin-bottom:20px!important}
-.space-y-1>*+*{margin-top:8px!important}
-.space-y-2>*+*{margin-top:16px!important}
-.space-y-3>*+*{margin-top:20px!important}
-.space-y-4>*+*{margin-top:24px!important}
-.leading-loose{line-height:2.5!important}
+.mb-2{margin-bottom:6px!important}.mb-3{margin-bottom:10px!important}
+.space-y-1>*+*{margin-top:4px!important}
+.space-y-2>*+*{margin-top:6px!important}
+.space-y-3>*+*{margin-top:10px!important}
+.space-y-4>*+*{margin-top:14px!important}
+.leading-loose{line-height:1.7!important}
 .text-sm{font-size:14px!important}
-.text-base{font-size:16px!important}
-.text-lg{font-size:18px!important}
-.text-xl{font-size:20px!important}
-.text-2xl{font-size:24px!important}
+.text-base{font-size:14px!important}
+.text-lg{font-size:15px!important}
+.text-xl{font-size:17px!important}
+.text-2xl{font-size:20px!important}
 .w-full{width:100%!important}
 .h-\\[2px\\]{height:2px!important}
 .bg-black{background:#000!important}
 .bg-foreground\\/70{background:rgba(0,0,0,.7)!important}
 .opacity-80{opacity:.8!important}
-@media print{body{padding:10px}@page{margin:1.2cm}}
+@media print{body{padding:8px;zoom:0.82}@page{size:A4;margin:0.6cm}}
 </style></head>
 <body>${bodyHtml}<script>window.onload=function(){window.print()}</script></body></html>`;
 
@@ -714,7 +759,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
         </h1>
       </header>
 
-      <main className="flex-1 max-w-md mx-auto w-full px-3 sm:px-4 pb-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pb-6">
         {/* Formula display */}
         <div className="text-center mb-4">
           <div className="inline-block px-5 py-2 rounded-xl bg-primary/10 border border-primary/25">
@@ -733,9 +778,9 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
             </div>
 
             {/* Large expression canvas */}
-            <div className="rounded-xl border-2 border-primary/30 bg-card overflow-hidden animate-pop-in max-w-md mx-auto w-full shadow-md">
+            <div className="rounded-xl border-2 border-primary/30 bg-card overflow-hidden animate-pop-in max-w-2xl mx-auto w-full shadow-md">
               <div className="px-2 py-2">
-                <div className="w-full h-[120px] sm:h-[140px] rounded-lg border border-border overflow-hidden bg-white">
+                <div className="w-full h-[150px] sm:h-[170px] rounded-lg border border-border overflow-hidden bg-white">
                   <MathDrawCanvas
                     strokes={exprStrokes}
                     onStrokesChange={setExprStrokes}
@@ -777,7 +822,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
 
             {/* Recognized LaTeX display — rendered with KaTeX */}
             {recognizedLatex && (
-              <div className="rounded-xl border border-border bg-card p-4 animate-pop-in max-w-md mx-auto w-full">
+              <div className="rounded-xl border border-border bg-card p-5 animate-pop-in max-w-2xl mx-auto w-full">
                 <span className="text-sm font-semibold text-muted-foreground tracking-widest">
                   ESPRESSIONE RICONOSCIUTA:
                 </span>
@@ -802,7 +847,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
 
             {/* Parsing error */}
             {parseError && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 animate-pop-in max-w-md mx-auto w-full text-center">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5 animate-pop-in max-w-2xl mx-auto w-full text-center">
                 <span className="text-base font-semibold text-destructive">{parseError}</span>
               </div>
             )}
@@ -811,7 +856,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:36px 24px;ma
             {parsedEq && !parseError && (
               <button
                 onClick={handleConfirmExpression}
-                className="max-w-md mx-auto w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
+                className="max-w-2xl mx-auto w-full py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
               >
                 ✅ CONFERMA E CALCOLA
               </button>
@@ -948,10 +993,17 @@ function BiquadraticExercise({
   onNew, generatingPdf,
   equationDisplay, tEquationDisplay,
 }: BiquadraticExerciseProps) {
+  // Mostra i passi 5-6 solo se tutti i passi precedenti sono corretti
+  const allPreviousStepsCorrect =
+    computed.solutionType !== "delta_negative" &&
+    deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) &&
+    t1Utente !== null && computed.t1 !== null && areNumbersRoundedEqual(t1Utente, computed.t1) &&
+    (computed.hasOneDoubleSolution || (t2Utente !== null && computed.t2 !== null && areNumbersRoundedEqual(t2Utente, computed.t2)));
+
   return (
     <div className="space-y-5">
       {/* Step 1: Equation inserted */}
-      <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
+      <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
         <p className="text-base font-bold text-primary">1. Equazione inserita:</p>
         <div className="flex justify-center">
           <div className="inline-block px-4 py-2 rounded-lg bg-muted font-mono text-base" dangerouslySetInnerHTML={{ __html: equationDisplay }} />
@@ -962,7 +1014,7 @@ function BiquadraticExercise({
       </div>
 
       {/* Step 2: Variable substitution t = x² */}
-      <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
+      <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
         <p className="text-base font-bold text-primary">2. VARIABILE AUSILIARIA <span className="math-var">t = x²</span>:</p>
         <div className="flex justify-center">
           <div className="inline-block px-4 py-2 rounded-lg bg-muted font-mono text-base" dangerouslySetInnerHTML={{ __html: tEquationDisplay }} />
@@ -975,7 +1027,7 @@ function BiquadraticExercise({
       </div>
 
       {/* Step 3: Calculate Delta */}
-      <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
+      <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
         <p className="text-base font-bold text-primary">3. Calcolo delta Δ:</p>
         <div className="space-y-3">
           <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = b^{2} - 4ac`) }} />
@@ -1017,18 +1069,20 @@ function BiquadraticExercise({
         </NotebookGuide>
       </div>
 
-      {/* Step 4: Calculate t₁ */}
-      {computed.solutionType !== "delta_negative" && computed.t1 !== null && (
-        <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">4. CALCOLO <span className="math-var">t₁</span>:</p>
+      {/* Step 4-5: Calculate t₁ (and t₂ when distinct) */}
+      {computed.solutionType !== "delta_negative" && computed.hasOneDoubleSolution && computed.t1 !== null && (
+        /* ── Δ = 0: radici coincidenti — una sola card unificata ── */
+        <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+          <p className="text-base font-bold text-primary">4. CALCOLO DI <span className="math-var">t₁ = t₂</span>:</p>
+          <p className="text-base opacity-80">Δ = 0 → due soluzioni reali e coincidenti per t</p>
           <div className="space-y-3">
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
-            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = t_{2} = \\frac{-b}{2a}`) }} />
+            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = t_{2} = \\frac{${formatNegatedCoeff(computed.b)}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
           </div>
           <NumberInputCanvas
             value={t1Utente}
-            onChange={(v) => setT1Utente(v)}
-            label={<>INSERISCI IL TUO <span className="math-var">t₁</span>:</>}
+            onChange={(v) => { setT1Utente(v); setT2Utente(v); }}
+            label={<>INSERISCI IL TUO <span className="math-var">t₁ = t₂</span>:</>}
             colorClass="text-primary"
             allowNegative
           />
@@ -1047,105 +1101,122 @@ function BiquadraticExercise({
             visible={t1Utente !== null && areNumbersRoundedEqual(t1Utente, computed.t1!)}
             forceOpen={generatingPdf}
           >
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
-            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = t_{2} = \\frac{${formatNegatedCoeff(computed.b)}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = t_{2} = \\frac{${numberToLatex(-computed.b)}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = t_{2} = ${numberToLatex(computed.t1!)}`) }} />
             {computed.t1! >= -EPSILON
-              ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
-              : <p className="font-mono text-base text-destructive">t₁ &lt; 0 → impossibile nei reali ✗</p>
+              ? <p className="font-mono text-base">t₁ = t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
+              : <p className="font-mono text-base text-destructive">t₁ = t₂ &lt; 0 → impossibile nei reali ✗</p>
             }
           </NotebookGuide>
         </div>
       )}
 
-      {/* Step 5: Calculate t₂ */}
-      {computed.solutionType !== "delta_negative" && computed.t2 !== null && (
-        <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">5. CALCOLO <span className="math-var">t₂</span>:</p>
-          <div className="space-y-3">
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
-            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-          </div>
-          <NumberInputCanvas
-            value={t2Utente}
-            onChange={(v) => setT2Utente(v)}
-            label={<>INSERISCI IL TUO <span className="math-var">t₂</span>:</>}
-            colorClass="text-primary"
-            allowNegative
-          />
-          {t2Utente !== null && (
-            <p className={cn(
-              "text-base font-bold text-center mt-2",
-              areNumbersRoundedEqual(t2Utente, computed.t2!) ? "text-success" : "text-destructive",
-            )}>
-              {areNumbersRoundedEqual(t2Utente, computed.t2!)
-                ? "CORRETTO"
-                : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
-            </p>
+      {computed.solutionType !== "delta_negative" && !computed.hasOneDoubleSolution && (
+        /* ── Δ > 0: due card separate come prima ── */
+        <>
+          {computed.t1 !== null && (
+            <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+              <p className="text-base font-bold text-primary">4. CALCOLO <span className="math-var">t₁</span>:</p>
+              <div className="space-y-3">
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
+                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+              </div>
+              <NumberInputCanvas
+                value={t1Utente}
+                onChange={(v) => setT1Utente(v)}
+                label={<>INSERISCI IL TUO <span className="math-var">t₁</span>:</>}
+                colorClass="text-primary"
+                allowNegative
+              />
+              {t1Utente !== null && (
+                <p className={cn(
+                  "text-base font-bold text-center mt-2",
+                  areNumbersRoundedEqual(t1Utente, computed.t1!) ? "text-success" : "text-destructive",
+                )}>
+                  {areNumbersRoundedEqual(t1Utente, computed.t1!)
+                    ? "CORRETTO"
+                    : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
+                </p>
+              )}
+              <NotebookGuide
+                title="RICOPIA SUL QUADERNO:"
+                visible={t1Utente !== null && areNumbersRoundedEqual(t1Utente, computed.t1!)}
+                forceOpen={generatingPdf}
+              >
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
+                {computed.t1! >= -EPSILON
+                  ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
+                  : <p className="font-mono text-base text-destructive">t₁ &lt; 0 → impossibile nei reali ✗</p>
+                }
+              </NotebookGuide>
+            </div>
           )}
-          <NotebookGuide
-            title="RICOPIA SUL QUADERNO:"
-            visible={t2Utente !== null && areNumbersRoundedEqual(t2Utente, computed.t2!)}
-            forceOpen={generatingPdf}
-          >
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
-            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
-            {computed.t2! >= -EPSILON
-              ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
-              : <p className="font-mono text-base text-destructive">t₂ &lt; 0 → impossibile nei reali ✗</p>
-            }
-          </NotebookGuide>
-        </div>
-      )}
 
-      {/* Step 5-bis: Delta negativo — inserisci comunque il Δ */}
-      {computed.solutionType === "delta_negative" && (
-        <div className="p-4 rounded-xl bg-card/40 border border-destructive/30 space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">5. CALCOLO Δ:</p>
-          <div className="space-y-3">
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = b^{2} - 4ac`) }} />
-            <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
-            <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
-          </div>
-          <NumberInputCanvas
-            value={deltaUtente}
-            onChange={(v) => { setDeltaUtente(v); }}
-            label="Inserisci il tuo Δ:"
-            colorClass="text-primary"
-            allowNegative
-          />
-          {deltaUtente !== null && (
-            <p className={cn(
-              "text-base font-bold text-center mt-2",
-              areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) ? "text-success" : "text-destructive",
-            )}>
-              {areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)
-                ? "CORRETTO"
-                : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
-            </p>
+          {computed.t2 !== null && (
+            <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+              <p className="text-base font-bold text-primary">5. CALCOLO <span className="math-var">t₂</span>:</p>
+              <div className="space-y-3">
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
+                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+              </div>
+              <NumberInputCanvas
+                value={t2Utente}
+                onChange={(v) => setT2Utente(v)}
+                label={<>INSERISCI IL TUO <span className="math-var">t₂</span>:</>}
+                colorClass="text-primary"
+                allowNegative
+              />
+              {t2Utente !== null && (
+                <p className={cn(
+                  "text-base font-bold text-center mt-2",
+                  areNumbersRoundedEqual(t2Utente, computed.t2!) ? "text-success" : "text-destructive",
+                )}>
+                  {areNumbersRoundedEqual(t2Utente, computed.t2!)
+                    ? "CORRETTO"
+                    : "RISULTATO SBAGLIATO. CALCOLA DI NUOVO"}
+                </p>
+              )}
+              <NotebookGuide
+                title="RICOPIA SUL QUADERNO:"
+                visible={t2Utente !== null && areNumbersRoundedEqual(t2Utente, computed.t2!)}
+                forceOpen={generatingPdf}
+              >
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
+                {computed.t2! >= -EPSILON
+                  ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
+                  : <p className="font-mono text-base text-destructive">t₂ &lt; 0 → impossibile nei reali ✗</p>
+                }
+              </NotebookGuide>
+            </div>
           )}
-          <NotebookGuide
-            title="RICOPIA SUL QUADERNO:"
-            visible={deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100)}
-            forceOpen={generatingPdf}
-          >
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
-            <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
-            <p className="text-destructive font-semibold text-base">Δ &lt; 0 → nessuna soluzione reale</p>
-          </NotebookGuide>
-        </div>
+        </>
       )}
 
       {/* Step 6: Extract x from t */}
-      <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-        <p className="text-base font-bold text-primary">6. CALCOLO DI <span className="math-var">x₁</span> E <span className="math-var">x₂</span>:</p>
+      {allPreviousStepsCorrect && (
+      <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+        <p className="text-base font-bold text-primary">
+          {computed.solutionType === "delta_negative" ? "4." : computed.hasOneDoubleSolution ? "5." : "6."} CALCOLO DI <span className="math-var">x₁</span>
+          {!computed.hasOneDoubleSolution && <> E <span className="math-var">x₂</span></>}:
+        </p>
         <div className="space-y-2">
-          {computed.t1 !== null && computed.t1 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+          {computed.hasOneDoubleSolution && computed.t1 !== null && computed.t1 >= -EPSILON && (
+            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = x_{2} = \\pm\\sqrt{t} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
           )}
-          {computed.t2 !== null && computed.t2 >= -EPSILON && (
-            <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+          {!computed.hasOneDoubleSolution && (
+            <>
+              {computed.t1 !== null && computed.t1 >= -EPSILON && (
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+              )}
+              {computed.t2 !== null && computed.t2 >= -EPSILON && (
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+              )}
+            </>
           )}
           {!computed.hasRealSolutions && (
             <p className="text-destructive font-semibold text-base">
@@ -1157,43 +1228,68 @@ function BiquadraticExercise({
         <NotebookGuide title="RICOPIA SUL QUADERNO:" forceOpen={generatingPdf}>
           {computed.hasRealSolutions ? (
             <>
-              {computed.t1 !== null && computed.t1 >= -EPSILON && (
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
-              )}
-              {computed.t2 !== null && computed.t2 >= -EPSILON && (
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+              {computed.hasOneDoubleSolution ? (
+                <>
+                  {computed.t1 !== null && computed.t1 >= -EPSILON && (
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = x_{2} = \\pm\\sqrt{t} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${computed.positiveRootIsInteger[0] ? ` = \\pm ${Math.round(computed.positiveRoots[0])}` : ''}`) }} />
+                  )}
+                </>
+              ) : (
+                <>
+                  {computed.t1 !== null && computed.t1 >= -EPSILON && (
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${computed.positiveRootIsInteger[0] ? ` = \\pm ${Math.round(computed.positiveRoots[0])}` : ''}`) }} />
+                  )}
+                  {computed.t2 !== null && computed.t2 >= -EPSILON && (
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}${computed.positiveRootIsInteger[1] ? ` = \\pm ${Math.round(computed.positiveRoots[1])}` : ''}`) }} />
+                  )}
+                </>
               )}
               <p className="text-base lowercase text-primary">
                 calcolo la radice quadrata di t
               </p>
             </>
-          ) : (
+          ) : computed.solutionType === "delta_negative" ? (
             <p className="text-base text-primary">
               Il delta è negativo, quindi l&apos;equazione non ha soluzioni nell&apos;insieme dei numeri reali.
+            </p>
+          ) : (
+            <p className="text-base text-primary">
+              Nessuna soluzione reale perchè t1 e t2 sono negativi
             </p>
           )}
         </NotebookGuide>
       </div>
+      )}
 
-      {/* Step 7: Verification */}
-      {computed.hasRealSolutions && (
-        <div className="p-4 rounded-xl bg-card/40 border border-border space-y-4 leading-loose">
-          <p className="text-base font-bold text-primary">7. Verifica del risultato:</p>
+      {/* Step 7 (or 6 when Δ=0): Verification */}
+      {allPreviousStepsCorrect && computed.hasRealSolutions && (
+        <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+          <p className="text-base font-bold text-primary">{computed.hasOneDoubleSolution ? "6." : "7."} Verifica del risultato:</p>
           <div className="space-y-3">
-            <p className="text-base font-semibold">INSERISCI I VALORI ASSOLUTI DI <span className="math-var">x</span>:</p>
-
-            <NumberInputCanvas
-              value={x1Utente}
-              onChange={(v) => setX1Utente(v)}
-              label={<>VALORE ASSOLUTO <span className="math-var">x₁</span>:</>}
-              colorClass="text-primary"
-            />
-            <NumberInputCanvas
-              value={x2Utente}
-              onChange={(v) => setX2Utente(v)}
-              label={<>VALORE ASSOLUTO <span className="math-var">x₂</span>:</>}
-              colorClass="text-primary"
-            />
+            {computed.hasOneDoubleSolution ? (
+              /* ── Δ = 0: una sola card per x₁=x₂ ── */
+              <NumberInputCanvas
+                value={x1Utente}
+                onChange={(v) => { setX1Utente(v); setX2Utente(v); }}
+                label={<>INSERISCI IL TUO <span className="math-var">x₁ = x₂</span>:</>}
+                colorClass="text-primary"
+              />
+            ) : (
+              <>
+                <NumberInputCanvas
+                  value={x1Utente}
+                  onChange={(v) => setX1Utente(v)}
+                  label={<>INSERISCI IL TUO <span className="math-var">x₁</span>:</>}
+                  colorClass="text-primary"
+                />
+                <NumberInputCanvas
+                  value={x2Utente}
+                  onChange={(v) => setX2Utente(v)}
+                  label={<>INSERISCI IL TUO <span className="math-var">x₂</span>:</>}
+                  colorClass="text-primary"
+                />
+              </>
+            )}
 
             {/* Verify button */}
             <button
@@ -1212,18 +1308,46 @@ function BiquadraticExercise({
                 const match = userAbsVals.length === correctAbsVals.length &&
                   userAbsVals.every((v, i) => areNumbersRoundedEqual(v, correctAbsVals[i]));
 
+                // Costruisci la stringa con le 3 forme per ogni radice
+                const buildRootLine = (r: number, i: number): string => {
+                  if (areNumbersApproximatelyEqual(r, 0, 1e-10)) return "0";
+                  const radLatex = computed.positiveRootRadicals[i] ?? numberToLatexAbs(r);
+                  const radicalHtml = renderKatex(`\\pm ${radLatex}`);
+                  const rootRational = computed.positiveRootIsRational[i] ?? false;
+                  const rootInteger = computed.positiveRootIsInteger[i] ?? false;
+
+                  // Intero razionale → solo l'intero, senza decimali né frazioni
+                  if (rootInteger) {
+                    return radicalHtml;
+                  }
+
+                  const decimal = "±" + roundToPrecision(r, 2).toFixed(2).replace(".", ",");
+
+                  // Razionale non intero → radicale + decimale + frazione semplificata
+                  if (rootRational) {
+                    const rounded = Math.round(r * 100) / 100;
+                    const absR = Math.abs(rounded);
+                    const fNum = Math.round(absR * 100);
+                    const fDen = 100;
+                    const g = gcd(fNum, fDen);
+                    const sn = fNum / g;
+                    const sd = fDen / g;
+                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
+                    return `${radicalHtml} &rarr; ${decimal} &rarr; ${fracWithSign}`;
+                  }
+
+                  // Irrazionale → solo radicale + decimale
+                  return `${radicalHtml} &rarr; ${decimal}`;
+                };
+
                 if (match) {
                   setFeedbackFinale({
-                    testo: `Corretto! ✅ Le soluzioni sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
-                    ).join(", ")}`,
+                    testo: `Corretto! ✅ Le soluzioni sono:<br>${computed.positiveRoots.map((r, i) => buildRootLine(r, i)).join("<br>")}`,
                     corretto: true,
                   });
                 } else {
                   setFeedbackFinale({
-                    testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono: ${computed.positiveRoots.map(r =>
-                      areNumbersApproximatelyEqual(r, 0, 1e-10) ? "0" : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
-                    ).join(", ")}`,
+                    testo: `RISULTATO SBAGLIATO. Le soluzioni corrette sono:<br>${computed.positiveRoots.map((r, i) => buildRootLine(r, i)).join("<br>")}`,
                     corretto: false,
                   });
                 }
@@ -1252,11 +1376,39 @@ function BiquadraticExercise({
           >
             <p
               className="text-base font-bold text-primary"
-              dangerouslySetInnerHTML={{ __html: `Soluzioni finali: ${computed.positiveRoots.map(r =>
-                areNumbersApproximatelyEqual(r, 0, 1e-10)
-                  ? "0"
-                  : renderKatex(`\\pm ${numberToLatexAbs(r)}`)
-              ).join(", ")}` }}
+              dangerouslySetInnerHTML={{ __html: (() => {
+                const lines = computed.positiveRoots.map((r, i) => {
+                  if (areNumbersApproximatelyEqual(r, 0, 1e-10)) return "0";
+                  const radLatex = computed.positiveRootRadicals[i] ?? numberToLatexAbs(r);
+                  const radicalHtml = renderKatex(`\\pm ${radLatex}`);
+                  const rootRational = computed.positiveRootIsRational[i] ?? false;
+                  const rootInteger = computed.positiveRootIsInteger[i] ?? false;
+
+                  // Intero razionale → solo l'intero
+                  if (rootInteger) {
+                    return radicalHtml;
+                  }
+
+                  const decimal = "±" + roundToPrecision(r, 2).toFixed(2).replace(".", ",");
+
+                  // Razionale non intero → radicale + decimale + frazione semplificata
+                  if (rootRational) {
+                    const rounded = Math.round(r * 100) / 100;
+                    const absR = Math.abs(rounded);
+                    const fNum = Math.round(absR * 100);
+                    const fDen = 100;
+                    const g = gcd(fNum, fDen);
+                    const sn = fNum / g;
+                    const sd = fDen / g;
+                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
+                    return `${radicalHtml} &rarr; ${decimal} &rarr; ${fracWithSign}`;
+                  }
+
+                  // Irrazionale → solo radicale + decimale
+                  return `${radicalHtml} &rarr; ${decimal}`;
+                });
+                return `Soluzioni finali:<br>${lines.join("<br>")}`;
+              })() }}
             />
           </NotebookGuide>
         </div>

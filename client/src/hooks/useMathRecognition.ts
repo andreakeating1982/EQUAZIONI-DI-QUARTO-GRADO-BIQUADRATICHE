@@ -17,6 +17,8 @@ let preprocessStrokesFn: any = null;
 let isStrokeMeaningfulFn: any = null;
 let loadVocabFn: any = null;
 let VocabType: any = null;
+let repairLatexFn: any = null;
+let decodeToTokenArrayFn: any = null;
 
 async function ensureInkOn() {
   if (!InferenceEngine) {
@@ -25,8 +27,10 @@ async function ensureInkOn() {
     preprocessStrokesFn = mod.preprocessStrokes;
     isStrokeMeaningfulFn = mod.isStrokeMeaningful;
     loadVocabFn = mod.loadVocab;
+    repairLatexFn = mod.repairLatex;
+    decodeToTokenArrayFn = mod.decodeToTokenArray;
   }
-  return { InferenceEngine, preprocessStrokesFn, isStrokeMeaningfulFn, loadVocabFn };
+  return { InferenceEngine, preprocessStrokesFn, isStrokeMeaningfulFn, loadVocabFn, repairLatexFn, decodeToTokenArrayFn };
 }
 
 export function useMathRecognition() {
@@ -59,7 +63,7 @@ export function useMathRecognition() {
         const engine = new Eng({
           encoderUrl: "/models/comer/encoder_int8.onnx",
           decoderUrl: "/models/comer/decoder_int8.onnx",
-          beamWidth: 2,
+          beamWidth: 5,
           executionProvider: "wasm",
         });
 
@@ -127,6 +131,13 @@ export function useMathRecognition() {
           vocabRef.current,
           mode,
         );
+
+        // Apply LaTeX repair to fix common recognition errors (e.g., digit 9)
+        if (result && result.tokenIds && vocabRef.current && repairLatexFn && decodeToTokenArrayFn) {
+          const tokens = decodeToTokenArrayFn(result.tokenIds, vocabRef.current);
+          const repairedTokens = repairLatexFn(tokens);
+          result.latex = repairedTokens.join('');
+        }
 
         recognizingRef.current = false;
         return result as RecognitionResult;

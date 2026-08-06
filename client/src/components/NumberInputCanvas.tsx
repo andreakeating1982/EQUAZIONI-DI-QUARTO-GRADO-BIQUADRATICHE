@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
 import { FractionDisplay } from "@/components/FractionDisplay";
 import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
+import katex from "katex";
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -46,10 +47,51 @@ function numberToFractionParts(value: number): { num: number; den: number } | nu
 }
 
 /** Converte un numero in stringa decimale con virgola, arrotondato a 2 cifre */
+/** Quick KaTeX render for inline display-mode formulas */
+function renderKatex(latex: string): string {
+  try {
+    return katex.renderToString(latex, { displayMode: false, throwOnError: false, strict: false });
+  } catch { return latex; }
+}
+
 function toDecimalString(value: number): string {
   const rounded = Math.round(value * 100) / 100;
+  // Se il valore arrotondato è un intero esatto, niente virgola né decimali
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
+    return Math.round(rounded).toString();
+  }
   const str = rounded.toFixed(2);
   return str.replace(".", ",");
+}
+
+/** Verifica se un numero è razionale (decimale finito o periodico).
+ *  Cerca una frazione con denominatore ≤ 100 che approssimi il valore entro 1e-9.
+ *  Per valori irrazionali (es. √2≈1,4142...) nessuna frazione piccola corrisponde. */
+function isRationalCheck(value: number): boolean {
+  if (isNaN(value)) return false;
+  if (Math.abs(value) < 1e-10) return true; // 0 è razionale
+  const absValue = Math.abs(value);
+  for (let den = 1; den <= 100; den++) {
+    const num = Math.round(absValue * den);
+    if (Math.abs(absValue - num / den) < 1e-9) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Frazione generatrice del decimale ARROTONDATO a 2 cifre.
+ *  Es. √2≈1,41 → 141/100;  7/4=1,75 → 7/4. Sempre esatta. */
+function numberToFractionFromRounded(value: number): { num: number; den: number } | null {
+  if (isNaN(value)) return null;
+  const rounded = Math.round(value * 100) / 100;
+  if (Math.abs(rounded) < 1e-10) return { num: 0, den: 1 };
+  const sign = rounded < 0 ? -1 : 1;
+  const absValue = Math.abs(rounded);
+  const numerator = Math.round(absValue * 100);
+  const denominator = 100;
+  const g = gcd(numerator, denominator);
+  return { num: sign * (numerator / g), den: denominator / g };
 }
 
 // ─── LaTeX expression evaluator ───────────────────────────────────
@@ -73,7 +115,17 @@ function extractBraced(s: string, pos: number): { inner: string; end: number } |
 
 /** Valuta ricorsivamente una stringa LaTeX → numero */
 function evaluateLatex(latex: string): number | null {
-  let s = latex.trim().replace(/\s+/g, '');
+  // Normalizza moltiplicatori, decimali, e comandi decorativi
+  let s = latex.trim().replace(/\s+/g, '')
+    .replace(/\\cdot/g, '*')
+    .replace(/\\times/g, '*')
+    .replace(/\\,/g, '.')
+    .replace(/\\left/g, '')
+    .replace(/\\right/g, '');
+  // Converti \dfrac e \tfrac in \frac
+  s = s.replace(/\\(?:dfrac|tfrac)\{/g, '\\frac{');
+  // Converti {num} \over {den} → \frac{num}{den} (TeX primitiva, ancora usata da alcuni recognizer)
+  s = s.replace(/\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\s*\\over\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '\\frac{$1}{$2}');
   if (!s) return null;
 
   // ── 1. Leading minus ───────────────────────────────────────────
@@ -126,7 +178,39 @@ function evaluateLatex(latex: string): number | null {
     return null;
   }
 
-  // ── 4. Inline division a/b (only at top level, NOT inside braces) ─
+  // ── 3b. Addition / subtraction at top level (outside braces) ────
+  let braceDepth2 = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (s[i] === '}') braceDepth2++;
+    else if (s[i] === '{') braceDepth2--;
+    else if (braceDepth2 === 0 && (s[i] === '+' || s[i] === '-') && i > 0) {
+      const left = evaluateLatex(s.slice(0, i));
+      const right = evaluateLatex(s.slice(i + 1));
+      if (left !== null && right !== null) {
+        return s[i] === '+' ? left + right : left - right;
+      }
+    }
+  }
+
+  // ── 4b. Implicit multiplication: X\sqrt{Y} at top level ─────────
+  let braceDepth2b = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '{') braceDepth2b++;
+    else if (s[i] === '}') braceDepth2b--;
+    else if (braceDepth2b === 0 && s.slice(i).startsWith('\\sqrt{') && i > 0) {
+      const charBefore = s[i - 1];
+      if (/^[0-9a-zA-Z.\)}]$/.test(charBefore)) {
+        const leftPart = s.slice(0, i);
+        const rightPart = s.slice(i);
+        const left = evaluateLatex(leftPart);
+        const right = evaluateLatex(rightPart);
+        if (left !== null && right !== null) return left * right;
+        break;
+      }
+    }
+  }
+
+  // ── 5. Inline division a/b (only at top level, NOT inside braces) ─
   // Cerca '/' non racchiuso tra graffe
   let braceDepth = 0;
   for (let i = 0; i < s.length; i++) {
@@ -141,7 +225,7 @@ function evaluateLatex(latex: string): number | null {
     }
   }
 
-  // ── 5. sqrt(…) — plain text format ──────────────────────────────
+  // ── 6. sqrt(…) — plain text format ──────────────────────────────
   if (s.startsWith('sqrt(')) {
     let depth2 = 0;
     for (let i = 4; i < s.length; i++) {
@@ -167,7 +251,7 @@ function evaluateLatex(latex: string): number | null {
     return null;
   }
 
-  // ── 6. Plain number ────────────────────────────────────────────
+  // ── 7. Plain number ────────────────────────────────────────────
   s = s.replace(/,/g, '.');
   const num = parseFloat(s);
   if (!isNaN(num)) return num;
@@ -206,23 +290,32 @@ function extractFractionFromLatex(latex: string): ExtractedFraction | null {
   let s = latex.replace(/\s+/g, "");
   s = s.replace(/,/g, ".");
 
-  // Match \frac{num}{den}
-  const fracMatch = s.match(/\\frac\{([^{}]+)\}\{([^{}]+)\}/);
+  // Rileva il segno meno FUORI dalla frazione (es. -\frac{7}{4})
+  let globalNegative = false;
+  if (s.startsWith("-")) {
+    globalNegative = true;
+    s = s.slice(1);
+  }
+
+  // Match \frac, \dfrac, \tfrac{num}{den}
+  const fracMatch = s.match(/\\(?:frac|dfrac|tfrac)\{([^{}]+)\}\{([^{}]+)\}/);
   if (!fracMatch) return null;
 
   const numStr = fracMatch[1].replace(/[{}]/g, "").trim();
   const denStr = fracMatch[2].replace(/[{}]/g, "").trim();
 
-  // Check for negative sign
-  let isNegative = false;
-  let numClean = numStr;
-  let denClean = denStr;
-  if (numClean.startsWith("-")) { isNegative = true; numClean = numClean.slice(1); }
-  if (!isNegative && denClean.startsWith("-")) { isNegative = true; denClean = denClean.slice(1); }
+  // Rileva eventuali meno interni a numeratore e denominatore
+  const numNegative = numStr.startsWith("-");
+  const denNegative = denStr.startsWith("-");
+  const numClean = numNegative ? numStr.slice(1) : numStr;
+  const denClean = denNegative ? denStr.slice(1) : denStr;
 
   const num = parseFloat(numClean);
   const den = parseFloat(denClean);
   if (isNaN(num) || isNaN(den) || den === 0) return null;
+
+  // XOR a tre: la frazione è negativa se c'è un numero dispari di segni meno
+  const isNegative = (globalNegative !== numNegative) !== denNegative;
 
   return { numerator: num, denominator: den, isNegative };
 }
@@ -261,7 +354,20 @@ export function NumberInputCanvas({
   const [fracDen, setFracDen] = useState<number | null>(null);
   const [fracNeg, setFracNeg] = useState(false);
   const [decimalStr, setDecimalStr] = useState<string | null>(null);
-  const [radicalForm, setRadicalForm] = useState<string | null>(null);
+  const [radicalLatex, setRadicalLatex] = useState<string | null>(null);
+  const [eraserMode, setEraserMode] = useState(false);
+  const [hasPlusMinusSign, setHasPlusMinusSign] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editLatex, setEditLatex] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+  // Frazione generatrice del decimale arrotondato (terza forma)
+  const [roundFracNum, setRoundFracNum] = useState<number | null>(null);
+  const [roundFracDen, setRoundFracDen] = useState<number | null>(null);
+  const [roundFracNeg, setRoundFracNeg] = useState(false);
+  // Flag: il valore riconosciuto è razionale? (solo se sì mostriamo la frazione generatrice)
+  const [isValueRational, setIsValueRational] = useState(false);
+  // Flag: l'input è un decimale puro (nessun \frac né \sqrt)? → mostra solo il decimale
+  const [isPlainDecimalInput, setIsPlainDecimalInput] = useState(false);
 
   const { recognize, isModelReady, isLoading } = useMathRecognition();
 
@@ -270,6 +376,8 @@ export function NumberInputCanvas({
       setStrokes(newStrokes);
       if (newStrokes.length === 0) {
         setRecognizedText("");
+        // Se l'utente ha cancellato tutto con la gomma, esci automaticamente dalla modalità gomma
+        setEraserMode(false);
       }
     },
     [],
@@ -287,13 +395,41 @@ export function NumberInputCanvas({
     }
 
     if (result) {
-      // ── 1. Valuta l'espressione LaTeX completa (supporta √, \frac, /) ──
-      const evaluated = evaluateLatex(result.latex);
+      // ── Correggi errori comuni di riconoscimento dei digit (es. 9 → g, q, 4) ──
+      const DIGIT_FIXES: Record<string, string> = {
+        'g': '9',
+        'q': '9',
+        'G': '9',
+        'Q': '9',
+        '\\gamma': '9',
+        '\\Gamma': '9',
+        '\\operatorname{g}': '9',
+      };
+      const trimmedLatex = result.latex.trim();
+      if (DIGIT_FIXES[trimmedLatex]) {
+        result.latex = DIGIT_FIXES[trimmedLatex];
+      }
+
+      // L'utente ha scritto il simbolo ±?
+      const hasPM = result.latex.includes('\\pm') || result.latex.includes('\\mp') || result.latex.includes('±');
+      setHasPlusMinusSign(hasPM);
+
+      // Rimuovi \pm / \mp / ± (Unicode) — non sono operazioni numeriche
+      const cleanLatex = result.latex
+        .replace(/\\pm\s*/g, '')
+        .replace(/\\mp\s*/g, '')
+        .replace(/±/g, '')
+        .replace(/^\+/, '')
+        .replace(/\\(?:dfrac|tfrac)/g, '\\frac') // normalizza \dfrac e \tfrac
+        .trim();
+
+      // ── 1. Valuta l'espressione LaTeX pulita (supporta √, \frac, /) ──
+      const evaluated = evaluateLatex(cleanLatex);
 
       if (evaluated !== null && isFinite(evaluated)) {
         // Controlla se c'è una frazione LaTeX pura (per il display preferito)
-        const frac = extractFractionFromLatex(result.latex);
-        if (frac && !result.latex.includes('\\sqrt')) {
+        const frac = extractFractionFromLatex(cleanLatex);
+        if (frac && !cleanLatex.includes('\\sqrt')) {
           // Frazione semplice senza radice: usa num/den estratti
           setFracNum(frac.numerator);
           setFracDen(frac.denominator);
@@ -313,9 +449,23 @@ export function NumberInputCanvas({
         // Forma decimale
         setDecimalStr(toDecimalString(evaluated));
 
-        // Forma radicale (se presente nel LaTeX originale)
-        const rad = extractRadicalForm(result.latex);
-        setRadicalForm(rad);
+        // Forma radicale: salva il LaTeX originale per il rendering KaTeX
+        setRadicalLatex(result.latex.includes('\\sqrt') ? result.latex.trim().replace(/\s+/g, '') : null);
+
+        // Input decimale puro? (nessun \frac né \sqrt → mostra solo il decimale)
+        setIsPlainDecimalInput(!cleanLatex.includes('\\frac') && !cleanLatex.includes('\\sqrt'));
+
+        // Frazione generatrice del decimale arrotondato (terza forma)
+        const rfp = numberToFractionFromRounded(evaluated);
+        if (rfp) {
+          setRoundFracNum(Math.abs(rfp.num));
+          setRoundFracDen(rfp.den);
+          setRoundFracNeg(rfp.num < 0);
+        } else {
+          setRoundFracNum(null);
+          setRoundFracDen(null);
+          setRoundFracNeg(false);
+        }
 
         setRecognizedText("");
         onChange(evaluated);
@@ -324,53 +474,49 @@ export function NumberInputCanvas({
         return;
       }
 
-      // ── 2. Fallback: plain number parsing (come prima) ──
-      let numStr = result.latex.replace(/\s+/g, "");
-      numStr = numStr.replace(/,/g, ".");
+      // ── 2. Fallback avanzato: converti LaTeX in espressione JS valutabile ──
+      let fallbackStr = cleanLatex.replace(/\s+/g, "");
+      fallbackStr = fallbackStr.replace(/,/g, ".");
 
-      // Convert \frac{num}{den} → num/den
-      numStr = numStr.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "$1/$2");
+      // Converti \sqrt{x} → Math.sqrt(x)
+      fallbackStr = fallbackStr.replace(
+        /\\sqrt\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+        'Math.sqrt($1)',
+      );
+      // Converti \frac{a}{b} → (a)/(b) (parentesi per sicurezza)
+      fallbackStr = fallbackStr.replace(
+        /\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+        '($1)/($2)',
+      );
+      // Rimuovi \left, \right, \displaystyle, \mathrm, e comandi decorativi
+      fallbackStr = fallbackStr
+        .replace(/\\left/g, '')
+        .replace(/\\right/g, '')
+        .replace(/\\displaystyle/g, '')
+        .replace(/\\mathrm\{([^{}]*)\}/g, '$1')
+        .replace(/\\[a-zA-Z]+/g, ''); // altri comandi LaTeX residui
+      // Pulisci graffe rimaste
+      fallbackStr = fallbackStr.replace(/[{}]/g, '');
 
-      // Strip remaining LaTeX commands and braces
-      numStr = numStr
-        .replace(/\\mathrm\{([^{}]*)\}/g, "$1")
-        .replace(/\\[a-zA-Z]+(\{[^{}]*\})?/g, "")
-        .replace(/[{}]/g, "");
-
-      // Clean to digits, dot, minus, slash
-      if (allowNegative) {
-        numStr = numStr.replace(/[^0-9.\-\/]/g, "");
-        const minusCount = (numStr.match(/-/g) || []).length;
-        if (minusCount > 1) {
-          numStr = "-" + numStr.replace(/-/g, "");
-        }
-      } else {
-        numStr = numStr.replace(/[^0-9.\/]/g, "");
-      }
-
-      if (!numStr || numStr === "-" || numStr === ".") {
-        setRecognizedText("?");
+      if (!fallbackStr || fallbackStr === "-" || fallbackStr === ".") {
+        setRecognizedText(result.latex || "?");
         resetFraction();
         setIsRecognizing(false);
         return;
       }
 
-      let parsed: number;
-      if (numStr.includes("/")) {
-        const parts = numStr.split("/");
-        if (parts.length === 2) {
-          const n = parseFloat(parts[0]);
-          const d = parseFloat(parts[1]);
-          if (!isNaN(n) && !isNaN(d) && d !== 0) {
-            parsed = n / d;
-          } else {
-            parsed = NaN;
-          }
-        } else {
-          parsed = NaN;
+      // Prova a valutare come espressione JS (con Math.sqrt, +, -, *, /, parentesi)
+      let parsed: number = NaN;
+      try {
+        // Sanitizza: permetti solo caratteri matematici sicuri
+        const sanitized = fallbackStr.replace(/[^0-9.+\-*/()Math.sqrt]/g, '');
+        // eslint-disable-next-line no-new-func
+        const val = new Function('Math', `return ${sanitized}`)(Math);
+        if (typeof val === 'number' && isFinite(val)) {
+          parsed = val;
         }
-      } else {
-        parsed = parseFloat(numStr);
+      } catch {
+        // Fallback evaluation failed
       }
 
       if (!isNaN(parsed)) {
@@ -383,14 +529,19 @@ export function NumberInputCanvas({
           resetFraction();
         }
         setDecimalStr(toDecimalString(parsed));
-        setRadicalForm(null);
+        setRadicalLatex(null);
         setRecognizedText("");
         onChange(parsed);
         setTimeout(() => setStrokes([]), 1400);
       } else {
         resetFraction();
-        setRecognizedText(numStr || "?");
+        // Mostra il LaTeX grezzo riconosciuto così l'utente può capire cosa è andato storto
+        setRecognizedText(result.latex || "?");
       }
+    } else {
+      // ONNX recognition completamente fallita: dai un feedback chiaro
+      resetFraction();
+      setRecognizedText("Non riconosco. Riprova più grande e chiaro");
     }
     setIsRecognizing(false);
   }, [strokes, recognize, isModelReady, onChange, allowNegative]);
@@ -400,8 +551,49 @@ export function NumberInputCanvas({
     setFracDen(null);
     setFracNeg(false);
     setDecimalStr(null);
-    setRadicalForm(null);
+    setRadicalLatex(null);
+    setRecognizedText("");
+    setRoundFracNum(null);
+    setRoundFracDen(null);
+    setRoundFracNeg(false);
+    setIsPlainDecimalInput(false);
+    setHasPlusMinusSign(false);
   }, []);
+
+  /** Valuta LaTeX inserito manualmente via tastiera (stessa pipeline del riconoscimento) */
+  const handleEditSubmit = useCallback(() => {
+    if (!editLatex.trim()) { setIsEditing(false); return; }
+    const clean = editLatex
+      .replace(/\\pm\s*/g, '')
+      .replace(/\\mp\s*/g, '')
+      .replace(/±/g, '')
+      .replace(/^\+/, '')
+      .replace(/\\(?:dfrac|tfrac)/g, '\\frac')
+      .trim();
+    const ev = evaluateLatex(clean);
+    if (ev !== null && isFinite(ev)) {
+      const frac = extractFractionFromLatex(clean);
+      if (frac && !clean.includes('\\sqrt')) {
+        setFracNum(frac.numerator);
+        setFracDen(frac.denominator);
+        setFracNeg(frac.isNegative);
+      } else {
+        const fp = numberToFractionParts(ev);
+        if (fp) { setFracNum(Math.abs(fp.num)); setFracDen(fp.den); setFracNeg(ev < 0); }
+        else resetFraction();
+      }
+      setDecimalStr(toDecimalString(ev));
+      setRadicalLatex(clean.includes('\\sqrt') ? clean : null);
+      setIsPlainDecimalInput(!clean.includes('\\frac') && !clean.includes('\\sqrt'));
+      const rfp = numberToFractionFromRounded(ev);
+      if (rfp) { setRoundFracNum(Math.abs(rfp.num)); setRoundFracDen(rfp.den); setRoundFracNeg(rfp.num < 0); }
+      else { setRoundFracNum(null); setRoundFracDen(null); setRoundFracNeg(false); }
+      setRecognizedText('');
+      onChange(ev);
+    }
+    setIsEditing(false);
+    setEditLatex('');
+  }, [editLatex, onChange]);
 
   const handleClear = () => {
     setStrokes([]);
@@ -412,109 +604,189 @@ export function NumberInputCanvas({
 
   const hasContent = strokes.length > 0;
   const showFraction = fracNum !== null && fracDen !== null;
+  const showRoundFraction = roundFracNum !== null && roundFracDen !== null;
+  /** Il valore è razionale (decimale finito/periodico)? Se no, niente frazione generatrice */
+  const valueIsRational = value !== null && isRationalCheck(value);
+  /** Se il valore è un intero esatto, mostriamo solo il badge intero senza decimali */
+  const valueIsInteger = value !== null && Math.abs(value - Math.round(value)) < 1e-9;
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
-      {/* Canvas quadratino */}
-      <div className="flex-shrink-0 w-[120px] sm:w-[135px] h-[75px] sm:h-[85px] rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      {/* Label (sopra il canvas) */}
+      <span className={cn(
+        "text-sm sm:text-base tracking-widest font-normal",
+        colorClass,
+      )}>
+        {label}
+      </span>
+
+      {/* Canvas a tutta larghezza */}
+      <div className="w-full h-[170px] sm:h-[200px] rounded-xl border-2 border-border bg-card shadow-sm overflow-hidden">
         <MathDrawCanvas
           strokes={strokes}
           onStrokesChange={handleStrokesChange}
-          tool="write"
+          tool={eraserMode ? "erase" : "write"}
           className="border-0 rounded-none shadow-none ring-0"
           disabled={isLoading || isRecognizing}
           hideWatermark
         />
       </div>
 
-      {/* Colonna destra */}
-      <div className="flex flex-col items-center gap-1.5 flex-1">
-        {/* Label */}
-        <span className={cn(
-          "text-base tracking-widest text-amber-900",
-          colorClass,
-        )}>
-          {label}
-        </span>
-
+      {/* Barra dei pulsanti */}
+      <div className="flex items-center justify-center gap-2 flex-wrap">
         {/* Riconosci */}
         <button
           onClick={handleManualRecognize}
           disabled={!hasContent || !isModelReady || isRecognizing}
-          className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground text-base font-bold tracking-widest transition-all shadow-sm"
+          className="h-11 px-5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground text-base font-bold tracking-widest transition-all shadow-sm"
         >
           {isRecognizing ? "..." : "RICONOSCI"}
         </button>
 
-        {/* Display del valore riconosciuto */}
-        <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
-          {/* Risultato INTERO: solo il numero */}
-          {showFraction && fracDen === 1 && (
-            <span className="inline-block px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
-              {fracNeg ? `−${fracNum}` : fracNum}
-            </span>
-          )}
+        {/* GOMMA — sempre visibile in modalità gomma anche dopo aver cancellato tutto */}
+        {(hasContent || eraserMode) && (
+          <button
+            onClick={() => setEraserMode(!eraserMode)}
+            className={`h-11 px-4 rounded-xl font-bold text-sm sm:text-base tracking-widest transition-all shadow-sm ${
+              eraserMode
+                ? "bg-destructive text-destructive-foreground"
+                : "bg-secondary hover:bg-secondary/80 text-foreground"
+            }`}
+            title={eraserMode ? "Gomma attiva — clicca per uscire" : "Attiva la gomma per cancellare"}
+          >
+            {eraserMode ? "✕ ESCI GOMMA" : "GOMMA"}
+          </button>
+        )}
 
-          {/* Risultato FRAZIONARIO senza radice: frazione + decimale */}
-          {showFraction && fracDen !== 1 && !radicalForm && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
-              {fracNeg && <span className="mr-0.5">−</span>}
-              <FractionDisplay
-                numerator={fracNum!}
-                denominator={fracDen!}
-                size="sm"
-              />
-              {decimalStr && (
-                <>
-                  <span className="mx-0.5 opacity-60">→</span>
-                  <span className="font-mono">{decimalStr}</span>
-                </>
-              )}
-            </span>
-          )}
-
-          {/* Risultato con RADICE: frazione + radicale, NO decimale */}
-          {showFraction && fracDen !== 1 && radicalForm && (
-            <>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-base font-bold">
-                {fracNeg && <span className="mr-0.5">−</span>}
-                <FractionDisplay
-                  numerator={fracNum!}
-                  denominator={fracDen!}
-                  size="sm"
-                />
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 text-base font-bold font-mono">
-                {radicalForm}
-              </span>
-            </>
-          )}
-
-          {/* Text fallback */}
-          {!showFraction && recognizedText && (
-            <span className="inline-block px-2.5 py-0.5 rounded-lg bg-secondary text-base font-bold">
-              {recognizedText}
-            </span>
-          )}
-
-          {/* CANCELLA */}
-          {hasContent && (
-            <button
-              onClick={handleClear}
-              className="text-base text-muted-foreground hover:text-destructive transition-colors font-bold tracking-widest"
-            >
-              CANCELLA
-            </button>
-          )}
-        </div>
-
-        {/* Caricamento AI */}
-        {isLoading && (
-          <span className="text-base text-muted-foreground">
-            CARICAMENTO...
-          </span>
+        {/* CANCELLA */}
+        {hasContent && (
+          <button
+            onClick={() => { handleClear(); setEraserMode(false); }}
+            className="h-11 px-4 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground font-bold text-sm sm:text-base tracking-widest transition-all shadow-sm"
+          >
+            CANCELLA
+          </button>
         )}
       </div>
+
+      {/* Display del valore riconosciuto */}
+      <div className="flex flex-wrap items-center justify-center gap-2 min-h-[36px]">
+        {isPlainDecimalInput ? (
+          /* ── Input decimale puro (nessun \frac né \sqrt): mostra SOLO il decimale ── */
+          decimalStr && (
+            <span className="inline-block px-3 py-1 rounded-xl bg-blue-50 text-blue-800 font-mono text-base sm:text-lg font-bold">
+              {hasPlusMinusSign && !valueIsInteger ? `± ${decimalStr}` : decimalStr}
+            </span>
+          )
+        ) : (
+          /* ── Input con frazione o radicale: mostra tutte le forme pertinenti ── */
+          <>
+            {/* 1. FORMA ESATTA */}
+            {radicalLatex ? (
+              <span
+                className="inline-flex items-center px-4 py-1.5 rounded-xl bg-amber-100 text-amber-900 text-lg sm:text-xl font-bold [&_.katex]:text-amber-900"
+                dangerouslySetInnerHTML={{ __html: renderKatex(radicalLatex) }}
+              />
+            ) : showFraction ? (
+              fracDen === 1 ? (
+                <span className="inline-block px-4 py-1.5 rounded-xl bg-secondary text-lg sm:text-xl font-bold">
+                  {fracNeg ? `−${fracNum}` : fracNum}
+                </span>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-secondary text-lg sm:text-xl font-bold">
+                    {fracNeg && <span className="mr-0.5">−</span>}
+                    <FractionDisplay numerator={fracNum!} denominator={fracDen!} size="md" />
+                  </span>
+                  {/* Se la frazione si semplifica a intero, mostra il valore semplificato */}
+                  {valueIsInteger && decimalStr && (
+                    <>
+                      <span className="text-muted-foreground text-lg">→</span>
+                      <span className="inline-block px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 font-mono text-base sm:text-lg font-bold">
+                        {fracNeg ? `−${decimalStr}` : decimalStr}
+                      </span>
+                    </>
+                  )}
+                </>
+              )
+            ) : recognizedText ? (
+              <span className="inline-block px-4 py-1.5 rounded-xl bg-secondary text-base sm:text-lg font-bold">
+                {recognizedText}
+              </span>
+            ) : null}
+
+            {/* 2. DECIMALE */}
+            {decimalStr && !valueIsInteger && (
+              <>
+                <span className="text-muted-foreground text-lg">→</span>
+                <span className="inline-block px-3 py-1 rounded-xl bg-blue-50 text-blue-800 font-mono text-base sm:text-lg font-bold">
+                  {decimalStr}
+                </span>
+              </>
+            )}
+
+            {/* 3. FRAZIONE GENERATRICE */}
+            {showRoundFraction && decimalStr && valueIsRational && !valueIsInteger && (
+              <>
+                <span className="text-muted-foreground text-lg">→</span>
+                {roundFracDen === 1 ? (
+                  <span className="inline-block px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-lg sm:text-xl font-bold">
+                    {roundFracNeg ? `−${roundFracNum}` : roundFracNum}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-lg sm:text-xl font-bold">
+                    {roundFracNeg && <span className="mr-0.5">−</span>}
+                    <FractionDisplay numerator={roundFracNum!} denominator={roundFracDen!} size="md" />
+                  </span>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Correzione manuale via tastiera ── */}
+      {isEditing ? (
+        <div className="flex items-center justify-center gap-2 flex-wrap">
+          <input
+            ref={editInputRef}
+            type="text"
+            value={editLatex}
+            onChange={(e) => setEditLatex(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleEditSubmit(); if (e.key === 'Escape') { setIsEditing(false); setEditLatex(''); } }}
+            placeholder="es. 8/8 o \frac{8}{8}"
+            className="h-9 px-3 rounded-lg border-2 border-primary bg-background text-foreground text-sm font-mono w-48 text-center focus:outline-none"
+            autoFocus
+          />
+          <button
+            onClick={handleEditSubmit}
+            className="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-colors"
+          >
+            OK
+          </button>
+          <button
+            onClick={() => { setIsEditing(false); setEditLatex(''); }}
+            className="h-9 w-9 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-bold transition-colors flex items-center justify-center"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setIsEditing(true); setEditLatex(recognizedText && recognizedText !== '?' && !recognizedText.startsWith('Non riconosco') ? recognizedText : ''); }}
+          className="text-muted-foreground hover:text-primary transition-colors text-xs tracking-wide"
+          title="Inserisci manualmente il valore"
+        >
+          ✎ digita il valore
+        </button>
+      )}
+
+      {/* Caricamento AI */}
+      {isLoading && (
+        <span className="text-base text-muted-foreground text-center">
+          CARICAMENTO MODELLO AI...
+        </span>
+      )}
     </div>
   );
 }

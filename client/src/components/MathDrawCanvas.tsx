@@ -304,7 +304,7 @@ export function MathDrawCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full overflow-hidden rounded-xl border-2 border-border bg-card shadow-inner shadow-black/[0.04] ring-1 ring-black/[0.04] group ${className}`}
+      className={`relative w-full h-full overflow-hidden rounded-xl border-2 border-border bg-card shadow-inner shadow-black/[0.04] ring-1 ring-black/[0.04] group ${className}`}
       style={{ minHeight: height || 140 }}
     >
       {/* Empty state watermark */}
