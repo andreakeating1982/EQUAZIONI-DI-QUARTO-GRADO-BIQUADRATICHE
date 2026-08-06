@@ -1365,7 +1365,7 @@ function BiquadraticExercise({
                   // Intero → radicale + intero (NO decimale!)
                   if (entry.isInteger) {
                     const intVal = Math.round(entry.value);
-                    return `${radicalHtml} \\rightarrow ${renderKatex(`\\pm ${intVal}`)}`;
+                    return `${radicalHtml} → ${renderKatex(`\\pm ${intVal}`)}`;
                   }
 
                   const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
@@ -1380,11 +1380,11 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} \\rightarrow ${decimal} \\rightarrow ${fracWithSign}`;
+                    return `${radicalHtml} → ${decimal} → ${fracWithSign}`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} \\rightarrow ${decimal}`;
+                  return `${radicalHtml} → ${decimal}`;
                 };
 
                 if (match) {
@@ -1431,7 +1431,7 @@ function BiquadraticExercise({
                   // Intero → radicale + intero (NO decimale!)
                   if (entry.isInteger) {
                     const intVal = Math.round(entry.value);
-                    return `${radicalHtml} \\rightarrow ${renderKatex(`\\pm ${intVal}`)}`;
+                    return `${radicalHtml} → ${renderKatex(`\\pm ${intVal}`)}`;
                   }
 
                   const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
@@ -1446,11 +1446,11 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} \\rightarrow ${decimal} \\rightarrow ${fracWithSign}`;
+                    return `${radicalHtml} → ${decimal} → ${fracWithSign}`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} \\rightarrow ${decimal}`;
+                  return `${radicalHtml} → ${decimal}`;
                 });
                 return `Soluzioni finali:<br>${lines.join("<br>")}`;
               })() }}

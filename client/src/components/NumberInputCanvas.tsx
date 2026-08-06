@@ -725,22 +725,7 @@ export function NumberInputCanvas({
               </>
             )}
 
-            {/* 3. FRAZIONE GENERATRICE */}
-            {showRoundFraction && decimalStr && valueIsRational && !valueIsInteger && (
-              <>
-                <span className="text-muted-foreground text-lg">→</span>
-                {roundFracDen === 1 ? (
-                  <span className="inline-block px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-lg sm:text-xl font-bold">
-                    {roundFracNeg ? `−${roundFracNum}` : roundFracNum}
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 text-lg sm:text-xl font-bold">
-                    {roundFracNeg && <span className="mr-0.5">−</span>}
-                    <FractionDisplay numerator={roundFracNum!} denominator={roundFracDen!} size="md" />
-                  </span>
-                )}
-              </>
-            )}
+
           </>
         )}
       </div>
