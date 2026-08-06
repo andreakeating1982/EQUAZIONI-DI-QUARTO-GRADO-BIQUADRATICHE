@@ -1,0 +1,22 @@
+<!--EQUAZIONI BIQUADRATICHE-->
+<div style="background: rgb(250, 248, 245); border-radius: 16px; box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 20px; font-family: system-ui, -apple-system, sans-serif; margin: 0px auto; max-width: 800px; overflow: hidden;">
+  <div style="background: linear-gradient(135deg, #C69C7C 0%, #E0C8B0 100%); padding: 16px 20px; text-align: center;">
+    <span style="color: #3d2b1f; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 15px; font-weight: 600; letter-spacing: 1px;">EQUAZIONI DI QUARTO GRADO</span>
+    <br />
+    <span style="color: #5a3d2b; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 12px; font-weight: 400; letter-spacing: 0.5px;">TRINOMIE BIQUADRATICHE &nbsp;·&nbsp; RISOLVI IN 7 PASSI</span>
+  </div>
+  <iframe id="equazioniBiquadraticheIframe" loading="lazy" src="https://equazioni-biquadratiche.easy-peasy.site/" style="border: none; display: block; height: 600px; min-width: 100%; transition: height 0.2s ease; width: 1px;" title="Equazioni Biquadratiche Interattive">
+  </iframe>
+</div>
+
+<script>
+(function() {
+  var iframe = document.getElementById('equazioniBiquadraticheIframe');
+  if (!iframe) return;
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'labvisivo:height' && typeof e.data.height === 'number') {
+      if (e.data.height > 100) iframe.style.height = e.data.height + 'px';
+    }
+  });
+})();
+</script><br /><br />

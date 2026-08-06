@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 /** Formatta la data di oggi in formato italiano gg/mm/aaaa */
@@ -12,6 +13,20 @@ function getOggi(): string {
 
 export default function WelcomePage() {
   const [, navigate] = useLocation();
+
+  // ─── Auto-resize postMessage for embed ──────────────────────────
+  useEffect(() => {
+    const sendHeight = () => {
+      const height = document.body.scrollHeight;
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'labvisivo:height', height }, '*');
+      }
+    };
+    sendHeight();
+    const observer = new ResizeObserver(() => sendHeight());
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, []);
 
   const [cognome, setCognome] = useState("");
   const [nome, setNome] = useState("");
