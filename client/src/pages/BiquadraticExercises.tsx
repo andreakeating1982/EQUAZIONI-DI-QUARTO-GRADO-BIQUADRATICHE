@@ -392,9 +392,40 @@ export default function BiquadraticExercises() {
   const [cNum, setCNum] = useState<number | null>(null);
   const [cDen, setCDen] = useState<number | null>(null);
 
+  // ─── Read coefficients from URL hash (from WelcomePage) ────────
+  const urlCoefficients = useMemo(() => {
+    const hash = window.location.hash;
+    const qIdx = hash.indexOf('?');
+    if (qIdx === -1) return null;
+    const params = new URLSearchParams(hash.slice(qIdx + 1));
+    const a = parseInt(params.get('a') || '');
+    const b = parseInt(params.get('b') || '');
+    const c = parseInt(params.get('c') || '');
+    if (isNaN(a) || isNaN(b) || isNaN(c) || a === 0) return null;
+    return { a, b, c, nome: params.get('nome') || '' };
+  }, []);
+
+  const [studentName] = useState<string>(urlCoefficients?.nome || '');
+
+  // ─── Initialize coefficients from URL─────────────────────────────
+  const [coefficientsFromUrl, setCoefficientsFromUrl] = useState(false);
+  useEffect(() => {
+    if (urlCoefficients && !coefficientsFromUrl) {
+      setCoefficientsFromUrl(true);
+      setANum(urlCoefficients.a);
+      setADen(1);
+      setBNum(urlCoefficients.b);
+      setBDen(1);
+      setCNum(urlCoefficients.c);
+      setCDen(1);
+    }
+  }, [urlCoefficients, coefficientsFromUrl]);
+
   // ─── Phase tracking ─────────────────────────────────────────────
-  const [phase, setPhase] = useState<"input" | "exercise">("input");
-  const [submitted, setSubmitted] = useState(false);
+  const [phase, setPhase] = useState<"input" | "exercise">(
+    urlCoefficients ? "exercise" : "input"
+  );
+  const [submitted, setSubmitted] = useState(urlCoefficients ? true : false);
 
   // ─── Exercise state ─────────────────────────────────────────────
   const [deltaUtente, setDeltaUtente] = useState<number | null>(null);
@@ -564,14 +595,19 @@ export default function BiquadraticExercises() {
 
   // Trigger calculate after coefficients are set
   useEffect(() => {
-    if (aNum !== null && bNum !== null && cNum !== null && phase === "input") {
+    if (aNum !== null && bNum !== null && cNum !== null && !submitted) {
       setSubmitted(true);
-      setPhase("exercise");
+      if (phase === "input") setPhase("exercise");
       resetExercise();
     }
   }, [aNum, bNum, cNum]);
 
   const handleNewExercise = () => {
+    if (urlCoefficients) {
+      // Torna alla pagina iniziale per inserire nuovi coefficienti
+      window.location.href = '/#/';
+      return;
+    }
     setANum(null); setADen(null);
     setBNum(null); setBDen(null);
     setCNum(null); setCDen(null);
@@ -591,6 +627,9 @@ export default function BiquadraticExercises() {
       if (notebookContents.length === 0) { setGeneratingPdf(false); return; }
 
       let bodyHtml = '';
+      if (studentName) {
+        bodyHtml += `<div style="text-align:center;margin-bottom:12px;font-family:'Cambria Math',Cambria,serif;font-size:16px;color:#92400e;font-weight:bold">Studente: ${studentName}</div>`;
+      }
       notebookContents.forEach((el) => {
         bodyHtml += `<div style="margin-bottom:8px;text-align:center;page-break-inside:avoid">${el.innerHTML}</div>`;
       });
@@ -765,6 +804,21 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
         <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground text-center">
           EQUAZIONI DI QUARTO GRADO<br />TRINOMIE BIQUADRATICHE
         </h1>
+        {studentName && (
+          <p className="text-center text-sm text-muted-foreground mt-2">
+            Studente: <span className="font-semibold text-foreground">{studentName}</span>
+          </p>
+        )}
+        {urlCoefficients && (
+          <div className="text-center mt-3">
+            <a
+              href="/#/"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              ← Torna alla home
+            </a>
+          </div>
+        )}
       </header>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pb-6">

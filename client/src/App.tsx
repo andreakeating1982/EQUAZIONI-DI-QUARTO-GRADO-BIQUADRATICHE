@@ -5,12 +5,14 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import BiquadraticExercises from "./pages/BiquadraticExercises";
+import WelcomePage from "./pages/WelcomePage";
 
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={BiquadraticExercises} />
+      <Route path={"/"} component={WelcomePage} />
+      <Route path={"/esercizio"} component={BiquadraticExercises} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
