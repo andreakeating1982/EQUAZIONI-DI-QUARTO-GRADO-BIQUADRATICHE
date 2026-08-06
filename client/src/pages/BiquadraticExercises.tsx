@@ -116,10 +116,10 @@ function formatDenomCoeff(value: number): string {
   return latex;
 }
 
-/** Quick KaTeX render for inline display-mode formulas */
-function renderKatex(latex: string): string {
+/** Quick KaTeX render — displayMode:true per le formule dei passi, false per le soluzioni in riga */
+function renderKatex(latex: string, displayMode: boolean = true): string {
   try {
-    return katex.renderToString(latex, { displayMode: false, throwOnError: false, strict: false });
+    return katex.renderToString(latex, { displayMode, throwOnError: false, strict: false });
   } catch { return latex; }
 }
 
@@ -1360,12 +1360,12 @@ function BiquadraticExercise({
                 // Costruisci la stringa con le forme per ogni radice
                 const buildRootLine = (entry: PositiveRootEntry): string => {
                   if (areNumbersApproximatelyEqual(entry.value, 0, 1e-10)) return "0";
-                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`);
+                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`, false);
 
                   // Intero → radicale + intero (NO decimale!)
                   if (entry.isInteger) {
                     const intVal = Math.round(entry.value);
-                    return `${radicalHtml} → ${renderKatex(`\\pm ${intVal}`)}`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span>${renderKatex(`\\pm ${intVal}`, false)}</span>`;
                   }
 
                   const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
@@ -1379,12 +1379,12 @@ function BiquadraticExercise({
                     const g = gcd(fNum, fDen);
                     const sn = fNum / g;
                     const sd = fDen / g;
-                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} → ${decimal} → ${fracWithSign}`;
+                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`, false) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`, false);
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} → ${decimal}`;
+                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 };
 
                 if (match) {
@@ -1426,12 +1426,12 @@ function BiquadraticExercise({
               dangerouslySetInnerHTML={{ __html: (() => {
                 const lines = computed.positiveRootEntries.map((entry) => {
                   if (areNumbersApproximatelyEqual(entry.value, 0, 1e-10)) return "0";
-                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`);
+                  const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`, false);
 
                   // Intero → radicale + intero (NO decimale!)
                   if (entry.isInteger) {
                     const intVal = Math.round(entry.value);
-                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span>${renderKatex(`\\pm ${intVal}`)}</span>`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span>${renderKatex(`\\pm ${intVal}`, false)}</span>`;
                   }
 
                   const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
@@ -1445,7 +1445,7 @@ function BiquadraticExercise({
                     const g = gcd(fNum, fDen);
                     const sn = fNum / g;
                     const sd = fDen / g;
-                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
+                    const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`, false) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`, false);
                     return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
