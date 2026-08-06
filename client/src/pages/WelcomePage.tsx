@@ -50,7 +50,7 @@ export default function WelcomePage() {
 
         {/* Main heading */}
         <h2 className="text-base font-bold text-foreground tracking-wide mb-1">
-          EQUAZIONI BIQUADRATICHE
+          EQUAZIONI DI QUARTO GRADO<br />TRINOMIE BIQUADRATICHE
         </h2>
         <p className="text-[11px] text-muted-foreground mb-4 tracking-wide">
           RISOLVI LE EQUAZIONI IN{" "}

@@ -621,8 +621,18 @@ export default function BiquadraticExercises() {
       if (notebookContents.length === 0) { setGeneratingPdf(false); return; }
 
       let bodyHtml = '';
-      if (studentLabel) {
-        bodyHtml += `<div style="text-align:center;margin-bottom:12px;font-family:'Cambria Math',Cambria,serif;font-size:16px;color:#92400e;font-weight:bold">${studentLabel}</div>`;
+      if (studentInfo) {
+        bodyHtml += `<div style="text-align:center;margin-bottom:14px;font-family:'Cambria Math',Cambria,serif;border-bottom:1px solid #e5e0d8;padding-bottom:10px">`;
+        if (studentInfo.cognome || studentInfo.nome) {
+          bodyHtml += `<div style="font-size:15px;color:#2B2421;font-weight:bold">${[studentInfo.cognome, studentInfo.nome].filter(Boolean).join(' ')}</div>`;
+        }
+        if (studentInfo.classe) {
+          bodyHtml += `<div style="font-size:13px;color:#7A6A61;margin-top:2px">Classe ${studentInfo.classe}</div>`;
+        }
+        if (studentInfo.data) {
+          bodyHtml += `<div style="font-size:12px;color:#7A6A61;margin-top:1px">${studentInfo.data}</div>`;
+        }
+        bodyHtml += `</div>`;
       }
       notebookContents.forEach((el) => {
         bodyHtml += `<div style="margin-bottom:8px;text-align:center;page-break-inside:avoid">${el.innerHTML}</div>`;
