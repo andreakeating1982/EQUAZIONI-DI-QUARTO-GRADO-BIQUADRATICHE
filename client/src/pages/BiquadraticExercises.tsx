@@ -804,9 +804,9 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
   return (
     <div ref={containerRef} className="min-h-screen bg-background paper-grain flex flex-col">
       {/* Header */}
-      <header className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-9">
-        <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground text-center">
-          EQUAZIONI DI QUARTO GRADO<br />TRINOMIE BIQUADRATICHE
+      <header className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-6 sm:py-4">
+        <h1 className="text-sm sm:text-base font-bold leading-tight text-foreground text-center">
+          EQUAZIONI DI QUARTO GRADO &nbsp;·&nbsp; TRINOMIE BIQUADRATICHE
         </h1>
         {studentLabel && (
           <p className="text-center text-sm text-muted-foreground mt-2">
@@ -838,8 +838,8 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
           <div className="space-y-4">
             {/* Suggerimento */}
             <div className="text-center">
-              <span className="text-base text-muted-foreground tracking-widest font-semibold">
-                SCRIVI L'EQUAZIONE NEL RIQUADRO (ES. 2x⁴−3x²+1=0)
+              <span className="text-[13px] sm:text-sm text-muted-foreground tracking-wider font-medium">
+                SCRIVI L'EQUAZIONE NEL RIQUADRO (AD ESEMPIO 2x⁴−3x²+1=0)
               </span>
             </div>
 
