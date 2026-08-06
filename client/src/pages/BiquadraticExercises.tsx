@@ -1431,7 +1431,7 @@ function BiquadraticExercise({
                   // Intero → radicale + intero (NO decimale!)
                   if (entry.isInteger) {
                     const intVal = Math.round(entry.value);
-                    return `${radicalHtml} → ${renderKatex(`\\pm ${intVal}`)}`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span>${renderKatex(`\\pm ${intVal}`)}</span>`;
                   }
 
                   const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
@@ -1446,13 +1446,13 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`);
-                    return `${radicalHtml} → ${decimal} → ${fracWithSign}`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `${radicalHtml} → ${decimal}`;
+                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 });
-                return `Soluzioni finali:<br>${lines.join("<br>")}`;
+                return `Soluzioni finali:<br><br>${lines.join("<br><br>")}`;
               })() }}
             />
           </NotebookGuide>

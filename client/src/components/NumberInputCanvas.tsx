@@ -670,7 +670,7 @@ export function NumberInputCanvas({
       </div>
 
       {/* Display del valore riconosciuto */}
-      <div className="flex flex-wrap items-center justify-center gap-2 min-h-[36px]">
+      <div className="flex flex-wrap items-center justify-center gap-3 min-h-[40px]">
         {isPlainDecimalInput ? (
           /* ── Input decimale puro (nessun \frac né \sqrt): mostra SOLO il decimale ── */
           decimalStr && (
