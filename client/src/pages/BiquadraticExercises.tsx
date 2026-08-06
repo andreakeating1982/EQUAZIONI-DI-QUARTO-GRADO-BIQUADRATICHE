@@ -333,6 +333,23 @@ interface PositiveRootEntry {
   isInteger: boolean;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────
+
+/** Estrae i parametri studente dalla URL (supporta path e hash routing) */
+function getStudentSearchParams(): URLSearchParams | null {
+  // Path-based routing: /esercizio?cognome=Rossi&nome=Mario
+  if (window.location.search) {
+    return new URLSearchParams(window.location.search);
+  }
+  // Hash-based routing: #/esercizio?cognome=Rossi&nome=Mario
+  const hash = window.location.hash;
+  const qIdx = hash.indexOf('?');
+  if (qIdx !== -1) {
+    return new URLSearchParams(hash.slice(qIdx + 1));
+  }
+  return null;
+}
+
 // ─── Main component ───────────────────────────────────────────────
 
 export default function BiquadraticExercises() {
@@ -392,12 +409,10 @@ export default function BiquadraticExercises() {
   const [cNum, setCNum] = useState<number | null>(null);
   const [cDen, setCDen] = useState<number | null>(null);
 
-  // ─── Read student info from URL hash (from WelcomePage) ─────────
+  // ─── Read student info from URL (from WelcomePage) ──────────────
   const studentInfo = useMemo(() => {
-    const hash = window.location.hash;
-    const qIdx = hash.indexOf('?');
-    if (qIdx === -1) return null;
-    const params = new URLSearchParams(hash.slice(qIdx + 1));
+    const params = getStudentSearchParams();
+    if (!params) return null;
     const cognome = params.get('cognome')?.trim() || '';
     const nome = params.get('nome')?.trim() || '';
     const data = params.get('data')?.trim() || '';
@@ -620,13 +635,11 @@ export default function BiquadraticExercises() {
       const notebookContents = document.querySelectorAll('.notebook-content');
       if (notebookContents.length === 0) { setGeneratingPdf(false); return; }
 
-      // Legge i dati studente direttamente dalla URL (più robusto del closure)
+      // Legge i dati studente direttamente dalla URL (supporta path e hash routing)
       let siCognome = ''; let siNome = ''; let siClasse = ''; let siData = '';
       try {
-        const hash = window.location.hash;
-        const qIdx = hash.indexOf('?');
-        if (qIdx !== -1) {
-          const params = new URLSearchParams(hash.slice(qIdx + 1));
+        const params = getStudentSearchParams();
+        if (params) {
           siCognome = params.get('cognome')?.trim() || '';
           siNome = params.get('nome')?.trim() || '';
           siClasse = params.get('classe')?.trim() || '';
