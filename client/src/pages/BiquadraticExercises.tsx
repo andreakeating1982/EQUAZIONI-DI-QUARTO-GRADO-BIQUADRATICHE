@@ -620,17 +620,31 @@ export default function BiquadraticExercises() {
       const notebookContents = document.querySelectorAll('.notebook-content');
       if (notebookContents.length === 0) { setGeneratingPdf(false); return; }
 
+      // Legge i dati studente direttamente dalla URL (più robusto del closure)
+      let siCognome = ''; let siNome = ''; let siClasse = ''; let siData = '';
+      try {
+        const hash = window.location.hash;
+        const qIdx = hash.indexOf('?');
+        if (qIdx !== -1) {
+          const params = new URLSearchParams(hash.slice(qIdx + 1));
+          siCognome = params.get('cognome')?.trim() || '';
+          siNome = params.get('nome')?.trim() || '';
+          siClasse = params.get('classe')?.trim() || '';
+          siData = params.get('data')?.trim() || '';
+        }
+      } catch { /* ignora */ }
+
       let bodyHtml = '';
-      if (studentInfo) {
+      if (siCognome || siNome || siClasse || siData) {
         bodyHtml += `<div style="text-align:center;margin-bottom:14px;font-family:'Cambria Math',Cambria,serif;border-bottom:1px solid #e5e0d8;padding-bottom:10px">`;
-        if (studentInfo.cognome || studentInfo.nome) {
-          bodyHtml += `<div style="font-size:15px;color:#2B2421;font-weight:bold">${[studentInfo.cognome, studentInfo.nome].filter(Boolean).join(' ')}</div>`;
+        if (siCognome || siNome) {
+          bodyHtml += `<div style="font-size:15px;color:#2B2421;font-weight:bold">${[siCognome, siNome].filter(Boolean).join(' ')}</div>`;
         }
-        if (studentInfo.classe) {
-          bodyHtml += `<div style="font-size:13px;color:#7A6A61;margin-top:2px">Classe ${studentInfo.classe}</div>`;
+        if (siClasse) {
+          bodyHtml += `<div style="font-size:13px;color:#7A6A61;margin-top:2px">Classe ${siClasse}</div>`;
         }
-        if (studentInfo.data) {
-          bodyHtml += `<div style="font-size:12px;color:#7A6A61;margin-top:1px">${studentInfo.data}</div>`;
+        if (siData) {
+          bodyHtml += `<div style="font-size:12px;color:#7A6A61;margin-top:1px">${siData}</div>`;
         }
         bodyHtml += `</div>`;
       }
@@ -688,7 +702,7 @@ body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;ma
 .bg-black{background:#000!important}
 .bg-foreground\\/70{background:rgba(0,0,0,.7)!important}
 .opacity-80{opacity:.8!important}
-@media print{body{padding:8px;zoom:0.82}@page{size:A4;margin:0.6cm}}
+@media print{body{padding:0;zoom:0.82}@page{size:A4;margin-top:2.5cm;margin-bottom:2cm;margin-left:2cm;margin-right:2cm}}
 </style></head>
 <body>${bodyHtml}<script>window.onload=function(){window.print()}</script></body></html>`;
 
