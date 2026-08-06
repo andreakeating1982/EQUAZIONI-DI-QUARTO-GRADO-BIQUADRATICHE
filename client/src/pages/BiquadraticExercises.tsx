@@ -119,7 +119,7 @@ function formatDenomCoeff(value: number): string {
 /** Quick KaTeX render for inline display-mode formulas */
 function renderKatex(latex: string): string {
   try {
-    return katex.renderToString(latex, { displayMode: true, throwOnError: false, strict: false });
+    return katex.renderToString(latex, { displayMode: false, throwOnError: false, strict: false });
   } catch { return latex; }
 }
 
