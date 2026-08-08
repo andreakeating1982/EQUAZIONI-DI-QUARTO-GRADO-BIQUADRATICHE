@@ -319,6 +319,7 @@ interface BiquadraticComputed {
   hasRealSolutions: boolean;
   hasOneDoubleSolution: boolean;
   solutionType: string;
+  isDeltaPerfectSquare: boolean;
   nda: number; ndb: number; ndc: number;
 }
 
@@ -545,6 +546,20 @@ export default function BiquadraticExercises() {
     if (t2 !== null) addRadicalInfo(t2);
     positiveRootEntries.sort((a, b) => a.value - b.value);
 
+    // ── Check if Δ is a perfect square rational ──────────────────
+    // Δ = b² - 4ac where a=aNum/da, b=bNum/db, c=cNum/dc
+    // Δ numerator = bNum²·da·dc - 4·aNum·cNum·db²
+    // Δ denominator = db²·da·dc
+    const deltaNum = bNum! * bNum! * Math.abs(da) * Math.abs(dc) - 4 * aNum! * cNum! * Math.abs(db) * Math.abs(db);
+    const deltaDen = Math.abs(db) * Math.abs(db) * Math.abs(da) * Math.abs(dc);
+    const gDelta = gcd(Math.abs(deltaNum), Math.abs(deltaDen));
+    const reducedNum = Math.abs(Math.round(deltaNum / gDelta));
+    const reducedDen = Math.abs(Math.round(deltaDen / gDelta));
+    const isDeltaPerfectSquare =
+      Number.isInteger(Math.sqrt(reducedNum)) &&
+      Number.isInteger(Math.sqrt(reducedDen)) &&
+      reducedDen > 0;
+
     return {
       a, b, c,
       aNum: aNum!, aDen: Math.abs(da),
@@ -557,6 +572,7 @@ export default function BiquadraticExercises() {
       hasRealSolutions,
       hasOneDoubleSolution,
       solutionType,
+      isDeltaPerfectSquare,
       nda: Math.abs(da),
       ndb: Math.abs(db),
       ndc: Math.abs(dc),
@@ -1120,12 +1136,17 @@ function BiquadraticExercise({
   onNew, generatingPdf,
   equationDisplay, tEquationDisplay,
 }: BiquadraticExerciseProps) {
-  // Mostra i passi 5-6 solo se tutti i passi precedenti sono corretti
-  const allPreviousStepsCorrect =
-    computed.solutionType !== "delta_negative" &&
-    deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100) &&
-    t1Utente !== null && computed.t1 !== null && areNumbersRoundedEqual(t1Utente, computed.t1) &&
-    (computed.hasOneDoubleSolution || (t2Utente !== null && computed.t2 !== null && areNumbersRoundedEqual(t2Utente, computed.t2)));
+  const deltaCorrect = deltaUtente !== null && areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100);
+
+  // Quando Δ NON è un quadrato perfetto, basta il delta per procedere (saltiamo t₁, t₂ interattivi)
+  // Quando Δ È un quadrato perfetto, servono anche t₁ e t₂ corretti
+  const allPreviousStepsCorrect = computed.solutionType === "delta_negative"
+    ? false
+    : computed.isDeltaPerfectSquare
+      ? deltaCorrect &&
+        t1Utente !== null && computed.t1 !== null && areNumbersRoundedEqual(t1Utente, computed.t1) &&
+        (computed.hasOneDoubleSolution || (t2Utente !== null && computed.t2 !== null && areNumbersRoundedEqual(t2Utente, computed.t2)))
+      : deltaCorrect;
 
   return (
     <div className="space-y-5">
@@ -1196,8 +1217,107 @@ function BiquadraticExercise({
         </NotebookGuide>
       </div>
 
-      {/* Step 4-5: Calculate t₁ (and t₂ when distinct) */}
-      {computed.solutionType !== "delta_negative" && computed.hasOneDoubleSolution && computed.t1 !== null && (
+      {/* ── Δ NON è quadrato perfetto → NotebookGuide unico con tutto pre-compilato ── */}
+      {computed.solutionType !== "delta_negative" && !computed.isDeltaPerfectSquare && deltaCorrect && (
+        <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
+          <p className="text-base font-bold text-primary">
+            SVOLGIMENTO COMPLETO — RICOPIA SUL QUADERNO:
+          </p>
+          <p className="text-sm opacity-70">
+            Δ = {numberToLatex(computed.delta)} non è un quadrato perfetto. Ricopia i passaggi qui sotto.
+          </p>
+          <NotebookGuide title="" forceOpen={true}>
+            <div className="space-y-4 text-center">
+              {/* t₁ */}
+              <div>
+                <p className="font-mono text-base font-bold text-primary">Calcolo di t₁:</p>
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
+                {computed.t1! >= -EPSILON
+                  ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
+                  : <p className="font-mono text-base text-destructive">t₁ &lt; 0 → impossibile nei reali ✗</p>
+                }
+              </div>
+
+              {/* t₂ (se distinto) */}
+              {!computed.hasOneDoubleSolution && computed.t2 !== null && (
+                <div>
+                  <p className="font-mono text-base font-bold text-primary">Calcolo di t₂:</p>
+                  <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
+                  <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                  <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                  <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
+                  {computed.t2! >= -EPSILON
+                    ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
+                    : <p className="font-mono text-base text-destructive">t₂ &lt; 0 → impossibile nei reali ✗</p>
+                  }
+                </div>
+              )}
+
+              {/* Calcolo di x */}
+              {computed.hasRealSolutions && (
+                <div>
+                  <p className="font-mono text-base font-bold text-primary">
+                    {computed.hasOneDoubleSolution ? "Calcolo di x₁ = x₂:" : "Calcolo di x₁ e x₂:"}
+                  </p>
+                  {computed.hasOneDoubleSolution && computed.t1 !== null && computed.t1 >= -EPSILON && (
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = x_{2} = \\pm\\sqrt{t} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+                  )}
+                  {!computed.hasOneDoubleSolution && (
+                    <>
+                      {computed.t1 !== null && computed.t1 >= -EPSILON && (
+                        <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+                      )}
+                      {computed.t2 !== null && computed.t2 >= -EPSILON && (
+                        <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Soluzioni finali */}
+              {computed.hasRealSolutions && (
+                <div>
+                  <p className="font-mono text-base font-bold text-primary">Soluzioni finali:</p>
+                  {computed.positiveRootEntries.map((entry, i) => {
+                    if (areNumbersApproximatelyEqual(entry.value, 0, 1e-10)) return <p key={i} className="font-mono text-base">0</p>;
+                    const radicalHtml = renderKatex(`\\pm ${entry.radicalLatex}`, false);
+                    if (entry.isInteger) {
+                      const intVal = Math.round(entry.value);
+                      return <p key={i} className="font-mono text-base" dangerouslySetInnerHTML={{ __html: `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span>${renderKatex(`\\pm ${intVal}`, false)}</span>` }} />;
+                    }
+                    const decimal = "±" + roundToPrecision(entry.value, 2).toFixed(2).replace(".", ",");
+                    if (entry.isRational) {
+                      const rounded = Math.round(entry.value * 100) / 100;
+                      const absR = Math.abs(rounded);
+                      const fNum = Math.round(absR * 100);
+                      const fDen = 100;
+                      const g = gcd(fNum, fDen);
+                      const sn = fNum / g;
+                      const sd = fDen / g;
+                      const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`, false) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`, false);
+                      return <p key={i} className="font-mono text-base" dangerouslySetInnerHTML={{ __html: `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>` }} />;
+                    }
+                    return <p key={i} className="font-mono text-base" dangerouslySetInnerHTML={{ __html: `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>` }} />;
+                  })}
+                </div>
+              )}
+
+              {!computed.hasRealSolutions && (
+                <p className="text-base text-destructive">
+                  Nessuna soluzione reale: t₁ e t₂ sono negativi.
+                </p>
+              )}
+            </div>
+          </NotebookGuide>
+        </div>
+      )}
+
+      {/* Step 4-5: Calculate t₁ (and t₂ when distinct) — solo se Δ è quadrato perfetto */}
+      {computed.isDeltaPerfectSquare && computed.solutionType !== "delta_negative" && computed.hasOneDoubleSolution && computed.t1 !== null && (
         /* ── Δ = 0: radici coincidenti — una sola card unificata ── */
         <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
           <p className="text-base font-bold text-primary">4. CALCOLO DI <span className="math-var">t₁ = t₂</span>:</p>
@@ -1239,7 +1359,7 @@ function BiquadraticExercise({
         </div>
       )}
 
-      {computed.solutionType !== "delta_negative" && !computed.hasOneDoubleSolution && (
+      {computed.isDeltaPerfectSquare && computed.solutionType !== "delta_negative" && !computed.hasOneDoubleSolution && (
         /* ── Δ > 0: due card separate come prima ── */
         <>
           {computed.t1 !== null && (
@@ -1324,8 +1444,8 @@ function BiquadraticExercise({
         </>
       )}
 
-      {/* Step 6: Extract x from t */}
-      {allPreviousStepsCorrect && (
+      {/* Step 6: Extract x from t — solo se Δ è quadrato perfetto */}
+      {computed.isDeltaPerfectSquare && allPreviousStepsCorrect && (
       <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
         <p className="text-base font-bold text-primary">
           {computed.solutionType === "delta_negative" ? "4." : computed.hasOneDoubleSolution ? "5." : "6."} CALCOLO DI <span className="math-var">x₁</span>
@@ -1388,8 +1508,8 @@ function BiquadraticExercise({
       </div>
       )}
 
-      {/* Step 7 (or 6 when Δ=0): Verification */}
-      {allPreviousStepsCorrect && computed.hasRealSolutions && (
+      {/* Step 7 (or 6 when Δ=0): Verification — solo se Δ è quadrato perfetto */}
+      {computed.isDeltaPerfectSquare && allPreviousStepsCorrect && computed.hasRealSolutions && (
         <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
           <p className="text-base font-bold text-primary">{computed.hasOneDoubleSolution ? "6." : "7."} Verifica del risultato:</p>
           <div className="space-y-3">
