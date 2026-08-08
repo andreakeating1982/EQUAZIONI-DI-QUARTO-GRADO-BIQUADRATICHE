@@ -1289,8 +1289,14 @@ function BiquadraticExercise({
                 forceOpen={generatingPdf}
               >
                 <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatex(2 * computed.a)}}`) }} />
-                <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
+                {computed.isDeltaPerfectSquare ? (
+                  <>
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatex(2 * computed.a)}}`) }} />
+                    <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
+                  </>
+                ) : (
+                  <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{${numberToLatex(2 * computed.a)}}`) }} />
+                )}
                 {computed.t1! >= -EPSILON
                   ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
                   : <p className="font-mono text-base text-destructive">t₁ &lt; 0 → impossibile nei reali ✗</p>
@@ -1329,8 +1335,14 @@ function BiquadraticExercise({
                 forceOpen={generatingPdf}
               >
                 <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatex(2 * computed.a)}}`) }} />
-                <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
+                {computed.isDeltaPerfectSquare ? (
+                  <>
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatex(2 * computed.a)}}`) }} />
+                    <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
+                  </>
+                ) : (
+                  <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{${numberToLatex(2 * computed.a)}}`) }} />
+                )}
                 {computed.t2! >= -EPSILON
                   ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
                   : <p className="font-mono text-base text-destructive">t₂ &lt; 0 → impossibile nei reali ✗</p>
@@ -1478,7 +1490,10 @@ function BiquadraticExercise({
                     return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
-                  // Irrazionale → solo radicale + decimale
+                  // Irrazionale → radicale (con decimale solo se Δ è quadrato perfetto)
+                  if (!computed.isDeltaPerfectSquare) {
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}</span>`;
+                  }
                   return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 };
 
@@ -1544,7 +1559,10 @@ function BiquadraticExercise({
                     return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
-                  // Irrazionale → solo radicale + decimale
+                  // Irrazionale → radicale (con decimale solo se Δ è quadrato perfetto)
+                  if (!computed.isDeltaPerfectSquare) {
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}</span>`;
+                  }
                   return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 });
                 return `Soluzioni finali:<br><br>${lines.join("<br><br>")}`;
