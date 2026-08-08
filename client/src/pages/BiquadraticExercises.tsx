@@ -1317,7 +1317,7 @@ function BiquadraticExercise({
       )}
 
       {/* Step 4-5: Calculate t₁ (and t₂ when distinct) — solo se Δ è quadrato perfetto */}
-      {computed.isDeltaPerfectSquare && computed.solutionType !== "delta_negative" && computed.hasOneDoubleSolution && computed.t1 !== null && (
+      {computed.isDeltaPerfectSquare && deltaCorrect && computed.solutionType !== "delta_negative" && computed.hasOneDoubleSolution && computed.t1 !== null && (
         /* ── Δ = 0: radici coincidenti — una sola card unificata ── */
         <div className="p-5 rounded-xl bg-card/40 border border-border space-y-5 leading-loose">
           <p className="text-base font-bold text-primary">4. CALCOLO DI <span className="math-var">t₁ = t₂</span>:</p>
@@ -1359,7 +1359,7 @@ function BiquadraticExercise({
         </div>
       )}
 
-      {computed.isDeltaPerfectSquare && computed.solutionType !== "delta_negative" && !computed.hasOneDoubleSolution && (
+      {computed.isDeltaPerfectSquare && deltaCorrect && computed.solutionType !== "delta_negative" && !computed.hasOneDoubleSolution && (
         /* ── Δ > 0: due card separate come prima ── */
         <>
           {computed.t1 !== null && (
