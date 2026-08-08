@@ -1,0 +1,58 @@
+========================================
+   COME USARE QUESTO PACCHETTO
+   Equazioni Biquadratiche
+========================================
+
+Ciao! Hai scaricato il progetto completo dell'app
+"Equazioni Biquadratiche".
+
+L'APP È GIÀ ONLINE!
+Non devi fare nulla per pubblicarla. È già deployata su:
+  https://equazioni-biquadratiche.easy-peasy.site
+
+
+COME INCORPORARLA NEL TUO BLOG (BLOGGER):
+
+1. Apri il file embed-blogger.html (incluso nel pacchetto)
+2. Copia TUTTO il contenuto
+3. Vai su Blogger → Nuovo post → Modalità HTML
+4. Incolla il codice
+5. Pubblica!
+
+L'iframe si ridimensiona automaticamente in base al
+contenuto dell'app.
+
+
+COME PERSONALIZZARE L'APP:
+
+L'app è costruita su Easy-Peasy.AI. Puoi chiedere a
+MARKY (l'assistente AI) di modificare qualsiasi cosa:
+colori, testi, funzionalità. MARKY fa build, preview
+e deploy automaticamente.
+
+
+COME CARICARE IL CODICE SU GITHUB:
+
+1. Crea un repository su github.com
+2. Usa GitHub Desktop → Clona il repository
+3. Copia tutti i file di questo pacchetto
+   nella cartella del repository
+4. Fai Commit e Push
+
+Per istruzioni dettagliate, leggi GUIDA-UNICA.html
+(incluso in questo pacchetto).
+
+
+STRUTTURA DEL PROGETTO:
+
+equazioni-biquadratiche/
+├── client/           # Frontend React + Vite + Tailwind
+├── server/           # Server Express (serving statico)
+├── shared/           # Costanti condivise
+├── embed-blogger.html   # Codice embed per Blogger
+├── GUIDA-UNICA.html     # Guida completa
+├── README.md            # Documentazione tecnica
+└── package.json         # Dipendenze e script
+
+
+BUON DIVERTIMENTO! 📐

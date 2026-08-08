@@ -1,237 +1,192 @@
-# Web App Template (Static Frontend)
+# 📐 Equazioni Biquadratiche — App Interattiva
 
-Pure React 19 + Tailwind 4 template with shadcn/ui baked in. **Use this README as the checklist for shipping static experiences.**
+Un'app didattica interattiva che guida gli studenti passo-passo nella risoluzione delle equazioni biquadratiche (trinomie di quarto grado), con input tramite **scrittura a mano** (riconoscimento ONNX) e **quaderno PDF scaricabile**.
 
-> **Note:** This template includes a minimal `shared/` and `server/` directory with placeholder types to support imported templates. These are just compatibility placeholders - web-static remains a true static-only template without API functionality.
-
----
-
-## Stack Overview
-- Client-only routing powered by React + Wouter.
-- Design tokens live entirely in `client/src/index.css`—keep that file intact.
-
-## File Structure
-
-```
-client/
-  public/       ← Static assets copied verbatim to '/'
-  src/
-    pages/      ← Page-level components
-    components/ ← Reusable UI & shadcn/ui
-    contexts/   ← React contexts
-    hooks/      ← Custom React hooks
-    lib/        ← Utility helpers
-    App.tsx     ← Routes & top-level layout
-    main.tsx    ← React entry point
-    index.css   ← global style
-server/         ← Placeholder for imported template compatibility
-shared/         ← Placeholder for imported template compatibility
-  const.ts      ← Shared constants
-```
-
-Assets placed under `client/public` are served with aggressive caching, so add a content hash to filenames (for example, `asset.3fa9b2e4.svg`) whenever you replace a file and update its references to avoid stale assets.
-
-Files in `client/public` are available at the root of your site—reference them with absolute paths (`/asset.3fa9b2e4.svg`, `/robots.txt`, etc.) from HTML templates, JSX, or meta tags.
+L'app riconosce l'equazione scritta a mano dallo studente (`ax⁴ + bx² + c = 0`), la trasforma in un'equazione di secondo grado tramite la sostituzione `t = x²`, calcola discriminante, radici `t₁, t₂` e infine le quattro soluzioni `x₁, x₂, x₃, x₄`. Ogni passaggio è accompagnato da spiegazioni, formule e badge colorati che mostrano le frazioni semplificate.
 
 ---
 
-## 🎯 Development Workflow
+## 🚀 L'app è già online!
 
-1. **Choose a design style** before you write any frontend code according to Design Guide (color, font, shadow, art style). Tell user what you chose. Remember to edit `client/src/index.css` for global theming and add needed font using google font cdn in `client/index.html`.
-2. **Compose pages** in `client/src/pages/`. Keep sections modular so they can be reused across routes.
-3. **Share primitives** via `client/src/components/`—extend shadcn/ui when needed instead of duplicating markup.
-4. **Keep styling consistent** by relying on existing Tailwind tokens (spacing, colors, typography).
-5. **Fetch external data** with `useEffect` if the site needs dynamic content from public APIs.
----
+L'app è deployata e funzionante qui:
 
-## 🎨 Frontend Development Guidelines
+```
+https://equazioni-biquadratiche.easy-peasy.site
+```
 
-**UI & Styling:**
-- Prefer shadcn/ui components for interactions to keep a modern, consistent look; import from `@/components/ui/*` (e.g., `button`, `card`, `dialog`).
-- Compose Tailwind utilities with component variants for layout and states; avoid excessive custom CSS. Use built-in `variant`, `size`, etc. where available.
-- Preserve design tokens: keep the `@layer base` rules in `client/src/index.css`. Utilities like `border-border` and `font-sans` depend on them.
-- Consistent design language: use spacing, radius, shadows, and typography via tokens. Extract shared UI into `components/` for reuse instead of copy‑paste.
-- Accessibility and responsiveness: keep visible focus rings and ensure keyboard reachability; design mobile‑first with thoughtful breakpoints.
-- Theming: Choose dark/light theme to start with for ThemeProvider according to your design style (dark or light bg), then manage colors pallette with CSS variables in `client/src/index.css` instead of hard‑coding to keep global consistency.
-- Micro‑interactions and empty states: add motion, empty states, and icons tastefully to improve quality without distracting from content.
-- Navigation: For internal tools/admin panels, use persistent sidebar. For public-facing apps, design navigation based on content structure (top nav, side nav, or contextual)—ensure clear escape routes from all pages.
-- Placeholder UI elements: When adding structural placeholders (nav items, CTAs) for not-yet-implemented features, show toast on click ("Feature coming soon"). Inform user which elements are placeholders when presenting work.
+Non devi fare nulla per pubblicarla — è già live! Puoi:
 
-**React Best Practices:**
-- Never call setState/navigation in render phase → wrap in `useEffect`
-
-**Customized Defaults:**
-This template customizes some Tailwind/shadcn defaults for simplified usage:
-- `.container` is customized to auto-center and add responsive padding (see `index.css`). Use directly without `mx-auto`/`px-*`. For custom widths, use `max-w-*` with `mx-auto px-4`.
-- `.flex` is customized to have `min-width:0` and `min-height:0` by default
-- `button` variant `outline` uses transparent background (not `bg-background`). Add bg color class manually if needed.
+- **Usarla subito** dal link qui sopra
+- **Incorporarla nel tuo blog** con il codice embed (vedi sezione 📱 Embed)
+- **Modificare il codice** e ri-deployare con Easy-Peasy.AI
 
 ---
 
-## 🎨 Design Guide
+## 📱 Come si usa
 
-### Design Thinking
+### Per lo studente
 
-Before coding, understand the context and commit to a BOLD aesthetic direction:
-- **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+1. Apri l'app e compila la schermata iniziale con **Cognome, Nome, Data, Classe**
+2. Clicca **ENTRA**
+3. Scrivi a mano l'equazione nel riquadro (es. `2x⁴ − 3x² + 1 = 0`)
+4. Clicca **RICONOSCI** — l'app interpreta la scrittura
+5. Se il riconoscimento è corretto, clicca **CONFERMA**
+6. L'app mostra **7 passi guidati**:
+   - Passo 1: Scrittura dell'equazione originale
+   - Passo 2: Sostituzione `t = x²`
+   - Passo 3: Calcolo del discriminante Δ
+   - Passo 4: Calcolo di t₁ = (−b + √Δ) / 2a
+   - Passo 5: Calcolo di t₂ = (−b − √Δ) / 2a
+   - Passo 6: Soluzioni ±√t₁ e ±√t₂
+   - Passo 7: Riepilogo con le quattro radici
+7. Per ogni passo, scrivi il valore a mano, clicca **RICONOSCI**, e il sistema verifica
+8. Alla fine, scarica il **quaderno PDF** con tutti i passaggi
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+### Per il docente
 
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
-
-### Frontend Aesthetics Guidelines
-
-Focus on:
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
-- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
-
-NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
-
-**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
-
-Remember: The agent is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+- L'app è **autoguidata**: lo studente segue i passi da solo
+- Il PDF scaricabile contiene **Cognome, Nome, Classe e Data** in testa — perfetto per la valutazione
+- Nessun account, nessuna configurazione: l'app è pronta all'uso
 
 ---
 
-## Pre-built Components
+## 🖼️ Embed nel blog (Blogger / qualsiasi sito)
 
-Before implementing UI features, check if these components already exist:
+Incolla questo codice in modalità HTML nel tuo post o pagina:
 
-Maps:
-- `client/src/components/Map.tsx` - Google Maps integration. Provides MapView component with onMapReady callback for initializing Google Maps services (Places, Geocoder, Directions, Drawing, etc.). All map functionality works directly in the browser.
+```html
+<!--EQUAZIONI BIQUADRATICHE-->
+<div style="background: rgb(250, 248, 245); border-radius: 16px; box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 20px; font-family: system-ui, -apple-system, sans-serif; margin: 0px auto; max-width: 800px; overflow: hidden;">
+  <div style="background: linear-gradient(135deg, #C69C7C 0%, #E0C8B0 100%); padding: 16px 20px; text-align: center;">
+    <span style="color: #3d2b1f; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 15px; font-weight: 600; letter-spacing: 1px;">EQUAZIONI DI QUARTO GRADO</span>
+    <br />
+    <span style="color: #5a3d2b; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 12px; font-weight: 400; letter-spacing: 0.5px;">TRINOMIE BIQUADRATICHE &nbsp;·&nbsp; RISOLVI IN 7 PASSI</span>
+  </div>
+  <iframe id="equazioniBiquadraticheIframe" loading="lazy" src="https://equazioni-biquadratiche.easy-peasy.site/" style="border: none; display: block; height: 600px; min-width: 100%; transition: height 0.2s ease; width: 1px;" title="Equazioni Biquadratiche Interattive">
+  </iframe>
+</div>
 
-When implementing features that match these categories, MUST evaluate the component first to decide whether to use or customize it.
+<script>
+(function() {
+  var iframe = document.getElementById('equazioniBiquadraticheIframe');
+  if (!iframe) return;
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'labvisivo:height' && typeof e.data.height === 'number') {
+      if (e.data.height > 100) iframe.style.height = e.data.height + 'px';
+    }
+  });
+})();
+</script><br /><br />
+```
+
+Il codice embed è anche disponibile nel file `embed-blogger.html` incluso nel pacchetto.
+
+**L'iframe si auto-ridimensiona** grazie ai messaggi `postMessage` integrati nell'app.
 
 ---
 
-## 🗺️ Maps Integration
+## 🔧 Come modificare e ri-deployare
 
-**Implementation:**
-- Frontend: Import MapView from `client/src/components/Map.tsx` and initialize ANY Google Maps service (geocoding, directions, places, drawing, visualization, geometry, etc.) in the onMapReady callback. ALL Google Maps JavaScript API features work directly in the browser.
+L'app è costruita con lo scaffold **web-static** di Easy-Peasy.AI. Per modificarla:
+
+1. Apri il progetto su **Easy-Peasy.AI** (piattaforma MARKY)
+2. Chiedi a MARKY le modifiche che vuoi (es. "cambia il colore del bottone", "aggiungi un nuovo passo")
+3. MARKY applica le modifiche, fa build, preview e deploy
+4. Il deploy su Cloud Run è automatico — l'URL rimane lo stesso
+
+**Non serve configurare server, database o Docker.** Easy-Peasy.AI gestisce tutto.
+
+### Struttura dei file principali
+
+```
+client/src/
+  pages/
+    WelcomePage.tsx              # Schermata iniziale (dati studente)
+    BiquadraticExercises.tsx     # Pagina principale con i 7 passi
+  components/
+    MathDrawCanvas.tsx           # Canvas per input scrittura a mano
+    NumberInputCanvas.tsx        # Canvas per input valori numerici
+    FractionDisplay.tsx          # Componente visualizzazione frazioni
+  hooks/
+    useMathRecognition.ts        # Riconoscimento ONNX scrittura
+  App.tsx                        # Router e layout
+server/
+  index.ts                       # Server Express (solo serving statico)
+```
 
 ---
 
-## ✅ Launch Checklist
-- [ ] UI layout and navigation structure correct, all image src valid.
-- [ ] Success + error paths verified in the browser
+## 🏗️ Tecnologie
+
+| Tecnologia | Uso |
+|-----------|-----|
+| React 19 + TypeScript | Frontend |
+| Vite 7 | Build tool |
+| TailwindCSS 4 | Styling |
+| Wouter | Routing lato client |
+| KaTeX | Rendering formule matematiche |
+| ONNX Runtime Web | Riconoscimento scrittura a mano |
+| Ink-ON | Modello ONNX per handwriting recognition |
+| Express | Server di produzione |
 
 ---
 
-## Core File References
+## 🗂️ Struttura completa del progetto
 
-`package.json`
-```tsx
-{{FILE:package.json}}
+```
+├── client/                     # Frontend React + Vite + Tailwind
+│   ├── index.html              # Entry HTML
+│   ├── public/
+│   │   ├── models/             # Modelli ONNX per riconoscimento
+│   │   └── wasm/               # WASM per ONNX runtime
+│   └── src/
+│       ├── pages/
+│       │   ├── WelcomePage.tsx          # Home con dati studente
+│       │   └── BiquadraticExercises.tsx # App principale (7 passi)
+│       ├── components/
+│       │   ├── MathDrawCanvas.tsx       # Canvas disegno equazioni
+│       │   ├── NumberInputCanvas.tsx    # Canvas input valori
+│       │   ├── FractionDisplay.tsx      # Visualizzazione frazioni
+│       │   └── ui/                      # Componenti shadcn/ui
+│       ├── hooks/
+│       │   └── useMathRecognition.ts    # Riconoscimento ONNX
+│       ├── App.tsx                      # Router e layout
+│       ├── main.tsx                     # Entry React
+│       └── index.css                    # Stili globali + tema
+├── server/
+│   └── index.ts                # Server Express (serving statico)
+├── shared/
+│   └── const.ts                # Costanti condivise
+├── embed-blogger.html          # Codice embed per Blogger
+├── package.json                # Dipendenze e script
+├── tsconfig.json               # Configurazione TypeScript
+└── vite.config.ts              # Configurazione Vite
 ```
 
-`client/src/App.tsx`
-```tsx
-{{FILE:client/src/App.tsx}}
-```
-
-`client/src/pages/Home.tsx`
-```tsx
-{{FILE:client/src/pages/Home.tsx}}
-```
-
-`client/src/index.css`
-```tsx
-{{FILE:client/src/index.css}}
-```
-
-`client/index.html`
-```tsx
-{{FILE:client/index.html}}
-```
-
-`server/index.ts`
-```tsx
-{{FILE:server/index.ts}}
-```
 ---
 
-## Common Pitfalls
+## 📦 Sviluppo locale
 
-### Infinite loading loops from unstable references
-**Anti-pattern:** Creating new objects/arrays in render that are used as query inputs
-```tsx
-// ❌ Bad: New Date() creates new reference every render → infinite queries
-const { data } = trpc.items.getByDate.useQuery({
-  date: new Date(), // ← New object every render!
-});
+```bash
+# Installa dipendenze
+pnpm install
 
-// ❌ Bad: Array/object literals in query input
-const { data } = trpc.items.getByIds.useQuery({
-  ids: [1, 2, 3], // ← New array reference every render!
-});
+# Avvia server di sviluppo
+pnpm dev
+
+# Build di produzione
+pnpm build
+
+# Type check
+pnpm check
 ```
 
-**Correct approach:** Stabilize references with useState/useMemo
-```tsx
-// ✅ Good: Initialize once with useState
-const [date] = useState(() => new Date());
-const { data } = trpc.items.getByDate.useQuery({ date });
+---
 
-// ✅ Good: Memoize complex inputs
-const ids = useMemo(() => [1, 2, 3], []);
-const { data } = trpc.items.getByIds.useQuery({ ids });
-```
+## 📄 Licenza
 
-**Why this happens:** TRPC queries trigger when input references change. Objects/arrays created in render have new references each time, causing infinite re-fetches.
+MIT — libero di usare, modificare e condividere.
 
-### Navigation dead-ends in subpages
-**Problem:** Creating nested routes without escape routes—no header nav, no sidebar, no back button.
+---
 
-**Root cause:** Implementing individual pages before establishing global layout structure.
-
-**Solution:** Define layout wrapper in App.tsx first, then build pages inside it. For admin tools use DashboardLayout; for detail pages add back button with `router.back()`.
-
-### Invisible text from theme/color mismatches
-
-**Root cause:** Semantic colors (`bg-background`, `text-foreground`) are CSS variables that resolve based on ThemeProvider's active theme. Mismatches cause invisible text.
-
-**Two critical rules:**
-
-1. **Match theme to CSS variables:** If `defaultTheme="dark"` in App.tsx, ensure `.dark {}` in index.css has dark background + light foreground values
-2. **Always pair bg with text:** When using `bg-{semantic}`, MUST also use `text-{semantic}-foreground` (not automatic - text inherits from parent otherwise)
-
-**Quick reference:**
-```tsx
-// ✅ Theme + CSS alignment
-<ThemeProvider defaultTheme="dark">  {/* Must match .dark in index.css */}
-  <div className="bg-background text-foreground">...</div>
-</ThemeProvider>
-
-// ✅ Required class pairs
-<div className="bg-popover text-popover-foreground">...</div>
-<div className="bg-card text-card-foreground">...</div>
-<div className="bg-accent text-accent-foreground">...</div>
-```
-
-### Nested anchor tags in Link components
-**Problem:** Wrapping `<a>` tags inside another `<a>` or wouter's `<Link>` creates nested anchors and runtime errors.
-
-**Solution:** Pass children directly to Link—it already renders an `<a>` internally.
-```tsx
-// ❌ Bad: <Link><a>...</a></Link> or <a><a>...</a></a>
-// ✅ Good: <Link>...</Link> or just <a>...</a>
-```
-### Empty `Select.Item` values
-
-**Rule:** Every `<Select.Item>` must have a non-empty `value` prop—never `""`, `undefined`, or omitted.
-
-**Rule:** Use sonner for toasts; do not add react-toastify or @radix-ui/react-toast
-
-**Rule:** If you put placeholder components for App.tsx routes, you MUST replace them with actual components after your implementation.
+*App creata con ❤️ da MARKY su Easy-Peasy.AI · Agosto 2026*

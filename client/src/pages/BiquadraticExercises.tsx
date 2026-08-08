@@ -127,7 +127,7 @@ function formatFraction(value: number): string {
   if (isNaN(value)) return "?";
   if (areNumbersApproximatelyEqual(value, 0, 1e-10)) return "0";
 
-  const roundedValue = roundToPrecision(value, DISPLAY_PRECISION);
+  const roundedValue = roundToPrecision(value, CALCULATION_PRECISION);
   let sign = roundedValue < 0 ? "-" : "";
   let absValue = Math.abs(roundedValue);
 
@@ -1186,7 +1186,7 @@ function BiquadraticExercise({
           forceOpen={generatingPdf}
         >
           <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${formatCoeffWithParens(computed.b)}^{2} - 4 \\cdot ${formatCoeffWithParens(computed.a)} \\cdot ${formatCoeffWithParens(computed.c)}`) }} />
-          <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(computed.delta)}`) }} />
+          <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`\\Delta = ${numberToLatex(deltaUtente ?? computed.delta)}`) }} />
           {computed.solutionType === "delta_negative"
             ? <p className="font-mono text-base text-destructive">Δ &lt; 0 → nessuna soluzione reale</p>
             : computed.hasOneDoubleSolution
@@ -1247,7 +1247,7 @@ function BiquadraticExercise({
               <p className="text-base font-bold text-primary">4. CALCOLO <span className="math-var">t₁</span>:</p>
               <div className="space-y-3">
                 <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{-b + \\sqrt{\\Delta}}{2a}`) }} />
-                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
               </div>
               <NumberInputCanvas
                 value={t1Utente}
@@ -1271,8 +1271,8 @@ function BiquadraticExercise({
                 visible={t1Utente !== null && areNumbersRoundedEqual(t1Utente, computed.t1!)}
                 forceOpen={generatingPdf}
               >
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${formatNegatedCoeff(computed.b)} + \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = \\frac{${numberToLatex(-computed.b)} + ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
                 <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{1} = ${numberToLatex(computed.t1!)}`) }} />
                 {computed.t1! >= -EPSILON
                   ? <p className="font-mono text-base">t₁ ≥ 0 → si può estrarre la radice quadrata ✓</p>
@@ -1287,7 +1287,7 @@ function BiquadraticExercise({
               <p className="text-base font-bold text-primary">5. CALCOLO <span className="math-var">t₂</span>:</p>
               <div className="space-y-3">
                 <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{-b - \\sqrt{\\Delta}}{2a}`) }} />
-                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base opacity-80" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
               </div>
               <NumberInputCanvas
                 value={t2Utente}
@@ -1311,8 +1311,8 @@ function BiquadraticExercise({
                 visible={t2Utente !== null && areNumbersRoundedEqual(t2Utente, computed.t2!)}
                 forceOpen={generatingPdf}
               >
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${formatNegatedCoeff(computed.b)} - \\sqrt{${numberToLatex(deltaUtente ?? computed.delta)}}}{2 \\cdot ${formatDenomCoeff(computed.a)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = \\frac{${numberToLatex(-computed.b)} - ${numberToLatexAbs(Math.sqrt(Math.max(0, deltaUtente ?? computed.delta)))}}{${numberToLatexAbs(2 * computed.a)}}`) }} />
                 <p className="font-mono text-base font-bold text-primary" dangerouslySetInnerHTML={{ __html: renderKatex(`t_{2} = ${numberToLatex(computed.t2!)}`) }} />
                 {computed.t2! >= -EPSILON
                   ? <p className="font-mono text-base">t₂ ≥ 0 → si può estrarre la radice quadrata ✓</p>
