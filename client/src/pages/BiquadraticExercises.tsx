@@ -1458,11 +1458,11 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`, false) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`, false);
-                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
+                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 };
 
                 if (match) {
@@ -1524,11 +1524,11 @@ function BiquadraticExercise({
                     const sn = fNum / g;
                     const sd = fDen / g;
                     const fracWithSign = sd === 1 ? renderKatex(`\\pm ${sn}`, false) : renderKatex(`\\pm \\dfrac{${sn}}{${sd}}`, false);
-                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
+                    return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span><span class="text-muted-foreground mx-1">→</span>${fracWithSign}</span>`;
                   }
 
                   // Irrazionale → solo radicale + decimale
-                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:monospace;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
+                  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">${radicalHtml}<span class="text-muted-foreground mx-1">→</span><span style="font-family:'Cambria Math',Cambria,serif;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:8px;font-weight:bold">${decimal}</span></span>`;
                 });
                 return `Soluzioni finali:<br><br>${lines.join("<br><br>")}`;
               })() }}
