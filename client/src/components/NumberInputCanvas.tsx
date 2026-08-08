@@ -121,20 +121,15 @@ function evaluateLatex(latex: string): number | null {
     .replace(/\\times/g, '*')
     .replace(/\\,/g, '.')
     .replace(/\\left/g, '')
-    .replace(/\\right/g, '');
+    .replace(/\\right/g, '')
+    .replace(/\\displaystyle/g, '');
   // Converti \dfrac e \tfrac in \frac
   s = s.replace(/\\(?:dfrac|tfrac)\{/g, '\\frac{');
   // Converti {num} \over {den} → \frac{num}{den} (TeX primitiva, ancora usata da alcuni recognizer)
   s = s.replace(/\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\s*\\over\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '\\frac{$1}{$2}');
   if (!s) return null;
 
-  // ── 1. Leading minus ───────────────────────────────────────────
-  if (s.startsWith('-')) {
-    const inner = evaluateLatex(s.slice(1));
-    return inner !== null ? -inner : null;
-  }
-
-  // ── 2. Outermost \frac{num}{den} ──────────────────────────────
+  // ── 1. Outermost \frac{num}{den} ──────────────────────────────
   if (s.startsWith('\\frac{')) {
     const numBrace = extractBraced(s, 5); // after \frac
     if (!numBrace) return null;
@@ -178,7 +173,8 @@ function evaluateLatex(latex: string): number | null {
     return null;
   }
 
-  // ── 3b. Addition / subtraction at top level (outside braces) ────
+  // ── 3. Addition / subtraction at top level (outside braces) ────
+  // MUST come BEFORE leading-minus so that -4+√24 = (-4)+(√24) not -(4+√24)
   let braceDepth2 = 0;
   for (let i = s.length - 1; i >= 0; i--) {
     if (s[i] === '}') braceDepth2++;
@@ -192,7 +188,13 @@ function evaluateLatex(latex: string): number | null {
     }
   }
 
-  // ── 4b. Implicit multiplication: X\sqrt{Y} at top level ─────────
+  // ── 4. Leading minus (safe: only if no top-level + or - operator) ──
+  if (s.startsWith('-')) {
+    const inner = evaluateLatex(s.slice(1));
+    return inner !== null ? -inner : null;
+  }
+
+  // ── 5. Implicit multiplication: X\sqrt{Y} at top level ─────────
   let braceDepth2b = 0;
   for (let i = 0; i < s.length; i++) {
     if (s[i] === '{') braceDepth2b++;
