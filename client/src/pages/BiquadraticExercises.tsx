@@ -538,8 +538,9 @@ export default function BiquadraticExercises() {
       reducedDen > 0;
 
     // Radical LaTeX per t₁, t₂ (usato quando Δ NON è quadrato perfetto)
-    const t1RadicalLatex = `\\frac{${numberToLatex(-b)} + \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
-    const t2RadicalLatex = `\\frac{${numberToLatex(-b)} - \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
+    // \dfrac dà più spazio verticale, \, aggiunge respiro ai lati della frazione
+    const t1RadicalLatex = `\\dfrac{${numberToLatex(-b)} + \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
+    const t2RadicalLatex = `\\dfrac{${numberToLatex(-b)} - \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
 
     // Costruisci PositiveRootEntry: associa ogni radice al proprio radicale e flag
     // (ordinato per valore crescente, così l'indice è coerente)
@@ -549,7 +550,7 @@ export default function BiquadraticExercises() {
       if (t >= -EPSILON) {
         const rLatex = isDeltaPerfectSquare
           ? `\\sqrt{${numberToLatex(t)}}`
-          : `\\sqrt{${tRadicalLatex}}`;
+          : `\\sqrt{\\,${tRadicalLatex}\\,}`;
         if (!seenRadicals.has(rLatex)) {
           seenRadicals.add(rLatex);
           const sqrtT = Math.sqrt(Math.max(0, t));
