@@ -523,29 +523,6 @@ export default function BiquadraticExercises() {
       solutionType = "delta_negative";
     }
 
-    // Costruisci PositiveRootEntry: associa ogni radice al proprio radicale e flag
-    // (ordinato per valore crescente, così l'indice è coerente)
-    const positiveRootEntries: PositiveRootEntry[] = [];
-    const seenRadicals = new Set<string>();
-    const addRadicalInfo = (t: number) => {
-      if (t >= -EPSILON) {
-        const rLatex = `\\sqrt{${numberToLatex(t)}}`;
-        if (!seenRadicals.has(rLatex)) {
-          seenRadicals.add(rLatex);
-          const sqrtT = Math.sqrt(Math.max(0, t));
-          positiveRootEntries.push({
-            value: roundToPrecision(sqrtT, DISPLAY_PRECISION),
-            radicalLatex: rLatex,
-            isRational: isRootRational(sqrtT),
-            isInteger: Math.abs(sqrtT - Math.round(sqrtT)) < 1e-9,
-          });
-        }
-      }
-    };
-    if (t1 !== null) addRadicalInfo(t1);
-    if (t2 !== null) addRadicalInfo(t2);
-    positiveRootEntries.sort((a, b) => a.value - b.value);
-
     // ── Check if Δ is a perfect square rational ──────────────────
     // Δ = b² - 4ac where a=aNum/da, b=bNum/db, c=cNum/dc
     // Δ numerator = bNum²·da·dc - 4·aNum·cNum·db²
@@ -559,6 +536,35 @@ export default function BiquadraticExercises() {
       Number.isInteger(Math.sqrt(reducedNum)) &&
       Number.isInteger(Math.sqrt(reducedDen)) &&
       reducedDen > 0;
+
+    // Radical LaTeX per t₁, t₂ (usato quando Δ NON è quadrato perfetto)
+    const t1RadicalLatex = `\\frac{${numberToLatex(-b)} + \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
+    const t2RadicalLatex = `\\frac{${numberToLatex(-b)} - \\sqrt{${numberToLatex(delta)}}}{${numberToLatex(2 * a)}}`;
+
+    // Costruisci PositiveRootEntry: associa ogni radice al proprio radicale e flag
+    // (ordinato per valore crescente, così l'indice è coerente)
+    const positiveRootEntries: PositiveRootEntry[] = [];
+    const seenRadicals = new Set<string>();
+    const addRadicalInfo = (t: number, tRadicalLatex: string) => {
+      if (t >= -EPSILON) {
+        const rLatex = isDeltaPerfectSquare
+          ? `\\sqrt{${numberToLatex(t)}}`
+          : `\\sqrt{${tRadicalLatex}}`;
+        if (!seenRadicals.has(rLatex)) {
+          seenRadicals.add(rLatex);
+          const sqrtT = Math.sqrt(Math.max(0, t));
+          positiveRootEntries.push({
+            value: roundToPrecision(sqrtT, DISPLAY_PRECISION),
+            radicalLatex: rLatex,
+            isRational: isRootRational(sqrtT),
+            isInteger: Math.abs(sqrtT - Math.round(sqrtT)) < 1e-9,
+          });
+        }
+      }
+    };
+    if (t1 !== null) addRadicalInfo(t1, t1RadicalLatex);
+    if (t2 !== null) addRadicalInfo(t2, t2RadicalLatex);
+    positiveRootEntries.sort((a, b) => a.value - b.value);
 
     return {
       a, b, c,
