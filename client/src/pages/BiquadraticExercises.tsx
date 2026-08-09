@@ -1367,10 +1367,10 @@ function BiquadraticExercise({
           {!computed.hasOneDoubleSolution && (
             <>
               {computed.t1 !== null && computed.t1 >= -EPSILON && (
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(computed.isDeltaPerfectSquare ? `x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}` : `x_{1} = \\pm\\sqrt{t_{1}}`) }} />
               )}
               {computed.t2 !== null && computed.t2 >= -EPSILON && (
-                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}`) }} />
+                <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(computed.isDeltaPerfectSquare ? `x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}` : `x_{2} = \\pm\\sqrt{t_{2}}`) }} />
               )}
             </>
           )}
@@ -1393,10 +1393,10 @@ function BiquadraticExercise({
               ) : (
                 <>
                   {computed.t1 !== null && computed.t1 >= -EPSILON && (
-                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t1!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) }} />
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: computed.isDeltaPerfectSquare ? renderKatex(`x_{1} = \\pm\\sqrt{t_{1}} = \\pm\\sqrt{${numberToLatex(computed.t1)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t1!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) : renderKatex(`x_{1} = \\pm\\sqrt{t_{1}}`) }} />
                   )}
                   {computed.t2 !== null && computed.t2 >= -EPSILON && (
-                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t2!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) }} />
+                    <p className="font-mono text-base" dangerouslySetInnerHTML={{ __html: computed.isDeltaPerfectSquare ? renderKatex(`x_{2} = \\pm\\sqrt{t_{2}} = \\pm\\sqrt{${numberToLatex(computed.t2)}}${(() => { const s = Math.sqrt(Math.max(0, computed.t2!)); return Math.abs(s - Math.round(s)) < 1e-9 ? ` = \\pm ${Math.round(s)}` : ''; })()}`) : renderKatex(`x_{2} = \\pm\\sqrt{t_{2}}`) }} />
                   )}
                 </>
               )}
