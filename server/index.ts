@@ -16,25 +16,26 @@ async function startServer() {
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
-  // COOP/COEP headers required by ONNX Runtime Web for SharedArrayBuffer
-  app.use((_req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-    next();
-  });
-
   // CORS per i font OpenDyslexic (usati anche dalle cornici embed su siti esterni)
   app.use("/fonts", (_req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     next();
   });
 
-  // Ensure .wasm files are served with the correct MIME type
+  // Ensure .wasm files are served with the correct MIME type.
+  // IMPORTANTE: COOP/COEP sono impostati SOLO sui documenti HTML (servono a
+  // ONNX Runtime Web per SharedArrayBuffer). NON vanno messi su font/asset:
+  // altrimenti il font OpenDyslexic non puo' essere caricato cross-origin dalle
+  // cornici embed su Blogger (ricadrebbe su un font serif).
   app.use(
     express.static(staticPath, {
       setHeaders: (res, filePath) => {
         if (filePath.endsWith(".wasm")) {
           res.setHeader("Content-Type", "application/wasm");
+        }
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+          res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
         }
       },
     })
@@ -42,6 +43,8 @@ async function startServer() {
 
   // Handle client-side routing - serve index.html for all routes
   app.get("*", (_req, res) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     res.sendFile(path.join(staticPath, "index.html"));
   });
 
