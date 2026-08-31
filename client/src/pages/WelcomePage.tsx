@@ -45,9 +45,9 @@ export default function WelcomePage() {
 
   return (
     <div className="lf-welcome flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
-      {/* La card è centrata nel riquadro visibile SOTTO la barra di accessibilità
-          (padding top: la sposta debitamente più in basso rispetto alla barra) */}
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-4">
+      {/* Card centrata nel riquadro tra la barra di accessibilità (in alto) e il
+          footer (in basso). Padding top aumentato per distanziarla dalla barra. */}
+      <div className="flex flex-1 flex-col items-center justify-center px-4 pt-10 pb-6">
       <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-[20px] p-5 md:p-6 w-full max-w-[400px] shadow-[0_8px_25px_rgba(43,36,33,0.06)] flex flex-col items-center text-center">
         {/* Book icon — identico a Mappa Concettuale */}
         <div className="bg-[#F0E5DF] p-2.5 rounded-[12px] mb-3">
@@ -126,9 +126,9 @@ export default function WelcomePage() {
           ENTRA
         </button>
       </div>
-
-        <AppFooter />
       </div>
+
+      <AppFooter />
     </div>
   );
 }

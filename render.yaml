@@ -1,0 +1,29 @@
+# Render Blueprint — deploy di «Widget Matematico Sorgente» (app didattica) con un clic
+# --------------------------------------------------------------------------------
+# Come usarlo:
+#   1. Carica questa cartella (app/) su GitHub — vedi ISTRUZIONI-GITHUB.txt / DEPLOY-RENDER.md
+#   2. Vai su https://render.com → New → Blueprint
+#   3. Collega il repository: Render legge questo file e crea il Web Service.
+#
+# L'app NON ha database né chiavi API: tutto (riconoscimento scrittura ONNX,
+# KaTeX, font OpenDyslexic) gira nel browser. Il server Express serve solo i
+# file statici + gli header COOP/COEP (richiesti da ONNX Runtime Web) + CORS
+# su /fonts (per l'embed cross-origin). Non serve configurare nulla oltre a
+# NODE_VERSION.
+#
+# Il server ascolta su process.env.PORT (impostata automaticamente da Render).
+
+services:
+  - type: web
+    name: widget-matematico-sorgente
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production

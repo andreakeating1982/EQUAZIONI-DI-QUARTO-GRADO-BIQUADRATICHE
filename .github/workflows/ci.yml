@@ -1,0 +1,59 @@
+# CI per «Widget Matematico Sorgente»
+# A ogni push (o pull request) verso main/master:
+#   1. installa le dipendenze dal lockfile (versioni identiche)
+#   2. type-check TypeScript (pnpm check)
+#   3. test unitari (vitest, se presenti)
+#   4. build di produzione (client + server)
+# L'artefatto dist/ viene salvato come "artifact" scaricabile dalla pagina Actions.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Install · Check · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check (tsc --noEmit)
+        run: pnpm check
+
+      - name: Unit tests (vitest)
+        run: pnpm exec vitest run --passWithNoTests
+
+      - name: Build production (client + server)
+        run: pnpm build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
