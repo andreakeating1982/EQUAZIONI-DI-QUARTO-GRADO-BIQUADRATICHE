@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { AppFooter } from "@/components/AppFooter";
 
 /** Formatta la data di oggi in formato italiano gg/mm/aaaa */
 function getOggi(): string {
@@ -127,8 +126,6 @@ export default function WelcomePage() {
         </button>
       </div>
       </div>
-
-      <AppFooter />
     </div>
   );
 }

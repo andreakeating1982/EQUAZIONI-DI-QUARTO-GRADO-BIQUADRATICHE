@@ -1051,11 +1051,6 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/60 py-4 text-center text-xs text-muted-foreground">
-        Realizzato da Andrea Centinaro
-      </footer>
     </div>
   );
 }
