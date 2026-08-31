@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { AppFooter } from "@/components/AppFooter";
 
 /** Formatta la data di oggi in formato italiano gg/mm/aaaa */
 function getOggi(): string {
@@ -43,7 +44,10 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
+      {/* La card è centrata nel riquadro visibile SOTTO la barra di accessibilità
+          (padding top: la sposta debitamente più in basso rispetto alla barra) */}
+      <div className="flex flex-1 flex-col items-center justify-center px-4 pt-8 pb-4 sm:pt-12">
       <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-[20px] p-5 md:p-6 w-full max-w-[400px] shadow-[0_8px_25px_rgba(43,36,33,0.06)] flex flex-col items-center text-center">
         {/* Book icon — identico a Mappa Concettuale */}
         <div className="bg-[#F0E5DF] p-2.5 rounded-[12px] mb-3">
@@ -121,6 +125,9 @@ export default function WelcomePage() {
         >
           ENTRA
         </button>
+      </div>
+
+        <AppFooter />
       </div>
     </div>
   );
