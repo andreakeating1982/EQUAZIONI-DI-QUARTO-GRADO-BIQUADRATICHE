@@ -44,7 +44,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
+    <div className="lf-welcome flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
       {/* La card è centrata nel riquadro visibile SOTTO la barra di accessibilità
           (padding top: la sposta debitamente più in basso rispetto alla barra) */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-4">

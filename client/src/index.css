@@ -399,3 +399,25 @@ html.lf-hc body {
 }
 
 
+
+
+/* ------------------------------------------------------------------
+   EMBED (cornice dinamica / iframe a altezza automatica)
+   Quando l'app è dentro un iframe, la classe `lf-embedded` viene messa
+   su <html> da heightSync.ts: la pagina deve seguire il CONTENUTO,
+   quindi niente min-h-screen (100vh) — altrimenti l'altezza misurata
+   dipende dall'altezza dell'iframe e si crea un loop di crescita infinita.
+   ------------------------------------------------------------------ */
+html.lf-embedded .min-h-screen,
+html.lf-embedded .min-h-dvh {
+  min-height: 0 !important;
+}
+html.lf-embedded body {
+  min-height: 0 !important;
+}
+/* La pagina di ingresso (WelcomePage) compensa l'altezza della barra di
+   accessibilità con un min-height in dvh; dentro l'iframe (cornice Blogger)
+   deve invece seguire il contenuto come le altre pagine. */
+html.lf-embedded .lf-welcome {
+  min-height: 0 !important;
+}
