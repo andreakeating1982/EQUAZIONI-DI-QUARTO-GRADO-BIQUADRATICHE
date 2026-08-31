@@ -3,7 +3,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { AccessibilityToolbar } from "./components/AccessibilityToolbar";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import BiquadraticExercises from "./pages/BiquadraticExercises";
 import WelcomePage from "./pages/WelcomePage";
 
@@ -33,8 +35,11 @@ function App() {
         // switchable
       >
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <AccessibilityProvider>
+            <Toaster />
+            <AccessibilityToolbar />
+            <Router />
+          </AccessibilityProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

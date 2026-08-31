@@ -672,7 +672,7 @@ export default function BiquadraticExercises() {
 
       let bodyHtml = '';
       if (siCognome || siNome || siClasse || siData) {
-        bodyHtml += `<div style="text-align:center;margin-bottom:14px;font-family:'Cambria Math',Cambria,serif;border-bottom:1px solid #e5e0d8;padding-bottom:10px">`;
+        bodyHtml += `<div style="text-align:center;margin-bottom:14px;font-family:'OpenDyslexic','Cambria Math',Cambria,serif;border-bottom:1px solid #e5e0d8;padding-bottom:10px">`;
         if (siCognome || siNome) {
           bodyHtml += `<div style="font-size:15px;color:#2B2421;font-weight:bold">${[siCognome, siNome].filter(Boolean).join(' ')}</div>`;
         }
@@ -689,18 +689,20 @@ export default function BiquadraticExercises() {
       });
 
       const printHtml = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Quaderno — Equazioni Biquadratiche</title>
+<html><head><meta charset="utf-8"><base href="${window.location.origin}/"><title>Quaderno — Equazioni Biquadratiche</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
+@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Regular.ttf') format('truetype');font-weight:400;font-style:normal}
+@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;max-width:100%;margin:0 auto;text-align:center;line-height:1.65}
+body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;padding:12px 18px;max-width:100%;margin:0 auto;text-align:center;line-height:1.65}
 .text-primary,.text-primary *{color:#92400e!important;font-weight:bold!important}
 .text-success{color:#16a34a!important}
 .text-destructive,.text-destructive *{color:#dc2626!important}
 .text-amber-900,.text-amber-900 *{color:#78350f!important}
 .font-bold{font-weight:bold!important}
-.font-mono{font-family:'Cambria Math',Cambria,serif!important}
-.font-serif{font-family:'Cambria Math',Cambria,serif!important}
+.font-mono{font-family:'OpenDyslexic','Cambria Math',Cambria,serif!important}
+.font-serif{font-family:'OpenDyslexic','Cambria Math',Cambria,serif!important}
 .font-semibold{font-weight:600!important}
 .bg-muted{background:#f1f5f9!important;padding:8px 14px!important;border-radius:8px!important;display:inline-block!important}
 .rounded-lg{border-radius:8px!important}

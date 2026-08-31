@@ -23,6 +23,12 @@ async function startServer() {
     next();
   });
 
+  // CORS per i font OpenDyslexic (usati anche dalle cornici embed su siti esterni)
+  app.use("/fonts", (_req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    next();
+  });
+
   // Ensure .wasm files are served with the correct MIME type
   app.use(
     express.static(staticPath, {
