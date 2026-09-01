@@ -1,5 +1,6 @@
-import { AlignJustify, Contrast, Ruler, Type } from "lucide-react";
+import { AlignJustify, Contrast, Ruler, Type, Volume2 } from "lucide-react";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useReadAloud } from "@/hooks/useReadAloud";
 
 /**
  * Barra di accessibilità (stile Cornice Universale, adattata alla palette
@@ -14,6 +15,7 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
  */
 export function AccessibilityToolbar() {
   const acc = useAccessibility();
+  const readAloud = useReadAloud();
 
   const groupCls =
     "flex items-center gap-1 whitespace-nowrap rounded-lg border border-border bg-background/90 px-2 py-1";
@@ -112,6 +114,24 @@ export function AccessibilityToolbar() {
           title="Modalità di lettura"
         >
           {acc.mode === "contrasto" ? "Contrasto" : "Normale"}
+        </button>
+      </div>
+
+      {/* ASCOLTO: lettura ad alta voce (text-to-speech) per DSA */}
+      <div className={groupCls}>
+        <span className={labelCls}>
+          <Volume2 className="h-3 w-3" />
+          Ascolto
+        </span>
+        <button
+          type="button"
+          onClick={readAloud.toggle}
+          className={readAloud.speaking ? activeBtnCls : btnCls}
+          aria-pressed={readAloud.speaking}
+          aria-label={readAloud.speaking ? "Interrompi la lettura ad alta voce" : "Leggi il testo ad alta voce"}
+          title={readAloud.speaking ? "Interrompi la lettura" : "Leggi ad alta voce"}
+        >
+          {readAloud.speaking ? "Stop" : "Leggi"}
         </button>
       </div>
     </div>

@@ -43,7 +43,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="lf-welcome flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
+    <main className="lf-welcome flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
       {/* Card centrata nel riquadro tra la barra di accessibilità (in alto) e il
           footer (in basso). Padding top aumentato per distanziarla dalla barra. */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
@@ -126,6 +126,6 @@ export default function WelcomePage() {
         </button>
       </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -167,6 +167,11 @@
     font-family: 'OpenDyslexic', 'Cambria Math', Cambria, serif !important;
   }
 
+  /* Scroll morbido (accessibilità: evita salti bruschi di posizione) */
+  html {
+    scroll-behavior: smooth;
+  }
+
   /* Forza TUTTE le classi font di Tailwind a usare OpenDyslexic */
   .font-sans,
   .font-serif,
@@ -384,6 +389,9 @@ html.lf-hc {
 }
 html.lf-hc body {
   background-color: #ffffff;
+}
+html.lf-hc .paper-grain {
+  background: #ffffff !important;
 }
 
 /* Rispetta chi preferisce meno animazioni (vestibolare / ipersensibilità) */

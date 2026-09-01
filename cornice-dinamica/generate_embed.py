@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Genera la cornice dinamica AUTOSUFFICIENTE di EQUAZIONI BIQUADRATICHE:
+Genera la cornice dinamica AUTOSUFFICIENTE di EQUAZIONI DI QUARTO GRADO BIQUADRATICHE:
 embed-equazioni-biquadratiche.html con i font OpenDyslexic incorporati in base64.
 
 Uso:  python3 generate_embed.py
@@ -18,7 +18,7 @@ regular_b64 = base64.b64encode((FONTS / "OpenDyslexic-Regular-v2.woff2").read_by
 bold_b64 = base64.b64encode((FONTS / "OpenDyslexic-Bold-v2.woff2").read_bytes()).decode()
 
 TEMPLATE = """<!-- ============================================================
-     EQUAZIONI BIQUADRATICHE — CORNICE DINAMICA (embed per Blogger)
+     EQUAZIONI DI QUARTO GRADO BIQUADRATICHE — CORNICE DINAMICA (embed per Blogger)
      Font: OpenDyslexic incorporato (WOFF2 base64) — autosufficiente
      Altezza dinamica: protocollo labvisivo:height
      ============================================================ -->
@@ -73,7 +73,7 @@ TEMPLATE = """<!-- ============================================================
 
 <div id="eqEmbed">
   <div id="eqEmbedHead">
-    <div id="eqEmbedTitle">EQUAZIONI BIQUADRATICHE</div>
+    <div id="eqEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
   </div>
   <iframe id="eqIframe" loading="lazy" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
 </div>
