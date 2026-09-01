@@ -66,7 +66,19 @@ function integerToItalian(n: number): string {
     const unitWord = units === 3 ? "tré" : IT_NUMBERS[units] ?? String(units);
     return word + unitWord;
   }
-  // Numeri più grandi: lettura a cifre separate (raro nell'app).
+  if (n < 1000) {
+    const hundreds = Math.floor(n / 100);
+    const rest = n % 100;
+    const h = hundreds === 1 ? "cento" : (IT_NUMBERS[hundreds] ?? String(hundreds)) + "cento";
+    return rest === 0 ? h : h + integerToItalian(rest);
+  }
+  if (n < 1000000) {
+    const thousands = Math.floor(n / 1000);
+    const rest = n % 1000;
+    const t = thousands === 1 ? "mille" : integerToItalian(thousands) + "mila";
+    return rest === 0 ? t : t + integerToItalian(rest);
+  }
+  // Numeri ancora più grandi: lettura a cifre separate (raro nell'app).
   return String(n);
 }
 
@@ -85,6 +97,19 @@ function numberToItalian(numStr: string): string {
   const n = parseInt(s, 10);
   if (!isNaN(n)) return integerToItalian(n);
   return s;
+}
+
+/** Converte una data "gg/mm/aaaa" in italiano parlato (es. "01/09/2026" → "primo settembre duemilaventisei"). */
+function formatDateItalian(value: string): string | null {
+  const m = value.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if (!m) return null;
+  const day = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  const year = parseInt(m[3], 10);
+  if (month < 1 || month > 12) return null;
+  const MONTHS = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+  const dayWord = day === 1 ? "primo" : integerToItalian(day);
+  return `${dayWord} ${MONTHS[month - 1]} ${integerToItalian(year)}`;
 }
 
 function exponentToItalian(arg: string): string {
@@ -251,14 +276,25 @@ function normalizeUnicodeMath(text: string): string {
 }
 
 /**
+ * Porta il testo a un caso "naturale" per il TTS: le parole tutte MAIUSCOLE
+ * vengono lette dagli engine con accenti sbagliati o lettera per lettera
+ * (es. "TRINOMIE" letto con l'accento sbagliato). Le convertiamo in minuscolo.
+ */
+function toNaturalCase(text: string): string {
+  return text
+    .replace(/Δ/g, "delta")
+    .replace(/\p{Lu}{2,}/gu, (w) => w.toLowerCase())
+    .replace(/\bE\b/g, "e");
+}
+
+/**
  * Estrae il testo leggibile della pagina attraversando i nodi di testo del DOM
  * (senza mutare la UI). Usa i nodi di testo e NON `innerText` su un clone
  * staccato, che accorpava le parole senza spazi (es. "GRADOTRINOMIE").
  */
 function getReadableText(): string {
   const EXCLUDE_TAGS = new Set([
-    "SCRIPT", "STYLE", "NOSCRIPT", "BUTTON", "INPUT", "TEXTAREA",
-    "SELECT", "CANVAS", "SVG", "IFRAME",
+    "SCRIPT", "STYLE", "NOSCRIPT", "BUTTON", "CANVAS", "SVG", "IFRAME",
   ]);
   const BLOCK_TAGS = new Set([
     "DIV", "P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "SECTION",
@@ -276,6 +312,26 @@ function getReadableText(): string {
     const el = node as HTMLElement;
     if (EXCLUDE_TAGS.has(el.tagName)) return;
     if (el.getAttribute("role") === "toolbar") return;
+
+    // Campi di input: leggiamo etichetta (aria-label/placeholder) e valore.
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+      const input = el as HTMLInputElement;
+      const label = input.getAttribute("aria-label")?.trim()
+        || input.getAttribute("placeholder")?.trim()
+        || "";
+      const value = input.value?.trim() || "";
+      const pieces: string[] = [];
+      if (label) pieces.push(label);
+      if (value && value !== label) pieces.push(formatDateItalian(value) ?? value);
+      if (pieces.length) parts.push(" " + pieces.join(" ") + " ");
+      return;
+    }
+    if (el.tagName === "SELECT") {
+      const sel = el as HTMLSelectElement;
+      const opt = sel.options[sel.selectedIndex]?.text?.trim() || "";
+      if (opt) parts.push(" " + opt + " ");
+      return;
+    }
 
     // Formula KaTeX: convertiamo il LaTeX in italiano parlato.
     if (el.classList.contains("katex")) {
@@ -306,6 +362,7 @@ function getReadableText(): string {
 
   let text = parts.join(" ").replace(/\s+/g, " ").trim();
   text = normalizeUnicodeMath(text);
+  text = toNaturalCase(text);
   return text;
 }
 
