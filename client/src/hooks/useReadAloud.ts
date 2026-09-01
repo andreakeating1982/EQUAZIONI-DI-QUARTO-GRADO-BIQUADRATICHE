@@ -7,11 +7,14 @@ import { useCallback, useEffect, useState } from "react";
  * (`speechSynthesis`). Il pulsante "Ascolto → Leggi" nella barra di accessibilità
  * avvia/interrompe la lettura.
  *
- * Accorgimenti per una lettura naturale e completa:
+ * Accorgimenti per una lettura naturale, completa e corretta:
  *  - seleziona la migliore voce italiana disponibile (neurale/naturale se c'è);
  *  - legge TUTTA la pagina (header + contenuto), non solo il <main>;
- *  - rimuove la copia MathML nascosta di ogni formula KaTeX: è questa che faceva
- *    leggere ogni equazione DUE volte e con un ritmo spezzato/robotico;
+ *  - converte le formule KaTeX dal loro LaTeX in italiano parlato, così gli
+ *    esponenti diventano "alla quarta", le frazioni "fratto", le radici
+ *    "radice quadrata di", ecc. (es. "3x^{4}" → "tre x alla quarta");
+ *  - converte anche gli esponenti/pedici Unicode nel testo ("x²" → "x al quadrato",
+ *    "t₁" → "t uno");
  *  - ignora toolbar, pulsanti, campi e canvas (niente rumore).
  */
 
@@ -38,11 +41,219 @@ function pickBestVoice(): SpeechSynthesisVoice | null {
   return [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null;
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Conversione LaTeX → italiano parlato
+// ────────────────────────────────────────────────────────────────────────────
+
+const IT_NUMBERS: Record<number, string> = {
+  0: "zero", 1: "uno", 2: "due", 3: "tre", 4: "quattro", 5: "cinque",
+  6: "sei", 7: "sette", 8: "otto", 9: "nove", 10: "dieci", 11: "undici",
+  12: "dodici", 13: "tredici", 14: "quattordici", 15: "quindici",
+  16: "sedici", 17: "diciassette", 18: "diciotto", 19: "diciannove",
+  20: "venti", 30: "trenta", 40: "quaranta", 50: "cinquanta",
+  60: "sessanta", 70: "settanta", 80: "ottanta", 90: "novanta",
+};
+
+function integerToItalian(n: number): string {
+  if (n < 0) return "meno " + integerToItalian(-n);
+  if (n < 20) return IT_NUMBERS[n] ?? String(n);
+  if (n < 100) {
+    const tens = Math.floor(n / 10) * 10;
+    const units = n % 10;
+    let word = IT_NUMBERS[tens] ?? String(tens);
+    if (units === 0) return word;
+    if (units === 1 || units === 8) word = word.slice(0, -1);
+    const unitWord = units === 3 ? "tré" : IT_NUMBERS[units] ?? String(units);
+    return word + unitWord;
+  }
+  // Numeri più grandi: lettura a cifre separate (raro nell'app).
+  return String(n);
+}
+
+function numberToItalian(numStr: string): string {
+  const s = numStr.trim();
+  if (s === "") return "";
+  if (s.includes(".")) {
+    const [intPart, decPart] = s.split(".");
+    const intWords = integerToItalian(parseInt(intPart || "0", 10));
+    const decWords = (decPart || "")
+      .split("")
+      .map((d) => IT_NUMBERS[Number(d)] ?? d)
+      .join(" ");
+    return intWords + " virgola " + decWords;
+  }
+  const n = parseInt(s, 10);
+  if (!isNaN(n)) return integerToItalian(n);
+  return s;
+}
+
+function exponentToItalian(arg: string): string {
+  const t = arg.trim();
+  const n = parseInt(t, 10);
+  if (!isNaN(n)) {
+    const map: Record<number, string> = {
+      0: "alla zero", 1: "alla prima", 2: "al quadrato", 3: "al cubo",
+      4: "alla quarta", 5: "alla quinta", 6: "alla sesta", 7: "alla settima",
+      8: "all'ottava", 9: "alla nona", 10: "alla decima",
+    };
+    if (map[n]) return map[n];
+    return "alla " + integerToItalian(n);
+  }
+  return "alla " + t;
+}
+
+function subscriptToItalian(arg: string): string {
+  const t = arg.trim();
+  const n = parseInt(t, 10);
+  if (!isNaN(n)) return IT_NUMBERS[n] ?? t;
+  return t;
+}
+
+/** Converte una stringa LaTeX in italiano parlato. */
+function latexToSpeech(latex: string): string {
+  let s = latex
+    .replace(/\\left|\\right|\\displaystyle|\\textstyle/gi, "")
+    .replace(/\\[,;:!]|\\\s|\\quad|\\qquad/gi, " ")
+    .trim();
+  if (!s) return "";
+
+  let i = 0;
+  const n = s.length;
+
+  function parseExpr(): string {
+    let out = "";
+    while (i < n) {
+      const c = s[i];
+
+      if (c === "\\") {
+        i++;
+        let cmd = "";
+        while (i < n && /[a-zA-Z]/.test(s[i])) { cmd += s[i]; i++; }
+
+        if (cmd === "dfrac" || cmd === "frac") {
+          let num = "", den = "";
+          if (s[i] === "{") { i++; num = parseExpr(); if (s[i] === "}") i++; }
+          if (s[i] === "{") { i++; den = parseExpr(); if (s[i] === "}") i++; }
+          out += " " + num.trim() + " fratto " + den.trim() + " ";
+        } else if (cmd === "sqrt") {
+          let inner = "";
+          if (s[i] === "{") { i++; inner = parseExpr(); if (s[i] === "}") i++; }
+          out += " radice quadrata di " + inner.trim() + " ";
+        } else if (cmd === "Delta") {
+          out += " delta ";
+        } else if (cmd === "cdot" || cmd === "times") {
+          out += " per ";
+        } else if (cmd === "pm") {
+          out += " più o meno ";
+        } else if (cmd === "mp") {
+          out += " meno o più ";
+        } else if (cmd === "neq" || cmd === "ne") {
+          out += " diverso da ";
+        } else if (cmd === "leq" || cmd === "le") {
+          out += " minore o uguale a ";
+        } else if (cmd === "geq" || cmd === "ge") {
+          out += " maggiore o uguale a ";
+        } else if (cmd === "lt") {
+          out += " minore ";
+        } else if (cmd === "gt") {
+          out += " maggiore ";
+        } else if (cmd === "approx") {
+          out += " circa ";
+        } else if (cmd === "infty") {
+          out += " infinito ";
+        } else {
+          out += " " + cmd + " ";
+        }
+        continue;
+      }
+
+      if (c === "^" || c === "_") {
+        const isExp = c === "^";
+        i++;
+        let arg = "";
+        if (s[i] === "{") {
+          // Leggiamo il contenuto GREZZO (es. "4", "2"), non la forma già
+          // parlata: serve a exponentToItalian per riconoscere l'ordinale.
+          arg = readRawGroup();
+        } else if (i < n) {
+          arg = s[i];
+          i++;
+        }
+        out += isExp ? " " + exponentToItalian(arg) + " " : " " + subscriptToItalian(arg) + " ";
+        continue;
+      }
+
+      if (c === "{") { i++; continue; }
+      if (c === "}") { break; }
+
+      if (c === "=") { out += " uguale "; i++; continue; }
+      if (c === "+") { out += " più "; i++; continue; }
+      if (c === "-") { out += " meno "; i++; continue; }
+      if (c === "(" || c === ")") { out += " "; i++; continue; }
+      if (c === ",") { out += " virgola "; i++; continue; }
+
+      if (/[0-9]/.test(c)) {
+        let num = "";
+        while (i < n && /[0-9.]/.test(s[i])) { num += s[i]; i++; }
+        out += " " + numberToItalian(num) + " ";
+        continue;
+      }
+
+      if (/[a-zA-Z]/.test(c)) {
+        let word = "";
+        while (i < n && /[a-zA-Z]/.test(s[i])) { word += s[i]; i++; }
+        out += " " + word + " ";
+        continue;
+      }
+
+      // Carattere sconosciuto (spazi, ecc.)
+      i++;
+    }
+    return out;
+  }
+
+  /** Legge il contenuto GREZZO (senza conversione) di un gruppo {...}. */
+  function readRawGroup(): string {
+    i++; // salta "{"
+    let depth = 1;
+    let content = "";
+    while (i < n && depth > 0) {
+      const ch = s[i];
+      if (ch === "{") { depth++; content += ch; i++; }
+      else if (ch === "}") { depth--; if (depth > 0) content += ch; i++; }
+      else { content += ch; i++; }
+    }
+    return content;
+  }
+
+  return parseExpr().replace(/\s+/g, " ").trim();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Esponenti e pedici Unicode nel testo (es. "x²", "t₁")
+// ────────────────────────────────────────────────────────────────────────────
+
+const UNICODE_SUPERSCRIPT: Record<string, string> = {
+  "⁰": " alla zero", "¹": " alla prima", "²": " al quadrato", "³": " al cubo",
+  "⁴": " alla quarta", "⁵": " alla quinta", "⁶": " alla sesta",
+  "⁷": " alla settima", "⁸": " all'ottava", "⁹": " alla nona",
+};
+
+const UNICODE_SUBSCRIPT: Record<string, string> = {
+  "₀": " zero", "₁": " uno", "₂": " due", "₃": " tre", "₄": " quattro",
+  "₅": " cinque", "₆": " sei", "₇": " sette", "₈": " otto", "₉": " nove",
+};
+
+function normalizeUnicodeMath(text: string): string {
+  return text
+    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (m) => UNICODE_SUPERSCRIPT[m])
+    .replace(/[₀₁₂₃₄₅₆₇₈₉]/g, (m) => UNICODE_SUBSCRIPT[m]);
+}
+
 /**
  * Estrae il testo leggibile della pagina attraversando i nodi di testo del DOM
  * (senza mutare la UI). Usa i nodi di testo e NON `innerText` su un clone
- * staccato, che accorpava le parole senza spazi (es. "GRADOTRINOMIE") perché
- * dipende dal motore di layout.
+ * staccato, che accorpava le parole senza spazi (es. "GRADOTRINOMIE").
  */
 function getReadableText(): string {
   const EXCLUDE_TAGS = new Set([
@@ -65,9 +276,25 @@ function getReadableText(): string {
     const el = node as HTMLElement;
     if (EXCLUDE_TAGS.has(el.tagName)) return;
     if (el.getAttribute("role") === "toolbar") return;
-    // Copia MathML nascosta di KaTeX: duplicava ogni equazione (lettura doppia
-    // e spezzata). Teniamo solo la forma resa visivamente (.katex-html).
-    if (el.classList.contains("katex-mathml")) return;
+
+    // Formula KaTeX: convertiamo il LaTeX in italiano parlato.
+    if (el.classList.contains("katex")) {
+      let spoken = "";
+      try {
+        const annotation = el.querySelector(".katex-mathml annotation");
+        const latex = annotation?.textContent?.trim() || "";
+        if (latex) spoken = latexToSpeech(latex);
+      } catch {
+        spoken = "";
+      }
+      if (!spoken) {
+        // Fallback: leggiamo solo la forma resa visivamente (senza MathML).
+        const html = el.querySelector(".katex-html") as HTMLElement | null;
+        spoken = html?.innerText?.replace(/\s+/g, " ").trim() || "";
+      }
+      if (spoken) parts.push(" " + spoken + " ");
+      return; // non scendiamo in .katex-html / .katex-mathml
+    }
 
     const isBlock = BLOCK_TAGS.has(el.tagName);
     if (isBlock) parts.push(" ");
@@ -76,7 +303,10 @@ function getReadableText(): string {
   };
 
   walk(document.body);
-  return parts.join(" ").replace(/\s+/g, " ").trim();
+
+  let text = parts.join(" ").replace(/\s+/g, " ").trim();
+  text = normalizeUnicodeMath(text);
+  return text;
 }
 
 /** Divide il testo in frasi (per pause naturali e robustezza sui browser). */
