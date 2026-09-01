@@ -27,6 +27,7 @@ testo grande e ad alta leggibilità; contrasto regolabile; rispetto di `prefers-
 | 11 | **PDF esportato in OpenDyslexic** | `client/src/pages/BiquadraticExercises.tsx` (`handleScaricaPdf`) |
 | 12 | **Preferenze persistenti** (`localStorage`) | `AccessibilityContext.tsx` (chiave `wms_access`) |
 | 13 | **CORS sui font** (per embed Blogger cross-origin) | `server/index.ts` (`app.use("/fonts", ...)`) |
+| 14 | **Lettura ad alta voce** (text-to-speech in italiano) | `client/src/hooks/useReadAloud.ts` + pulsante "Ascolto" nella barra |
 
 ---
 
@@ -47,6 +48,8 @@ Barra fissa in alto, visibile su **tutte** le pagine (`App.tsx`), con:
 - **Interlinea**: cicla 1.65 → 1.9 → 2.2 → 2.6.
 - **Righello**: banda gialla di lettura che segue il mouse (`pointer-events: none`).
 - **Modalità**: alterna Normale ↔ Alto contrasto.
+- **Ascolto**: pulsante **Leggi** / **Stop** che legge ad alta voce il contenuto della
+  pagina in italiano (Web Speech API `speechSynthesis`, voce italiana).
 
 Usa le variabili semantiche del tema (plum/gold), quindi si adatta automaticamente a
 chiaro/scuro e resta coerente con la palette dell'app.
@@ -57,7 +60,15 @@ variabili `--lf-scale` / `--lf-lh`. Il `body` usa `font-size: calc(18px * var(--
 e `line-height: var(--lf-lh)`. Tutto scala in modo proporzionale.
 
 ### Alto contrasto
-`html.lf-hc` applica `filter: contrast(1.3) saturate(1.15)` e sfondo bianco.
+`html.lf-hc` applica `filter: contrast(1.3) saturate(1.15)` e sfondo bianco
+(+ override dello sfondo `.paper-grain`).
+
+### Lettura ad alta voce (text-to-speech)
+Il pulsante **Ascolto → Leggi** nella barra legge in italiano il testo della pagina
+(consegne degli esercizi) usando l'API Web Speech (`speechSynthesis`, `lang="it-IT"`).
+**Stop** interrompe la lettura. Esclude toolbar, pulsanti e campi di input; preferisce
+il landmark `<main>` come sorgente del testo. Aggiunta come misura di inclusione
+aggiuntiva per gli studenti con dislessia che preferiscono ascoltare.
 
 ### Focus e riduzione movimento
 - `:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px }` — anello
@@ -65,7 +76,10 @@ e `line-height: var(--lf-lh)`. Tutto scala in modo proporzionale.
 - `::selection { background: var(--primary); color: var(--primary-foreground) }`.
 - `@media (prefers-reduced-motion: reduce)` azzera animazioni e transizioni.
 
-### ARIA
+### ARIA e struttura
+- Le pagine usano il landmark `<main>` (WelcomePage e BiquadraticExercises) per la
+  navigazione con screen reader e come sorgente per la lettura ad alta voce.
+- `html { scroll-behavior: smooth }` per uno scorrimento morbido.
 - Barra: `role="toolbar"`, `aria-label`, `aria-pressed` sui toggle, `aria-live` sulla
   percentuale.
 - Campi di ingresso `Cognome` / `Nome` / `Data` / `Classe`: `aria-label` (`WelcomePage.tsx`).
@@ -93,6 +107,7 @@ all'avvio, su tutte le pagine.
 - [ ] Modalità Contrasto schiarisce lo sfondo e aumenta il contrasto.
 - [ ] Le preferenze restano dopo il riavvio del browser (`localStorage` → `wms_access`).
 - [ ] Il PDF usa OpenDyslexic.
+- [ ] Il pulsante "Ascolto → Leggi" avvia la lettura ad alta voce in italiano; "Stop" la ferma.
 
 ---
 
