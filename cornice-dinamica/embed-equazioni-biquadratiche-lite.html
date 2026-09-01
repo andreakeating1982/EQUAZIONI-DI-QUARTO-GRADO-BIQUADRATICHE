@@ -1,12 +1,8 @@
 <!-- ============================================================
-     EQUAZIONI DI QUARTO GRADO BIQUADRATICHE — CORNICE DINAMICA LITE (embed per Blogger)
-     Font OpenDyslexic caricati dall'app (CORS abilitato su /fonts/*)
+     EQUAZIONI DI QUARTO GRADO BIQUADRATICHE — CORNICE DINAMICA LITE
+     (embed per Blogger, cornice identica a quella di LATINO FACILE)
+     Font: OpenDyslexic caricati dall'app (CORS abilitato su /fonts/*)
      Altezza dinamica: protocollo labvisivo:height
-     ----------------------------------------
-     Vantaggi: codice piccolo e leggibile, font sempre aggiornati.
-     Richiede che l'app sia online (https://equazioni-biquadratiche.easy-peasy.site).
-     Esiste anche la versione autosufficiente con font incorporati:
-     embed-equazioni-biquadratiche.html (funziona anche se l'app è offline).
      ============================================================ -->
 <style>
   @font-face {
@@ -23,8 +19,9 @@
     font-style: normal;
     font-display: swap;
   }
-  #eqEmbed {
-    background: #faf7f2;
+  #lfEmbed {
+    background: #f8f1e4;
+    border: 1px solid rgba(46,32,24,0.15);
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     font-family: 'OpenDyslexic', 'Cambria', 'Times New Roman', Georgia, serif;
@@ -32,14 +29,14 @@
     max-width: 800px;
     overflow: hidden;
   }
-  #eqEmbedHead {
-    background: linear-gradient(135deg, #7c4a6b 0%, #b8846a 100%);
-    padding: 14px 20px;
+  #lfEmbedHead {
+    background: #f8f1e4;
+    padding: 12px 20px;
     text-align: center;
     border-bottom: 2px solid rgba(46,32,24,0.08);
   }
-  #eqEmbedTitle {
-    color: #ffffff;
+  #lfEmbedTitle {
+    color: #2e2018;
     font-family: 'OpenDyslexic', 'Cambria', 'Times New Roman', Georgia, serif;
     font-size: 17px;
     font-weight: 700;
@@ -47,7 +44,7 @@
     margin: 0;
     line-height: 1.3;
   }
-  #eqIframe {
+  #latinoFacileIframe {
     border: none;
     display: block;
     height: 600px;
@@ -57,16 +54,16 @@
   }
 </style>
 
-<div id="eqEmbed">
-  <div id="eqEmbedHead">
-    <div id="eqEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
+<div id="lfEmbed">
+  <div id="lfEmbedHead">
+    <div id="lfEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
   </div>
-  <iframe id="eqIframe" loading="lazy" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
+  <iframe id="latinoFacileIframe" loading="lazy" title="Equazioni di quarto grado biquadratiche — risolvi le equazioni in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
 </div>
 
 <script>
 (function() {
-  var iframe = document.getElementById('eqIframe');
+  var iframe = document.getElementById('latinoFacileIframe');
   if (!iframe) return;
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'labvisivo:height' && typeof e.data.height === 'number') {
