@@ -39,24 +39,44 @@ function pickBestVoice(): SpeechSynthesisVoice | null {
 }
 
 /**
- * Estrae il testo leggibile della pagina.
- * Lavora su un CLONE del DOM: possiamo rimuovere elementi senza toccare la UI.
+ * Estrae il testo leggibile della pagina attraversando i nodi di testo del DOM
+ * (senza mutare la UI). Usa i nodi di testo e NON `innerText` su un clone
+ * staccato, che accorpava le parole senza spazi (es. "GRADOTRINOMIE") perché
+ * dipende dal motore di layout.
  */
 function getReadableText(): string {
-  const clone = document.body.cloneNode(true) as HTMLElement;
+  const EXCLUDE_TAGS = new Set([
+    "SCRIPT", "STYLE", "NOSCRIPT", "BUTTON", "INPUT", "TEXTAREA",
+    "SELECT", "CANVAS", "SVG", "IFRAME",
+  ]);
+  const BLOCK_TAGS = new Set([
+    "DIV", "P", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "SECTION",
+    "ARTICLE", "HEADER", "MAIN", "FOOTER", "UL", "OL", "TABLE", "TR", "BR",
+  ]);
 
-  // Rumore: toolbar, pulsanti, campi, canvas/svg, script/stili.
-  clone
-    .querySelectorAll(
-      '[role="toolbar"], button, input, textarea, select, script, style, noscript, canvas, svg, iframe'
-    )
-    .forEach((el) => el.remove());
+  const parts: string[] = [];
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const t = node.textContent?.replace(/\s+/g, " ").trim();
+      if (t) parts.push(t);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    if (EXCLUDE_TAGS.has(el.tagName)) return;
+    if (el.getAttribute("role") === "toolbar") return;
+    // Copia MathML nascosta di KaTeX: duplicava ogni equazione (lettura doppia
+    // e spezzata). Teniamo solo la forma resa visivamente (.katex-html).
+    if (el.classList.contains("katex-mathml")) return;
 
-  // Copia MathML nascosta di KaTeX: duplicava ogni equazione (lettura doppia
-  // e spezzata). Teniamo solo la forma resa visivamente (.katex-html).
-  clone.querySelectorAll(".katex-mathml").forEach((el) => el.remove());
+    const isBlock = BLOCK_TAGS.has(el.tagName);
+    if (isBlock) parts.push(" ");
+    for (const child of Array.from(el.childNodes)) walk(child);
+    if (isBlock) parts.push(" ");
+  };
 
-  return (clone.innerText || "").replace(/\s+/g, " ").trim();
+  walk(document.body);
+  return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
 /** Divide il testo in frasi (per pause naturali e robustezza sui browser). */
