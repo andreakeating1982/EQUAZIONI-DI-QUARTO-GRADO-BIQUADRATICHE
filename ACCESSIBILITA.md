@@ -1,5 +1,10 @@
 # ♿ ACCESSIBILITÀ — Widget Matematico Sorgente
 
+> ⚠️ **SEZIONE ACCESSIBILITÀ** — Questa è la sezione che riassume **TUTTE** le misure di
+> accessibilità/inclusione dell'app. Ogni misura è **portabile su altre app simili**:
+> nella tabella è indicato il file da copiare. Il riepilogo operativo "come portarle su
+> un'altra app" è in fondo a questa pagina e in `GUIDA-IA.md` (sezione 9).
+
 > Misure di accessibilità/inclusione aggiunte all'app **WIDGET MATEMATICO SORGENTE**
 > (già "Equazioni Biquadratiche"), portate dall'app di riferimento **LATINO FACILE**
 > (https://github.com/andreakeating1982/LATINO-FACILE).
@@ -51,8 +56,10 @@ Barra fissa in alto, visibile su **tutte** le pagine (`App.tsx`), con:
 - **Ascolto**: pulsante **Leggi** / **Stop** che legge ad alta voce il contenuto della
   pagina in italiano (Web Speech API `speechSynthesis`, voce italiana).
 
-Usa le variabili semantiche del tema (plum/gold), quindi si adatta automaticamente a
-chiaro/scuro e resta coerente con la palette dell'app.
+Usa una palette calda fissa (barra bianco caldo `#fdfbf8`, capsule crema `#f5f0e6`
+senza bordo, testo `#2e2118`, bordo `#dedbd6`, anello focus `#b71c1c`), identica alla
+barra dell'app di riferimento (stile Cornice Universale): l'aspetto resta coerente anche
+dentro la cornice dinamica del blog.
 
 ### Dimensione testo e interlinea
 Il provider imposta su `<html>`: `font-size: 16px × scala` (scala le unità `rem`) e le
@@ -64,11 +71,20 @@ e `line-height: var(--lf-lh)`. Tutto scala in modo proporzionale.
 (+ override dello sfondo `.paper-grain`).
 
 ### Lettura ad alta voce (text-to-speech)
-Il pulsante **Ascolto → Leggi** nella barra legge in italiano il testo della pagina
-(consegne degli esercizi) usando l'API Web Speech (`speechSynthesis`, `lang="it-IT"`).
-**Stop** interrompe la lettura. Esclude toolbar, pulsanti e campi di input; preferisce
-il landmark `<main>` come sorgente del testo. Aggiunta come misura di inclusione
-aggiuntiva per gli studenti con dislessia che preferiscono ascoltare.
+Il pulsante **Ascolto → Leggi** nella barra legge ad alta voce **tutta la pagina** in
+italiano (Web Speech API `speechSynthesis`, `lang="it-IT"`, migliore voce italiana
+disponibile). **Stop** interrompe la lettura.
+
+Caratteristiche della lettura (`useReadAloud.ts`):
+- legge **tutto il contenuto**: header, guida del quaderno, sezioni comprimibili e passaggi;
+- **converte le formule KaTeX dal LaTeX in italiano parlato**: esponenti ("x⁴" → "x alla
+  quarta", "x²" → "x al quadrato"), frazioni ("fratto"), radici ("radice quadrata di"),
+  "più o meno", "delta";
+- legge anche **etichette e valori dei campi di input** (Cognome, Nome, Data, Classe),
+  con le **date lette in forma naturale** ("01/09/2026" → "primo settembre duemilaventisei");
+- converte le **parole MAIUSCOLE in minuscolo** per evitare accenti sbagliati o lettura
+  lettera-per-lettera ("TRINOMIE" → "trinomie");
+- ignora toolbar, pulsanti, canvas e script (niente rumore).
 
 ### Focus e riduzione movimento
 - `:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px }` — anello
@@ -80,8 +96,11 @@ aggiuntiva per gli studenti con dislessia che preferiscono ascoltare.
 - Le pagine usano il landmark `<main>` (WelcomePage e BiquadraticExercises) per la
   navigazione con screen reader e come sorgente per la lettura ad alta voce.
 - `html { scroll-behavior: smooth }` per uno scorrimento morbido.
-- Barra: `role="toolbar"`, `aria-label`, `aria-pressed` sui toggle, `aria-live` sulla
-  percentuale.
+- Barra: `role="toolbar"` con `aria-label`; ogni modulo è un `role="group"` con il
+  proprio `aria-label`; `aria-pressed` sui toggle; `aria-live` sulla percentuale;
+  icone decorative con `aria-hidden="true"`; descrizione introduttiva `sr-only` e
+  live region `role="status"` che annunciano all'avvio la disponibilità della barra
+  e del pulsante Ascolto (fruibile da screen reader come NVDA/JAWS/VoiceOver/TalkBack).
 - Campi di ingresso `Cognome` / `Nome` / `Data` / `Classe`: `aria-label` (`WelcomePage.tsx`).
 - Il canvas di scrittura a mano è affiancato dal pulsante **✎ digita l'equazione**
   (input da tastiera), alternativa per chi non può usare il tratto.
@@ -94,6 +113,19 @@ le formule KaTeX.
 ### Persistenza
 Le impostazioni sono salvate in `localStorage` (chiave `wms_access`) e ricaricate
 all'avvio, su tutte le pagine.
+
+### Come portare queste misure su un'altra app
+
+1. Copiare la cartella `client/public/fonts/` (font OpenDyslexic).
+2. Copiare in `index.css`: i 4 `@font-face`, le variabili `--lf-scale` / `--lf-lh`, le
+   classi `.lf-ruler-band` e `html.lf-hc`, `:focus-visible`, `::selection` e
+   `@media (prefers-reduced-motion: reduce)`.
+3. Copiare `AccessibilityContext.tsx` + `AccessibilityToolbar.tsx` e montarli in `App.tsx`
+   dentro un `<AccessibilityProvider>`, **prima** del router.
+4. Copiare `useReadAloud.ts` per la lettura ad alta voce (voce italiana, converte formule
+   ed esponenti in linguaggio naturale).
+5. Aggiungere `aria-label` ai campi di input e `role="toolbar"` / `aria-live` alla barra.
+6. Nel PDF: usare OpenDyslexic con `@font-face` inline nel documento di stampa.
 
 ---
 

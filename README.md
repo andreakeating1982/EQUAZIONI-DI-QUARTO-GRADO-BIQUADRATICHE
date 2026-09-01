@@ -1,24 +1,37 @@
-# 📐 Equazioni Biquadratiche — App Interattiva
+# 📐 Widget Matematico Sorgente — App Interattiva
 
-Un'app didattica interattiva che guida gli studenti passo-passo nella risoluzione delle equazioni biquadratiche (trinomie di quarto grado), con input tramite **scrittura a mano** (riconoscimento ONNX) e **quaderno PDF scaricabile**.
+> Già **"Equazioni Biquadratiche"** — ora **WIDGET MATEMATICO SORGENTE**.
 
-L'app riconosce l'equazione scritta a mano dallo studente (`ax⁴ + bx² + c = 0`), la trasforma in un'equazione di secondo grado tramite la sostituzione `t = x²`, calcola discriminante, radici `t₁, t₂` e infine le quattro soluzioni `x₁, x₂, x₃, x₄`. Ogni passaggio è accompagnato da spiegazioni, formule e badge colorati che mostrano le frazioni semplificate.
+Un'app didattica interattiva che guida gli studenti passo-passo nella risoluzione delle
+**equazioni trinomie** `a·x^(2k) + b·x^k + c = 0` tramite la sostituzione `t = x^k`, con
+input a **scrittura a mano** (riconoscimento ONNX), box **"RICOPIA SUL QUADERNO"** e
+**quaderno PDF scaricabile**.
+
+La sorgente attuale risolve le **equazioni biquadratiche** (grado 4, `k = 2`), ma è
+progettata per essere **clonata e variata** facilmente: grado 2/4/6/8…, disequazioni di
+qualsiasi grado, equazioni/disequazioni fratte (vedi [Varianti](#-varianti)).
 
 ---
 
-## 🚀 L'app è già online!
-
-L'app è deployata e funzionante qui:
+## 🚀 L'app è già online
 
 ```
 https://equazioni-biquadratiche.easy-peasy.site
 ```
 
-Non devi fare nulla per pubblicarla — è già live! Puoi:
+---
 
-- **Usarla subito** dal link qui sopra
-- **Incorporarla nel tuo blog** con il codice embed (vedi sezione 📱 Embed)
-- **Modificare il codice** e ri-deployare con Easy-Peasy.AI
+## 📚 Documentazione chiave (leggi prima di modificare)
+
+| Documento | A cosa serve |
+|-----------|--------------|
+| **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA**: ricostruire e variare l'app (grado, disequazioni, fratte) |
+| **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)** | Trasferire l'app su **Render** via GitHub |
+| **[`ACCESSIBILITA.md`](ACCESSIBILITA.md)** | ♿ **Sezione ACCESSIBILITÀ** — tutte le misure BES/DSA, portabili su altre app |
+| [`docs/grado.md`](docs/grado.md) | Mappa del codice per **cambiare il grado** |
+| [`docs/disequazioni.md`](docs/disequazioni.md) | Come adattare l'app alle **disequazioni** |
+| [`docs/fratte.md`](docs/fratte.md) | Come adattare l'app alle **fratte** (C.E. + verifica) |
+| [`scripts/clone_app.py`](scripts/clone_app.py) | Script di **clonazione** con grado diverso |
 
 ---
 
@@ -28,17 +41,11 @@ Non devi fare nulla per pubblicarla — è già live! Puoi:
 
 1. Apri l'app e compila la schermata iniziale con **Cognome, Nome, Data, Classe**
 2. Clicca **ENTRA**
-3. Scrivi a mano l'equazione nel riquadro (es. `2x⁴ − 3x² + 1 = 0`)
+3. Scrivi a mano l'equazione nel riquadro (es. `2x⁴ − 3x² + 1 = 0`) oppure usa
+   **✎ digita l'equazione**
 4. Clicca **RICONOSCI** — l'app interpreta la scrittura
 5. Se il riconoscimento è corretto, clicca **CONFERMA**
-6. L'app mostra **7 passi guidati**:
-   - Passo 1: Scrittura dell'equazione originale
-   - Passo 2: Sostituzione `t = x²`
-   - Passo 3: Calcolo del discriminante Δ
-   - Passo 4: Calcolo di t₁ = (−b + √Δ) / 2a
-   - Passo 5: Calcolo di t₂ = (−b − √Δ) / 2a
-   - Passo 6: Soluzioni ±√t₁ e ±√t₂
-   - Passo 7: Riepilogo con le quattro radici
+6. L'app mostra **7 passi guidati** (equazione → sostituzione `t = x²` → Δ → t₁ → t₂ → x₁ → x₂ → verifica)
 7. Per ogni passo, scrivi il valore a mano, clicca **RICONOSCI**, e il sistema verifica
 8. Alla fine, scarica il **quaderno PDF** con tutti i passaggi
 
@@ -52,23 +59,30 @@ Non devi fare nulla per pubblicarla — è già live! Puoi:
 
 ## 🖼️ Embed nel blog (Blogger / qualsiasi sito)
 
-Incolla questo codice in modalità HTML nel tuo post o pagina:
+> ⭐ **Consigliata — cornice dinamica dedicata**: copia l'intero contenuto del file
+> [`cornice-dinamica/embed-equazioni-biquadratiche-dedicata.html`](cornice-dinamica/embed-equazioni-biquadratiche-dedicata.html)
+> nella vista HTML del post. Include pulsanti **Schermo intero** e **Ricarica**, spinner
+> di caricamento, stato online/errore con **Riprova** e altezza automatica. Per un'altra
+> app usa [`cornice-dinamica/embed-universale.html`](cornice-dinamica/embed-universale.html)
+> (cambia `APP_URL` o passa `?app=URL`). Dettagli: [`cornice-dinamica/README.md`](cornice-dinamica/README.md).
+
+In alternativa, incolla questo codice minimale in modalità HTML:
 
 ```html
-<!--EQUAZIONI BIQUADRATICHE-->
+<!--WIDGET MATEMATICO SORGENTE-->
 <div style="background: rgb(250, 248, 245); border-radius: 16px; box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 20px; font-family: system-ui, -apple-system, sans-serif; margin: 0px auto; max-width: 800px; overflow: hidden;">
   <div style="background: linear-gradient(135deg, #C69C7C 0%, #E0C8B0 100%); padding: 16px 20px; text-align: center;">
     <span style="color: #3d2b1f; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 15px; font-weight: 600; letter-spacing: 1px;">EQUAZIONI DI QUARTO GRADO</span>
     <br />
     <span style="color: #5a3d2b; font-family: 'Cambria','Hoefler Text','Times New Roman',serif; font-size: 12px; font-weight: 400; letter-spacing: 0.5px;">TRINOMIE BIQUADRATICHE &nbsp;·&nbsp; RISOLVI IN 7 PASSI</span>
   </div>
-  <iframe id="equazioniBiquadraticheIframe" loading="lazy" src="https://equazioni-biquadratiche.easy-peasy.site/" style="border: none; display: block; height: 600px; min-width: 100%; transition: height 0.2s ease; width: 1px;" title="Equazioni Biquadratiche Interattive">
+  <iframe id="widgetMatematicoIframe" loading="lazy" src="https://equazioni-biquadratiche.easy-peasy.site/" style="border: none; display: block; height: 600px; min-width: 100%; transition: height 0.2s ease; width: 1px;" title="Widget Matematico Sorgente">
   </iframe>
 </div>
 
 <script>
 (function() {
-  var iframe = document.getElementById('equazioniBiquadraticheIframe');
+  var iframe = document.getElementById('widgetMatematicoIframe');
   if (!iframe) return;
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'labvisivo:height' && typeof e.data.height === 'number') {
@@ -79,40 +93,51 @@ Incolla questo codice in modalità HTML nel tuo post o pagina:
 </script><br /><br />
 ```
 
-Il codice embed è anche disponibile nel file `embed-blogger.html` incluso nel pacchetto.
+Il codice embed è disponibile anche come **file pronti** in `cornice-dinamica/`:
+`embed-equazioni-biquadratiche-dedicata.html` (⭐ dedicata), `embed-equazioni-biquadratiche-lite.html`
+(leggera), `embed-universale.html` (template per altre app) e
+`embed-equazioni-biquadratiche.html` (autosufficiente con font in base64).
 
-**L'iframe si auto-ridimensiona** grazie ai messaggi `postMessage` integrati nell'app.
+**L'iframe si auto-ridimensiona** grazie ai messaggi `postMessage` (`labvisivo:height` + `ping`)
+integrati nell'app.
 
 ---
 
-## 🔧 Come modificare e ri-deployare
+## 🔀 Varianti
 
-L'app è costruita con lo scaffold **web-static** di Easy-Peasy.AI. Per modificarla:
+L'app è un **sorgente** pensato per essere variato. L'**IA** (MARKY su Easy-Peasy.AI,
+Copilot, Claude, ecc.) può ricostruire la stessa app cambiando:
 
-1. Apri il progetto su **Easy-Peasy.AI** (piattaforma MARKY)
-2. Chiedi a MARKY le modifiche che vuoi (es. "cambia il colore del bottone", "aggiungi un nuovo passo")
-3. MARKY applica le modifiche, fa build, preview e deploy
-4. Il deploy su Cloud Run è automatico — l'URL rimane lo stesso
+1. **Il grado dell'equazione** — `t = x^k` con k = 1, 2, 3, 4… (grado 2, 4, 6, 8…).
+   Usa `scripts/clone_app.py` + `docs/grado.md`.
+2. **Le disequazioni** di qualsiasi grado — studio del segno + intervalli. Vedi
+   `docs/disequazioni.md`.
+3. **Le equazioni/disequazioni fratte** — Condizioni di Esistenza + verifica. Vedi
+   `docs/fratte.md`.
 
-**Non serve configurare server, database o Docker.** Easy-Peasy.AI gestisce tutto.
+La guida operativa completa è in **[`GUIDA-IA.md`](GUIDA-IA.md)**.
 
-### Struttura dei file principali
+---
 
-```
-client/src/
-  pages/
-    WelcomePage.tsx              # Schermata iniziale (dati studente)
-    BiquadraticExercises.tsx     # Pagina principale con i 7 passi
-  components/
-    MathDrawCanvas.tsx           # Canvas per input scrittura a mano
-    NumberInputCanvas.tsx        # Canvas per input valori numerici
-    FractionDisplay.tsx          # Componente visualizzazione frazioni
-  hooks/
-    useMathRecognition.ts        # Riconoscimento ONNX scrittura
-  App.tsx                        # Router e layout
-server/
-  index.ts                       # Server Express (solo serving statico)
-```
+## ☁️ Trasferire su Render (via GitHub)
+
+Il pacchetto include già tutto il necessario: `render.yaml` (Blueprint), la CI di GitHub
+(`.github/workflows/ci.yml`) e la guida **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)**.
+
+In sintesi: carica la cartella su un repository GitHub → su [render.com](https://render.com)
+→ **New → Blueprint** → collega il repo → Render crea il Web Service automaticamente.
+
+---
+
+## ♿ Accessibilità (BES/DSA)
+
+L'app include misure di inclusione per studenti con **BES/DSA** e **ipovisione**:
+**font OpenDyslexic**, barra di accessibilità (dimensione testo, interlinea, righello,
+alto contrasto), **lettura ad alta voce** in italiano, focus visibile, ARIA,
+`prefers-reduced-motion`, PDF in OpenDyslexic.
+
+Tutte le misure sono documentate e **portabili** su altre app nella
+**[`ACCESSIBILITA.md`](ACCESSIBILITA.md)** (sezione ACCESSIBILITÀ).
 
 ---
 
@@ -123,43 +148,48 @@ server/
 | React 19 + TypeScript | Frontend |
 | Vite 7 | Build tool |
 | TailwindCSS 4 | Styling |
-| Wouter | Routing lato client |
+| Wouter | Routing lato client (hash) |
 | KaTeX | Rendering formule matematiche |
-| ONNX Runtime Web | Riconoscimento scrittura a mano |
-| Ink-ON | Modello ONNX per handwriting recognition |
-| Express | Server di produzione |
+| ONNX Runtime Web + Ink-ON | Riconoscimento scrittura a mano |
+| Express | Server di produzione (serving statico + COOP/COEP + CORS) |
 
 ---
 
-## 🗂️ Struttura completa del progetto
+## 🗂️ Struttura del progetto
 
 ```
 ├── client/                     # Frontend React + Vite + Tailwind
-│   ├── index.html              # Entry HTML
+│   ├── index.html
 │   ├── public/
-│   │   ├── models/             # Modelli ONNX per riconoscimento
-│   │   └── wasm/               # WASM per ONNX runtime
+│   │   ├── models/comer/       # Modelli ONNX (riconoscimento scrittura)
+│   │   └── fonts/              # Font OpenDyslexic
 │   └── src/
 │       ├── pages/
-│       │   ├── WelcomePage.tsx          # Home con dati studente
+│       │   ├── WelcomePage.tsx          # Home (dati studente)
 │       │   └── BiquadraticExercises.tsx # App principale (7 passi)
 │       ├── components/
-│       │   ├── MathDrawCanvas.tsx       # Canvas disegno equazioni
+│       │   ├── MathDrawCanvas.tsx       # Canvas disegno
 │       │   ├── NumberInputCanvas.tsx    # Canvas input valori
-│       │   ├── FractionDisplay.tsx      # Visualizzazione frazioni
+│       │   ├── FractionDisplay.tsx      # Badge frazioni
+│       │   ├── AccessibilityToolbar.tsx # Barra accessibilità
 │       │   └── ui/                      # Componenti shadcn/ui
+│       ├── contexts/AccessibilityContext.tsx
 │       ├── hooks/
-│       │   └── useMathRecognition.ts    # Riconoscimento ONNX
-│       ├── App.tsx                      # Router e layout
-│       ├── main.tsx                     # Entry React
-│       └── index.css                    # Stili globali + tema
-├── server/
-│   └── index.ts                # Server Express (serving statico)
-├── shared/
-│   └── const.ts                # Costanti condivise
-├── embed-blogger.html          # Codice embed per Blogger
+│       │   ├── useMathRecognition.ts    # Riconoscimento ONNX
+│       │   └── useReadAloud.ts          # Lettura ad alta voce (TTS)
+│       ├── App.tsx
+│       ├── main.tsx
+│       └── index.css                    # Stili globali + tema + accessibilità
+├── server/index.ts             # Server Express (serving statico)
+├── shared/const.ts             # Costanti condivise
+├── docs/                       # Riferimenti per le varianti (grado, disequazioni, fratte)
+├── scripts/clone_app.py        # Script di clonazione con grado diverso
+├── cornice-dinamica/           # Cornice dinamica embed (dedicata, lite, universale, autosufficiente + test)
+├── GUIDA-IA.md                 # Guida per l'IA
+├── DEPLOY-RENDER.md            # Guida deploy Render
+├── ACCESSIBILITA.md            # Sezione ACCESSIBILITÀ
+├── render.yaml                 # Blueprint Render
 ├── package.json                # Dipendenze e script
-├── tsconfig.json               # Configurazione TypeScript
 └── vite.config.ts              # Configurazione Vite
 ```
 
@@ -168,17 +198,11 @@ server/
 ## 📦 Sviluppo locale
 
 ```bash
-# Installa dipendenze
-pnpm install
-
-# Avvia server di sviluppo
-pnpm dev
-
-# Build di produzione
-pnpm build
-
-# Type check
-pnpm check
+pnpm install     # dipendenze
+pnpm dev         # dev server
+pnpm check       # type-check TypeScript
+pnpm build       # build di produzione (client + server)
+pnpm start       # server di produzione
 ```
 
 ---
@@ -189,4 +213,4 @@ MIT — libero di usare, modificare e condividere.
 
 ---
 
-*App creata con ❤️ da MARKY su Easy-Peasy.AI · Agosto 2026*
+*App creata con ❤️ da MARKY su Easy-Peasy.AI · Settembre 2026*

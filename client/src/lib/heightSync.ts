@@ -20,12 +20,26 @@ function currentHeight(): number {
   );
 }
 
+function getCorniceToken(): string | null {
+  // La cornice v3 "impermeabile" aggiunge ?cornice=<token> all'URL dell'iframe:
+  // rispecchiamo il token nei messaggi, così la cornice rifiuta i messaggi
+  // di altezza che arrivano da altre istanze (filtro e.source + token).
+  try {
+    return new URLSearchParams(window.location.search).get("cornice");
+  } catch {
+    return null;
+  }
+}
+
 function sendHeight(): void {
   // Attivo solo quando siamo dentro un iframe (non come pagina principale)
   if (window.self === window.top) return;
   const height = currentHeight();
   if (height > 100) {
-    window.parent.postMessage({ type: "labvisivo:height", height }, "*");
+    const msg: Record<string, unknown> = { type: "labvisivo:height", height };
+    const token = getCorniceToken();
+    if (token) msg.cornice = token;
+    window.parent.postMessage(msg, "*");
   }
 }
 

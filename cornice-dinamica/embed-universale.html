@@ -1,10 +1,9 @@
 <!-- ============================================================
-     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE
-     (embed per Blogger o qualsiasi sito — stile LATINO FACILE)
+     CORNICE DINAMICA — EMBED UNIVERSALE (template per ALTRE APP)
      ------------------------------------------------------------
-     ✏️  RIUSO PER UN'ALTRA APP: cambia SOLO le due righe nella
-         sezione "⚙️ CONFIGURAZIONE" qui sotto:
-           1. APP_URL   → l'URL della tua app (es. https://mia-app.example.com/)
+     ✏️  RIUSO: cambia SOLO le due righe nella sezione
+         "⚙️ CONFIGURAZIONE" qui sotto:
+           1. APP_URL   → l'URL della tua app
            2. APP_TITLE → (facoltativo) il titolo mostrato nella cornice
          Tutto il resto (iframe, font OpenDyslexic, altezza dinamica)
          si adatta automaticamente usando quell'URL.
@@ -13,8 +12,9 @@
          della pagina, es. https://tuosito.it/post?app=https://mia-app.example.com/
          (parametro "app" o "url"). Se presente, ha la precedenza su APP_URL.
 
-     📏  Altezza dinamica: protocollo labvisivo:height + ping.
-         Se l'app non lo supporta, resta l'altezza di default (640px).
+     📏  Altezza dinamica: protocollo labvisivo:height + ping
+         (usato dalle app della famiglia "LabVisivo"). Se l'app non lo
+         supporta, la cornice mantiene l'altezza di default (640px).
 
      🎨  Colori allineati all'app: carta #f8f1e4, inchiostro #2e2018.
      ============================================================ -->
@@ -76,7 +76,7 @@
 
 <div id="lfEmbed">
   <div id="lfEmbedHead">
-    <div id="lfEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
+    <div id="lfEmbedTitle">LA TUA APP</div>
     <a id="lfEmbedOpen" href="#" target="_blank" rel="noopener">Apri ↗</a>
   </div>
   <iframe id="lfFrame" loading="lazy" title="App in cornice" src="about:blank"></iframe>
@@ -84,8 +84,8 @@
 
 <script>
   /* ================= ⚙️ CONFIGURAZIONE — unica parte da modificare ================= */
-  var APP_URL   = 'https://equazioni-biquadratiche.easy-peasy.site/';   // ← cambia SOLO qui per un'altra app
-  var APP_TITLE = 'EQUAZIONI DI QUARTO GRADO BIQUADRATICHE';            // ← (facoltativo) titolo in cornice
+  var APP_URL   = 'https://LA-TUA-APP.example.com/';   // ← cambia SOLO qui
+  var APP_TITLE = 'LA TUA APP';                         // ← (facoltativo) titolo in cornice
   /* ================================================================================ */
 
   (function () {

@@ -1,58 +1,65 @@
 ========================================
-   COME USARE QUESTO PACCHETTO
-   Equazioni Biquadratiche
+   PACCHETTO — WIDGET MATEMATICO SORGENTE
+   (già "Equazioni Biquadratiche")
 ========================================
 
-Ciao! Hai scaricato il progetto completo dell'app
-"Equazioni Biquadratiche".
+Hai scaricato il progetto completo dell'app didattica
+"Widget Matematico Sorgente".
 
-L'APP È GIÀ ONLINE!
-Non devi fare nulla per pubblicarla. È già deployata su:
+
+DA DOVE COMINCIARE (leggi questi file):
+
+  1. GUIDA-IA.md        -> Guida per l'intelligenza artificiale:
+                           come RICOSTRUIRE e VARIARE l'app
+                           (grado, disequazioni, fratte).
+
+  2. DEPLOY-RENDER.md   -> Come trasferire l'app su RENDER
+                           usando un repository GitHub.
+
+  3. ACCESSIBILITA.md   -> Sezione ACCESSIBILITA': tutte le
+                           misure BES/DSA (OpenDyslexic, ecc.)
+                           portabili su altre app.
+
+  4. README.md          -> Documentazione generale + embed.
+
+
+L'APP È GIÀ ONLINE (produzione Easy-Peasy.AI):
   https://equazioni-biquadratiche.easy-peasy.site
 
 
-COME INCORPORARLA NEL TUO BLOG (BLOGGER):
+VARIANTI POSSIBILI (tramite l'IA):
 
-1. Apri il file embed-blogger.html (incluso nel pacchetto)
-2. Copia TUTTO il contenuto
-3. Vai su Blogger → Nuovo post → Modalità HTML
-4. Incolla il codice
-5. Pubblica!
+  * Cambiare il grado dell'equazione (2, 4, 6, 8...)
+    -> scripts/clone_app.py + docs/grado.md
 
-L'iframe si ridimensiona automaticamente in base al
-contenuto dell'app.
+  * Disequazioni di qualsiasi grado (studio del segno)
+    -> docs/disequazioni.md
 
-
-COME PERSONALIZZARE L'APP:
-
-L'app è costruita su Easy-Peasy.AI. Puoi chiedere a
-MARKY (l'assistente AI) di modificare qualsiasi cosa:
-colori, testi, funzionalità. MARKY fa build, preview
-e deploy automaticamente.
+  * Equazioni/disequazioni fratte (C.E. + verifica)
+    -> docs/fratte.md
 
 
-COME CARICARE IL CODICE SU GITHUB:
+TRASFERIRE SU RENDER (via GitHub):
 
-1. Crea un repository su github.com
-2. Usa GitHub Desktop → Clona il repository
-3. Copia tutti i file di questo pacchetto
-   nella cartella del repository
-4. Fai Commit e Push
+  1. Crea un repository su github.com
+  2. Carica TUTTI i file di questo pacchetto (root del repo)
+  3. Vai su render.com -> New -> Blueprint
+  4. Collega il repository: Render legge render.yaml
+     e crea il Web Service automaticamente.
 
-Per istruzioni dettagliate, leggi GUIDA-UNICA.html
-(incluso in questo pacchetto).
+  Dettagli: DEPLOY-RENDER.md
 
 
 STRUTTURA DEL PROGETTO:
 
-equazioni-biquadratiche/
-├── client/           # Frontend React + Vite + Tailwind
-├── server/           # Server Express (serving statico)
-├── shared/           # Costanti condivise
-├── embed-blogger.html   # Codice embed per Blogger
-├── GUIDA-UNICA.html     # Guida completa
-├── README.md            # Documentazione tecnica
-└── package.json         # Dipendenze e script
+  client/            Frontend React + Vite + Tailwind
+  server/            Server Express (serving statico)
+  shared/            Costanti condivise
+  docs/              Riferimenti per le varianti
+  scripts/           clone_app.py (clonazione grado)
+  cornice-dinamica/  Embed Blogger (lite + base64)
+  render.yaml        Blueprint Render
+  .github/workflows/ CI (build automatica)
 
 
-BUON DIVERTIMENTO! 📐
+BUON LAVORO! 📐
