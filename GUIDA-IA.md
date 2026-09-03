@@ -8,6 +8,12 @@
 > **Stack**: Vite + React 19 + TypeScript + TailwindCSS 4 + shadcn/ui + KaTeX + ONNX (ink-on)
 > **Nessun backend, nessun database**: tutta la logica (generazione equazione, passi,
 > verifica, PDF) è lato client. Il server Express serve solo i file statici.
+>
+> **Documenti canonici** (lettura rapida): [`AGENTS.md`](AGENTS.md) (indice),
+> [`REBUILD.md`](REBUILD.md) (ricostruire identica), [`ADATTARE.md`](ADATTARE.md)
+> (creare varianti), [`RENDER.md`](RENDER.md) (deploy Render),
+> [`ACCESSIBILITA.md`](ACCESSIBILITA.md) (accessibilità). Questo documento è
+> l'approfondimento completo.
 
 ---
 
@@ -277,7 +283,7 @@ Il progetto include già:
   `pnpm install --frozen-lockfile && pnpm build`, `pnpm start`).
 - **`.github/workflows/ci.yml`** — CI su ogni push (install → check → test → build).
 
-Procedura completa passo-passo: **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)**.
+Procedura completa passo-passo: **[`RENDER.md`](RENDER.md)**.
 
 In sintesi:
 1. Carica questa cartella su un repository GitHub (root del repo).

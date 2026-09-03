@@ -25,8 +25,11 @@ https://equazioni-biquadratiche.easy-peasy.site
 
 | Documento | A cosa serve |
 |-----------|--------------|
-| **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA**: ricostruire e variare l'app (grado, disequazioni, fratte, **lingua**, quiz) |
-| **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)** | Trasferire l'app su **Render** via GitHub |
+| **[`AGENTS.md`](AGENTS.md)** | **Punto di partenza per agenti IA**: indice dei documenti e regole essenziali |
+| **[`REBUILD.md`](REBUILD.md)** | **Ricostruire** l'app identica dal repository GitHub |
+| **[`ADATTARE.md`](ADATTARE.md)** | **Creare varianti**: grado, disequazioni, fratte, lingua, quiz |
+| **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA** completa (architettura, file critici, regole d'oro) |
+| **[`RENDER.md`](RENDER.md)** | Trasferire l'app su **Render** via GitHub |
 | **[`ACCESSIBILITA.md`](ACCESSIBILITA.md)** | ♿ **Sezione ACCESSIBILITÀ** — tutte le misure BES/DSA, portabili su altre app |
 | [`docs/grado.md`](docs/grado.md) | Mappa del codice per **cambiare il grado** |
 | [`docs/disequazioni.md`](docs/disequazioni.md) | Come adattare l'app alle **disequazioni** |
@@ -121,14 +124,14 @@ Copilot, Claude, ecc.) può ricostruire la stessa app cambiando:
 5. **Un quiz** con set di domande — contenuto, numero, VERO/FALSO o 3/4 opzioni.
    Vedi `docs/quiz.md`.
 
-La guida operativa completa è in **[`GUIDA-IA.md`](GUIDA-IA.md)**.
+La guida operativa completa è in **[`ADATTARE.md`](ADATTARE.md)** e **[`GUIDA-IA.md`](GUIDA-IA.md)**.
 
 ---
 
 ## ☁️ Trasferire su Render (via GitHub)
 
 Il pacchetto include già tutto il necessario: `render.yaml` (Blueprint), la CI di GitHub
-(`.github/workflows/ci.yml`) e la guida **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)**.
+(`.github/workflows/ci.yml`) e la guida **[`RENDER.md`](RENDER.md)**.
 
 In sintesi: carica la cartella su un repository GitHub → su [render.com](https://render.com)
 → **New → Blueprint** → collega il repo → Render crea il Web Service automaticamente.
@@ -191,8 +194,11 @@ Tutte le misure sono documentate e **portabili** su altre app nella
 ├── docs/                       # Riferimenti per le varianti (grado, disequazioni, fratte)
 ├── scripts/clone_app.py        # Script di clonazione con grado diverso
 ├── cornice-dinamica/           # Cornice dinamica embed (dedicata, lite, universale, autosufficiente + test)
+├── AGENTS.md                   # Punto di partenza per agenti IA
+├── REBUILD.md                  # Ricostruire l'app identica
+├── ADATTARE.md                 # Creare varianti (grado, disequazioni, fratte, lingua, quiz)
 ├── GUIDA-IA.md                 # Guida per l'IA
-├── DEPLOY-RENDER.md            # Guida deploy Render
+├── RENDER.md                   # Guida deploy Render
 ├── ACCESSIBILITA.md            # Sezione ACCESSIBILITÀ
 ├── render.yaml                 # Blueprint Render
 ├── package.json                # Dipendenze e script

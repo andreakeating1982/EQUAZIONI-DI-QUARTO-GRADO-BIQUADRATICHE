@@ -1,4 +1,4 @@
-# 🚀 DEPLOY-RENDER — Trasferire l'app da Easy-Peasy.AI a Render (via GitHub)
+# 🚀 RENDER — Trasferire l'app da Easy-Peasy.AI a Render (via GitHub)
 
 > Guida passo-passo per spostare il **Widget Matematico Sorgente** su
 > [Render.com](https://render.com) usando un repository GitHub e il Blueprint

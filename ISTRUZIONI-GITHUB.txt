@@ -9,18 +9,26 @@ Hai scaricato il progetto completo dell'app didattica
 
 DA DOVE COMINCIARE (leggi questi file):
 
-  1. GUIDA-IA.md        -> Guida per l'intelligenza artificiale:
-                           come RICOSTRUIRE e VARIARE l'app
-                           (grado, disequazioni, fratte, lingua, quiz).
+  1. AGENTS.md          -> Punto di partenza per agenti IA
+                           (indice dei documenti + regole).
 
-  2. DEPLOY-RENDER.md   -> Come trasferire l'app su RENDER
+  2. REBUILD.md         -> Come RICOSTRUIRE l'app identica
+                           dal repository GitHub.
+
+  3. ADATTARE.md        -> Come creare VARIANTI (grado,
+                           disequazioni, equazioni/disequazioni
+                           fratte, lingua, quiz).
+
+  4. RENDER.md          -> Come trasferire l'app su RENDER
                            usando un repository GitHub.
 
-  3. ACCESSIBILITA.md   -> Sezione ACCESSIBILITA': tutte le
+  5. ACCESSIBILITA.md   -> Sezione ACCESSIBILITA': tutte le
                            misure BES/DSA (OpenDyslexic, ecc.)
                            portabili su altre app.
 
-  4. README.md          -> Documentazione generale + embed.
+  6. GUIDA-IA.md        -> Guida operativa completa per l'IA.
+
+  7. README.md          -> Documentazione generale + embed.
 
 
 L'APP È GIÀ ONLINE (produzione Easy-Peasy.AI):
@@ -53,7 +61,7 @@ TRASFERIRE SU RENDER (via GitHub):
   4. Collega il repository: Render legge render.yaml
      e crea il Web Service automaticamente.
 
-  Dettagli: DEPLOY-RENDER.md
+  Dettagli: RENDER.md
 
 
 STRUTTURA DEL PROGETTO:
@@ -62,7 +70,7 @@ STRUTTURA DEL PROGETTO:
   server/            Server Express (serving statico)
   shared/            Costanti condivise
   docs/              Riferimenti per le varianti (grado, disequazioni,
-                     fratte, lingua, quiz)
+                     equazioni/disequazioni fratte, lingua, quiz)
   scripts/           clone_app.py (clonazione grado)
   cornice-dinamica/  Embed Blogger (lite + base64)
   render.yaml        Blueprint Render

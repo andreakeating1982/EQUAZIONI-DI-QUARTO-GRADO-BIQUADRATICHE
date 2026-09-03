@@ -1,7 +1,7 @@
 # Render Blueprint — deploy di «Widget Matematico Sorgente» (app didattica) con un clic
 # --------------------------------------------------------------------------------
 # Come usarlo:
-#   1. Carica questa cartella (app/) su GitHub — vedi ISTRUZIONI-GITHUB.txt / DEPLOY-RENDER.md
+#   1. Carica questa cartella (app/) su GitHub — vedi ISTRUZIONI-GITHUB.txt / RENDER.md
 #   2. Vai su https://render.com → New → Blueprint
 #   3. Collega il repository: Render legge questo file e crea il Web Service.
 #

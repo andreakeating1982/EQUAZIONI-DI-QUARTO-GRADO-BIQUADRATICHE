@@ -74,3 +74,43 @@ ma `x ≠ 1`), il passo 6 la scarta: la soluzione diventa `S = ∅` (o solo l'al
 - Fare scrivere allo studente **solo** i numeri essenziali (C.E., radici, verifica),
   mostrando i passaggi algebrici già svolti.
 - Tenere il box "RICOPIA SUL QUADERNO" con la derivazione completa da copiare.
+
+---
+
+## Disequazioni fratte (combinazione fratte + studio del segno)
+
+Una **disequazione fratta** ha forma `N(x) / D(x) ≷ 0` (oppure una somma di frazioni
+`≷ 0`), con `≷ ∈ {>, <, ≥, ≤}`. Si risolve **combinando** le C.E. (delle equazioni
+fratte) e lo **studio del segno** (delle disequazioni):
+
+1. **C.E.**: ogni denominatore ≠ 0 (stesso passo delle equazioni fratte).
+2. **Forma canonica**: portare tutto a sinistra e ridurre a **una frazione unica**
+   `N(x)/D(x) ≷ 0` (denominatore comune).
+3. **Zeri di numeratore e denominatore**: trovare le radici di `N(x) = 0` e di `D(x) = 0`.
+4. **Studio del segno**: tabella dei segni con i fattori di numeratore e denominatore
+   (righe separate per `N(x)` e `D(x)`, riga finale per `N/D`). Nei punti in cui
+   `D(x) = 0` la frazione **non esiste** (buco nella linea dei segni, non un "=").
+5. **Soluzione finale**: selezionare gli intervalli con il segno richiesto dal verso
+   (`> 0` → `+`, `< 0` → `−`), escludendo sempre i valori esclusi dalle C.E. Per `≥ 0` /
+   `≤ 0` includere gli zeri del numeratore MA **mai** quelli del denominatore.
+
+### Struttura passi per una disequazione fratta (es. `(x² − 1)/(x − 2) ≥ 0`)
+
+1. Disequazione fratta inserita (con verso)
+2. C.E.: `x − 2 ≠ 0` → `x ≠ 2`
+3. Zeri del numeratore: `x² − 1 = 0` → `x = ±1`
+4. Zeri del denominatore: `x − 2 = 0` → `x = 2` (escluso dalle C.E.)
+5. Studio del segno (tabella dei segni di N e D)
+6. Soluzione: `[-1, 1] ∪ ]2, +∞[` (intervalli con segno `+`, escluso `x = 2`)
+
+Se il numeratore è una trinomia `a·x^(2k) + b·x^k + c`, si riusa TUTTA la logica trinomie
+(sostituzione `t = x^k`, delta, radici, estrazione x) per gli zeri del numeratore: **il
+grado può essere qualsiasi**.
+
+### Linee guida BES per le disequazioni fratte
+
+- **Tabella dei segni visiva** con colori (`+` verde, `−` rosso) e il **"buco"** del
+  denominatore ben evidenziato (pallino vuoto vs pallino pieno).
+- **C.E. in riquadro colorato** "prima di tutto", come nelle equazioni fratte.
+- Fare scrivere allo studente **solo** C.E., zeri e intervallo finale: la tabella dei
+  segni è mostrata e ragionata, non calcolata a mano.
