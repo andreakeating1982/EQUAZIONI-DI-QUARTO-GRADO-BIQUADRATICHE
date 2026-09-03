@@ -11,7 +11,7 @@ DA DOVE COMINCIARE (leggi questi file):
 
   1. GUIDA-IA.md        -> Guida per l'intelligenza artificiale:
                            come RICOSTRUIRE e VARIARE l'app
-                           (grado, disequazioni, fratte).
+                           (grado, disequazioni, fratte, lingua, quiz).
 
   2. DEPLOY-RENDER.md   -> Come trasferire l'app su RENDER
                            usando un repository GitHub.
@@ -38,6 +38,12 @@ VARIANTI POSSIBILI (tramite l'IA):
   * Equazioni/disequazioni fratte (C.E. + verifica)
     -> docs/fratte.md
 
+  * Cambiare la LINGUA (inglese, spagnolo, francese)
+    -> docs/lingua.md
+
+  * Quiz con set di domande (VERO/FALSO, 3 o 4 opzioni)
+    -> docs/quiz.md
+
 
 TRASFERIRE SU RENDER (via GitHub):
 
@@ -55,7 +61,8 @@ STRUTTURA DEL PROGETTO:
   client/            Frontend React + Vite + Tailwind
   server/            Server Express (serving statico)
   shared/            Costanti condivise
-  docs/              Riferimenti per le varianti
+  docs/              Riferimenti per le varianti (grado, disequazioni,
+                     fratte, lingua, quiz)
   scripts/           clone_app.py (clonazione grado)
   cornice-dinamica/  Embed Blogger (lite + base64)
   render.yaml        Blueprint Render

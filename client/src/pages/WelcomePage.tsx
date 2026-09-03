@@ -14,18 +14,18 @@ function getOggi(): string {
 export default function WelcomePage() {
   const [, navigate] = useLocation();
 
-  // ─── Auto-resize postMessage for embed ──────────────────────────
   useEffect(() => {
-    const sendHeight = () => {
-      const height = document.body.scrollHeight;
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'labvisivo:height', height }, '*');
-      }
-    };
-    sendHeight();
-    const observer = new ResizeObserver(() => sendHeight());
-    observer.observe(document.body);
-    return () => observer.disconnect();
+    /* Vista autonoma (fuori dall'iframe del blog): la pagina deve "terminare"
+       subito sotto la card come le altre app del blog dentro la cornice.
+       Aggiunge la classe lf-welcome-top su <html> che rende neutro (bianco)
+       il canvas sotto il contenuto, così sparisce il grande vuoto crema sotto
+       la card. Dentro la cornice (iframe) NON viene aggiunta: lì è il
+       heightSync a segnalare l'altezza reale del contenuto e la cornice
+       dinamica si restringe da sola. */
+    if (window.self === window.top) {
+      document.documentElement.classList.add("lf-welcome-top");
+      return () => document.documentElement.classList.remove("lf-welcome-top");
+    }
   }, []);
 
   const [cognome, setCognome] = useState("");
@@ -43,10 +43,12 @@ export default function WelcomePage() {
   };
 
   return (
-    <main className="lf-welcome flex min-h-[calc(100dvh-7rem)] flex-col bg-background sm:min-h-[calc(100dvh-4.5rem)]">
-      {/* Card centrata nel riquadro tra la barra di accessibilità (in alto) e il
-          footer (in basso). Padding top aumentato per distanziarla dalla barra. */}
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
+    <div className="lf-welcome flex flex-col items-center bg-background px-4 pb-8 sm:pb-12">
+      {/* Layout compatto come le altre prime pagine: la card sta subito sotto la
+          barra di accessibilità, con un piccolo respiro sopra e sotto, e la
+          pagina termina subito dopo la card (niente più grande spazio vuoto
+          sotto, né in pagina né dentro l'iframe) */}
+      <div className="flex w-full flex-col items-center pt-4 sm:pt-8">
       <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-[20px] p-5 md:p-6 w-full max-w-[400px] shadow-[0_8px_25px_rgba(43,36,33,0.06)] flex flex-col items-center text-center">
         {/* Book icon — identico a Mappa Concettuale */}
         <div className="bg-[#F0E5DF] p-2.5 rounded-[12px] mb-3">
@@ -126,6 +128,6 @@ export default function WelcomePage() {
         </button>
       </div>
       </div>
-    </main>
+    </div>
   );
 }

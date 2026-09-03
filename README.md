@@ -25,12 +25,14 @@ https://equazioni-biquadratiche.easy-peasy.site
 
 | Documento | A cosa serve |
 |-----------|--------------|
-| **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA**: ricostruire e variare l'app (grado, disequazioni, fratte) |
+| **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA**: ricostruire e variare l'app (grado, disequazioni, fratte, **lingua**, quiz) |
 | **[`DEPLOY-RENDER.md`](DEPLOY-RENDER.md)** | Trasferire l'app su **Render** via GitHub |
 | **[`ACCESSIBILITA.md`](ACCESSIBILITA.md)** | ♿ **Sezione ACCESSIBILITÀ** — tutte le misure BES/DSA, portabili su altre app |
 | [`docs/grado.md`](docs/grado.md) | Mappa del codice per **cambiare il grado** |
 | [`docs/disequazioni.md`](docs/disequazioni.md) | Come adattare l'app alle **disequazioni** |
 | [`docs/fratte.md`](docs/fratte.md) | Come adattare l'app alle **fratte** (C.E. + verifica) |
+| [`docs/lingua.md`](docs/lingua.md) | Come **cambiare la lingua** (inglese, spagnolo, francese) |
+| [`docs/quiz.md`](docs/quiz.md) | Come adattare l'app a un **quiz** con set di domande |
 | [`scripts/clone_app.py`](scripts/clone_app.py) | Script di **clonazione** con grado diverso |
 
 ---
@@ -114,6 +116,10 @@ Copilot, Claude, ecc.) può ricostruire la stessa app cambiando:
    `docs/disequazioni.md`.
 3. **Le equazioni/disequazioni fratte** — Condizioni di Esistenza + verifica. Vedi
    `docs/fratte.md`.
+4. **La lingua** — inglese, spagnolo, francese (traduzione testi + voce TTS + formati
+   di numeri/date). Vedi `docs/lingua.md`.
+5. **Un quiz** con set di domande — contenuto, numero, VERO/FALSO o 3/4 opzioni.
+   Vedi `docs/quiz.md`.
 
 La guida operativa completa è in **[`GUIDA-IA.md`](GUIDA-IA.md)**.
 

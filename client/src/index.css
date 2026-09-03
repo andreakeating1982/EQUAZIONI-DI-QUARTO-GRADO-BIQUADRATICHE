@@ -423,9 +423,48 @@ html.lf-embedded .min-h-dvh {
 html.lf-embedded body {
   min-height: 0 !important;
 }
-/* La pagina di ingresso (WelcomePage) compensa l'altezza della barra di
-   accessibilità con un min-height in dvh; dentro l'iframe (cornice Blogger)
-   deve invece seguire il contenuto come le altre pagine. */
+/* PRIMA PAGINA dentro la cornice del blog (lf-embedded): la card segue il
+   contenuto (niente min-height, niente ancoraggio in basso): la cornice
+   dinamica riceve l'altezza REALE e si restringe da sola. Lo spazio tra la
+   barra di accessibilità e la card è pareggiato con quello sotto la card:
+   la barra ha già mb-1 (4px), quindi padding-top 20px + 4px = 24px sopra,
+   padding-bottom 24px sotto. */
 html.lf-embedded .lf-welcome {
   min-height: 0 !important;
+  justify-content: flex-start;
+  padding-top: 20px;
+  padding-bottom: 24px;
+}
+/* Il primo contenitore interno della card ha pt-4 sm:pt-8 (16/32px): dentro
+   la cornice lo azzeriamo perché lo spazio sopra la card è già dato dal
+   padding-top di .lf-welcome (pareggiato con quello sotto). */
+html.lf-embedded .lf-welcome > div:first-child {
+  padding-top: 0 !important;
+}
+
+/* ------------------------------------------------------------------
+   PRIMA PAGINA come pagina autonoma (non iframe): la classe lf-welcome-top
+   viene messa su <html> da WelcomePage quando l'app è aperta da sola nel
+   browser (window.self === window.top). Il body crema (#f8f1e4) riempie
+   l'intero viewport e lasciava un grande vuoto sotto la card; rendendo
+   neutro il canvas sotto il contenuto, la pagina "termina" subito sotto la
+   card, replicando l'aspetto compatto delle altre app del blog.
+   ------------------------------------------------------------------ */
+html.lf-welcome-top body {
+  background-color: #ffffff;
+}
+html.lf-welcome-top .lf-welcome {
+  position: relative;
+}
+/* Dissolvenza morbida in fondo al blocco crema: la pagina sfuma nel bianco
+   del canvas invece di tagliarsi con un bordo netto. */
+html.lf-welcome-top .lf-welcome::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(248, 241, 228, 0), #ffffff);
+  pointer-events: none;
 }

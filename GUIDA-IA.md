@@ -19,11 +19,13 @@
 4. [Variante A — cambiare il grado dell'equazione](#4-variante-a--cambiare-il-grado-dellequazione)
 5. [Variante B — disequazioni di qualsiasi grado](#5-variante-b--disequazioni-di-qualsiasi-grado)
 6. [Variante C — equazioni/disequazioni fratte](#6-variante-c--equazionidisequazioni-fratte)
-7. [Build, verifica e deploy](#7-build-verifica-e-deploy)
-8. [Trasferimento su Render (via GitHub)](#8-trasferimento-su-render-via-github)
-9. [ACCESSIBILITÀ (sezione portabile)](#9-accessibilità-sezione-portabile)
-10. [Regole d'oro](#10-regole-doro)
-11. [Cornice dinamica (embed per il blog)](#11-cornice-dinamica-embed-per-il-blog)
+7. [Variante D — cambiare la lingua (inglese, spagnolo, francese)](#7-variante-d--cambiare-la-lingua-inglese-spagnolo-francese)
+8. [Variante E — quiz con set di domande](#8-variante-e--quiz-con-set-di-domande)
+9. [Build, verifica e deploy](#9-build-verifica-e-deploy)
+10. [Trasferimento su Render (via GitHub)](#10-trasferimento-su-render-via-github)
+11. [ACCESSIBILITÀ (sezione portabile)](#11-accessibilità-sezione-portabile)
+12. [Regole d'oro](#12-regole-doro)
+13. [Cornice dinamica (embed per il blog)](#13-cornice-dinamica-embed-per-il-blog)
 
 ---
 
@@ -79,6 +81,8 @@ feedback immediato CORRETTO/SBAGLIATO, PDF finale.
 | `docs/grado.md` | Riferimento: **cambiare il grado** (mappa del codice) |
 | `docs/disequazioni.md` | Riferimento: **adattare alle disequazioni** |
 | `docs/fratte.md` | Riferimento: **adattare alle fratte** (C.E. + verifica) |
+| `docs/lingua.md` | Riferimento: **cambiare la lingua** (inglese, spagnolo, francese) |
+| `docs/quiz.md` | Riferimento: **adattare a quiz** (set di domande, VERO/FALSO, 3/4 opzioni) |
 | `scripts/clone_app.py` | Script di clonazione meccanica con grado diverso |
 
 ### Pipeline del riconoscimento scrittura (ONNX)
@@ -198,7 +202,52 @@ sommando i due riferimenti (C.E. + studio del segno).
 
 ---
 
-## 7. Build, verifica e deploy
+## 7. Variante D — cambiare la lingua (inglese, spagnolo, francese)
+
+La logica matematica **non dipende dalla lingua**: per ottenere un'app per lo studio
+dell'**inglese**, dello **spagnolo** o del **francese** cambiano solo i **testi**
+dell'interfaccia, la **voce della lettura ad alta voce** (TTS) e i **formati** di
+numeri/date.
+
+In sintesi:
+
+1. `client/index.html`: `lang="it"` → `en` / `es` / `fr` + `<title>` tradotto.
+2. `WelcomePage.tsx` e `BiquadraticExercises.tsx`: traduci le **stringhe** (titoli,
+   consegne, box "RICOPIA SUL QUADERNO", pulsanti, testi del PDF). **Non** rinominare
+   variabili, chiavi di stato o ID.
+3. `useReadAloud.ts`: imposta la voce TTS della lingua (`it-IT` → `en-US`/`en-GB`,
+   `es-ES`, `fr-FR`) e traduci le etichette lette ad alta voce.
+4. `AccessibilityToolbar.tsx`: traduci le etichette della barra e le `aria-label`.
+
+> Le formule KaTeX (`x⁴`, `Δ`, `√`, `±`, frazioni) **NON si traducono**: sono universali.
+> Cambiano solo le parole attorno alle formule ("discriminante" → "discriminant" /
+> "discriminante" / "discriminant", ecc.).
+
+Riferimento completo (tabella testi, simboli, formati numeri/date, voci TTS per
+it/en/es/fr, accessibilità e lingua, checklist di verifica):
+**[`docs/lingua.md`](docs/lingua.md)**.
+
+---
+
+## 8. Variante E — quiz con set di domande
+
+Per ricostruire un **quiz** (con dashboard docente, codici classe, sessioni, contatore
+studenti e report PDF con punteggio) si parte dalle app quiz della stessa famiglia e si
+cambia **solo il set di domande** tramite un **JSON**: contenuto, numero di domande,
+tipologia **VERO/FALSO** (2 opzioni) oppure a **3 o 4 opzioni**.
+
+| Obiettivo | Cosa fare |
+|---|---|
+| Contenuto diverso | modifica `testo` e `opzioni` di ogni domanda |
+| Numero diverso | aggiungi/rimuovi oggetti nell'array `domande` |
+| Tipologia diversa | `vero_falso` (2 opzioni), `multipla_3` (3), `multipla_4` (4) |
+| Tema/lingua diverso | traduci `testo`/`opzioni` (vedi `docs/lingua.md`) |
+
+Riferimento completo (JSON di esempio, skill di clonazione): **[`docs/quiz.md`](docs/quiz.md)**.
+
+---
+
+## 9. Build, verifica e deploy
 
 ```bash
 pnpm install                 # dipendenze (usa pnpm-lock.yaml)
@@ -221,7 +270,7 @@ grep -rn "x^{4}\|x^{2}\|x⁴\|x²" client/src
 
 ---
 
-## 8. Trasferimento su Render (via GitHub)
+## 10. Trasferimento su Render (via GitHub)
 
 Il progetto include già:
 - **`render.yaml`** — Blueprint Render: crea il Web Service con un clic (Node 22,
@@ -241,7 +290,7 @@ In sintesi:
 
 ---
 
-## 9. ACCESSIBILITÀ (sezione portabile)
+## 11. ACCESSIBILITÀ (sezione portabile)
 
 > ⚠️ **SEZIONE ACCESSIBILITÀ** — questa è la sezione che riassume TUTTE le misure di
 > accessibilità dell'app. Le stesse misure possono essere **portate su altre app simili**
@@ -284,7 +333,7 @@ verifica rapida).
 
 ---
 
-## 10. Regole d'oro
+## 12. Regole d'oro
 
 1. **MAI saltare `pnpm check`** prima del deploy — gli errori TypeScript bloccano la build.
 2. **Non fare replace globale delle cifre** `4`/`2` quando si cambia grado: sostituire solo
@@ -300,7 +349,7 @@ verifica rapida).
    **NON** su `.katex` (le formule restano in KaTeX).
 10. **Prima del deploy produzione**: sempre `webdev_save_checkpoint` con descrizione.
 
-## 11. Cornice dinamica (embed per il blog)
+## 13. Cornice dinamica (embed per il blog)
 
 Il pacchetto include la **cornice dinamica** in `cornice-dinamica/`: un blocco HTML
 autonomo da incollare su Blogger (o qualsiasi sito) che mostra l'app in un iframe con
