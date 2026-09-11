@@ -9,7 +9,9 @@
  */
 
 const MAX_EDGE = 2200;
-const MIN_EDGE = 720;
+/* 1100 px sul lato corto: gli esponenti in apice restano leggibili
+   anche nelle foto fatte da lontano */
+const MIN_EDGE = 1100;
 
 export async function bitmapFromBlob(blob: Blob): Promise<ImageBitmap> {
   try {

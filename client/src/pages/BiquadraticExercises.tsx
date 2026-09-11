@@ -10,7 +10,7 @@ import { Camera, Image as ImageIcon, Loader2 } from "lucide-react";
 import { CropDialog } from "@/components/CropDialog";
 import { ocrImage } from "@/lib/ocr";
 import { normalizePhoto } from "@/lib/imagePrep";
-import { normalizeEquationOcr } from "@/lib/eqOcr";
+import { normalizeEquationOcrDetailed } from "@/lib/eqOcr";
 
 // ─── Math utilities ───────────────────────────────────────────────
 function gcd(a: number, b: number): number {
@@ -300,8 +300,10 @@ function parseBiquadraticLaTeX(latex: string): ParsedBiquadratic | null {
       }
     }
 
-    // At least one coefficient must be non-zero
-    if (!foundX4 && !foundX2 && !foundConst) return null;
+    // L'app tratta SOLO trinomie biquadratiche: senza il termine x⁴
+    // l'equazione sarebbe di grado ≤ 2 (tipico errore dell'OCR sugli
+    // esponenti) e il calcolo successivo dividerebbe per a = 0.
+    if (!foundX4) return null;
 
     return { a: { num: aNum, den: aDen }, b: { num: bNum, den: bDen }, c: { num: cNum, den: cDen }, rawLatex: latex };
   } catch {
@@ -402,20 +404,28 @@ export default function BiquadraticExercises() {
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrWarn, setOcrWarn] = useState<string | null>(null);
   const MAX_OCR_BYTES = 18 * 1024 * 1024;
 
   /** Riconoscimento OCR vero e proprio (sul ritaglio confermato) */
   const runOcr = async (file: File) => {
     setOcrBusy(true);
     setOcrError(null);
+    setOcrWarn(null);
     setOcrProgress(0);
     try {
       const raw = await ocrImage(file, setOcrProgress);
-      const eq = normalizeEquationOcr(raw);
+      const { equation: eq, fuzzy } = normalizeEquationOcrDetailed(raw);
       if (!eq || !/[xX]/.test(eq)) throw new Error("nessuna equazione riconosciuta");
       setIsEditingExpr(true);
       setEditExprString(eq);
-      toast.success("Equazione riconosciuta dalla foto: controlla il testo e premi OK.");
+      if (fuzzy) {
+        setOcrWarn("Forse ho letto male qualche numero o esponente: controlla il testo qui sotto (ci deve essere x⁴) e correggilo prima di premere OK.");
+        toast.warning("Trascrizione incerta: controlla gli esponenti prima di confermare.");
+      } else {
+        setOcrWarn(null);
+        toast.success("Equazione riconosciuta dalla foto: controlla il testo e premi OK.");
+      }
     } catch {
       setOcrError("Non sono riuscito a leggere l'equazione. Riprova con una foto più nitida e dritta, oppure digita l'equazione a mano.");
       toast.error("Foto non leggibile: riprova o digita l'equazione a mano.");
@@ -1125,6 +1135,9 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
               )}
               {ocrError && !ocrBusy && (
                 <p className="mt-2 text-center text-sm text-destructive" role="alert">{ocrError}</p>
+              )}
+              {ocrWarn && !ocrBusy && !ocrError && (
+                <p className="mt-2 text-center text-sm font-semibold text-amber-600" role="status">{ocrWarn}</p>
               )}
               <input
                 ref={cameraInputRef}
