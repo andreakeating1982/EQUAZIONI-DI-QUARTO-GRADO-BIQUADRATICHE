@@ -38,3 +38,4 @@ pnpm start     # server produzione (NODE_ENV=production node dist/index.js)
    **NON** su `.katex` (le formule restano in KaTeX).
 4. Prima del deploy produzione: `pnpm check` + `pnpm build` + checkpoint.
 5. Lo scaffold è **`web-static`** (NON `web-db-user`): niente DB, niente auth.
+6. `currentHeight()` in `heightSync.ts` usa l'**altezza reale** del contenuto (`body`/`offsetHeight`), NON `documentElement.scrollHeight` assoluto — altrimenti resta un vuoto sotto la card in embed (dettagli in `GUIDA-IA.md` §12.11).

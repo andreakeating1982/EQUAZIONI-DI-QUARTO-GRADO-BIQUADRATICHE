@@ -354,6 +354,7 @@ verifica rapida).
 9. **Font OpenDyslexic su `html, body, #root` e `.font-sans/.font-serif/.font-mono`**, ma
    **NON** su `.katex` (le formule restano in KaTeX).
 10. **Prima del deploy produzione**: sempre `webdev_save_checkpoint` con descrizione.
+11. **`currentHeight()` (heightSync.ts) usa l'altezza REALE del contenuto**: `Math.max(body.scrollHeight, body.offsetHeight, documentElement.offsetHeight)` + `documentElement.scrollHeight` SOLO se supera `window.innerHeight`. **NON** usare `documentElement.scrollHeight` come riferimento assoluto: dentro l'iframe resta gonfiato all'altezza del viewport e la cornice non si restringe MAI, lasciando un grande vuoto sotto la card (bug corretto in produzione).
 
 ## 13. Cornice dinamica (embed per il blog)
 
@@ -382,6 +383,14 @@ autonomo da incollare su Blogger (o qualsiasi sito) che mostra l'app in un ifram
 - **Fix anti-loop**: quando l'app è dentro un iframe aggiunge la classe `lf-embedded` a
   `<html>` e il CSS disattiva `min-h-screen`/`min-h-dvh` (vedi `client/src/index.css`),
   così l'altezza misurata non dipende dall'altezza dell'iframe.
+- **Fix `currentHeight()` (vuoto sotto la card)**: `currentHeight()` NON deve usare
+  `documentElement.scrollHeight` come riferimento assoluto. Quando il contenuto è più
+  corto dell'iframe, `documentElement.scrollHeight` resta gonfiato all'altezza del
+  viewport (mai meno) e la cornice non può MAI restringersi: la prima pagina mostra un
+  grande vuoto sotto la card. Usa invece
+  `Math.max(body.scrollHeight, body.offsetHeight, documentElement.offsetHeight)` e
+  aggiungi `documentElement.scrollHeight` SOLO se supera `window.innerHeight`
+  (vedi `client/src/lib/heightSync.ts`).
 
 ### Adattare la cornice a un'altra app
 

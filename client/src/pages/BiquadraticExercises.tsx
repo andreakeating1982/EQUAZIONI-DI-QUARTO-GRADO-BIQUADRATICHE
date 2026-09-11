@@ -5,6 +5,12 @@ import { MathDrawCanvas, type Stroke } from "@/components/MathDrawCanvas";
 import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
 import katex from "katex";
+import { toast } from "sonner";
+import { Camera, Image as ImageIcon, Loader2 } from "lucide-react";
+import { CropDialog } from "@/components/CropDialog";
+import { ocrImage } from "@/lib/ocr";
+import { normalizePhoto } from "@/lib/imagePrep";
+import { normalizeEquationOcr } from "@/lib/eqOcr";
 
 // ─── Math utilities ───────────────────────────────────────────────
 function gcd(a: number, b: number): number {
@@ -387,6 +393,102 @@ export default function BiquadraticExercises() {
   const [isEditingExpr, setIsEditingExpr] = useState(false);
   const [editExprString, setEditExprString] = useState('');
   const editExprInputRef = useRef<HTMLInputElement>(null);
+
+  /* ---- Foto dell'equazione: scatta/carica → ritaglia → OCR → trascrivi ---- */
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const photoFileInputRef = useRef<HTMLInputElement>(null);
+  const [cropImage, setCropImage] = useState<{ url: string } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const MAX_OCR_BYTES = 18 * 1024 * 1024;
+
+  /** Riconoscimento OCR vero e proprio (sul ritaglio confermato) */
+  const runOcr = async (file: File) => {
+    setOcrBusy(true);
+    setOcrError(null);
+    setOcrProgress(0);
+    try {
+      const raw = await ocrImage(file, setOcrProgress);
+      const eq = normalizeEquationOcr(raw);
+      if (!eq || !/[xX]/.test(eq)) throw new Error("nessuna equazione riconosciuta");
+      setIsEditingExpr(true);
+      setEditExprString(eq);
+      toast.success("Equazione riconosciuta dalla foto: controlla il testo e premi OK.");
+    } catch {
+      setOcrError("Non sono riuscito a leggere l'equazione. Riprova con una foto più nitida e dritta, oppure digita l'equazione a mano.");
+      toast.error("Foto non leggibile: riprova o digita l'equazione a mano.");
+    } finally {
+      setOcrBusy(false);
+      setOcrProgress(0);
+    }
+  };
+
+  /** Le foto (fotocamera/caricamento/drag&drop/incolla) passano prima dal taglio dei margini */
+  const handleOcrFile = async (file: File) => {
+    if (ocrBusy) return;
+    if (file.size > MAX_OCR_BYTES) {
+      setOcrError("Il file è troppo grande (massimo 18 MB). Scatta o ritaglia una foto più piccola e riprova.");
+      return;
+    }
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const isImage = file.type.startsWith("image/") || ["png", "jpg", "jpeg", "webp", "bmp"].includes(ext);
+    if (!isImage) {
+      setOcrError("Formato non supportato: usa una foto (JPG, PNG, WEBP).");
+      return;
+    }
+    try {
+      const straight = await normalizePhoto(file);
+      const url = URL.createObjectURL(straight);
+      setCropImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return { url };
+      });
+    } catch {
+      const url = URL.createObjectURL(file);
+      setCropImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return { url };
+      });
+    }
+  };
+
+  /** Chiude il modale di taglio senza riconoscere nulla */
+  const closeCrop = () => {
+    setCropImage((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  };
+
+  /** Ritaglio confermato: avvia l'OCR sul file ritagliato */
+  const onCropConfirm = (croppedFile: File) => {
+    setCropImage((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+    void runOcr(croppedFile);
+  };
+
+  /* Incolla un'immagine dagli appunti con Ctrl+V */
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) void handleOcrFile(file);
+          return;
+        }
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Parsed coefficients extracted from the full expression
   const parsedEq = useMemo((): ParsedBiquadratic | null => {
@@ -972,6 +1074,79 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
               )}
             </div>
 
+            {/* ── Foto dell'equazione: scatta → ritaglia → riconosci ── */}
+            <div
+              className={`max-w-2xl mx-auto w-full mt-1 rounded-xl border-2 border-dashed p-4 transition-colors ${
+                dragOver ? "border-primary bg-primary/10" : "border-primary/30 bg-card/60"
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) void handleOcrFile(f);
+              }}
+            >
+              {ocrBusy ? (
+                <div className="text-center" role="status" aria-live="polite">
+                  <p className="flex items-center justify-center gap-2 text-sm font-bold tracking-widest text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    RICONOSCIMENTO... {Math.round(ocrProgress * 100)}%
+                  </p>
+                  <div className="mx-auto mt-2 h-2 w-full max-w-sm overflow-hidden rounded-full bg-muted">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${Math.max(4, Math.round(ocrProgress * 100))}%` }} />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-center text-[13px] sm:text-sm text-muted-foreground tracking-wider font-medium">
+                    OPPURE SCATTA UNA FOTO DELL'EQUAZIONE
+                  </p>
+                  <div className="mt-3 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-4 text-sm font-bold tracking-widest text-primary-foreground shadow-sm transition-all hover:bg-primary/90 sm:flex-none"
+                    >
+                      <Camera className="h-4 w-4" aria-hidden="true" />
+                      SCATTA UNA FOTO
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => photoFileInputRef.current?.click()}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 px-4 text-sm font-bold tracking-widest text-foreground shadow-sm transition-all hover:bg-secondary/80 sm:flex-none"
+                    >
+                      <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                      CARICA IMMAGINE
+                    </button>
+                  </div>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Inquadra l'equazione da vicino e dritta: prima del riconoscimento potrai
+                    ritagliare i margini e ruotare la foto. Oppure trascina qui un'immagine o premi Ctrl+V.
+                  </p>
+                </>
+              )}
+              {ocrError && !ocrBusy && (
+                <p className="mt-2 text-center text-sm text-destructive" role="alert">{ocrError}</p>
+              )}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleOcrFile(f); e.target.value = ""; }}
+              />
+              <input
+                ref={photoFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/bmp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleOcrFile(f); e.target.value = ""; }}
+              />
+            </div>
+
             {/* Recognized LaTeX display — rendered with KaTeX */}
             {recognizedLatex && (
               <div className="rounded-xl border border-border bg-card p-5 animate-pop-in max-w-2xl mx-auto w-full">
@@ -1051,6 +1226,13 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
           </div>
         )}
       </main>
+
+      <CropDialog
+        open={!!cropImage}
+        imageUrl={cropImage?.url ?? null}
+        onConfirm={onCropConfirm}
+        onClose={closeCrop}
+      />
     </div>
   );
 }

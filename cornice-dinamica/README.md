@@ -107,6 +107,13 @@ istanza resta indipendente.
   `lf-embedded` a `<html>` e disattiva `min-h-screen`/`min-h-dvh`
   (vedi `../client/src/index.css`), così l'altezza misurata non dipende più
   dall'altezza dell'iframe (niente crescita infinita).
+- **Fix `currentHeight()` (vuoto sotto la card)**: `currentHeight()` in
+  `../client/src/lib/heightSync.ts` NON deve usare `documentElement.scrollHeight`
+  come riferimento assoluto. Quando il contenuto è più corto dell'iframe,
+  `documentElement.scrollHeight` resta gonfiato all'altezza del viewport (mai meno)
+  e la cornice non può MAI restringersi → grande vuoto sotto la card. Usa invece
+  `Math.max(body.scrollHeight, body.offsetHeight, documentElement.offsetHeight)`
+  e aggiungi `documentElement.scrollHeight` SOLO se supera `window.innerHeight`.
 - **Anti-loop (lato cornice, dedicata)**: nessuna transizione CSS sull'altezza;
   debounce di ~200 ms (applica solo a layout stabilizzato); clamp di sanità
   100–15000 px; conferma dei salti sospetti (crescita > 2×); congelamento di
