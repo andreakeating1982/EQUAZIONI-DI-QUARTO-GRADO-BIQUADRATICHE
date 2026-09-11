@@ -2,7 +2,8 @@
  * Preparazione delle foto prima del ritaglio e dell'OCR.
  *
  * 1. `normalizePhoto` — corregge l'orientamento EXIF (le foto scattate dal
- *    telefono arrivano spesso ruotate di 90°) e restituisce un JPEG "dritto".
+ *    telefono arrivano spesso ruotate di 90°) e restituisce un PNG "dritto"
+ *    lossless (mai JPEG: i suoi artefatti uccidono l'OCR).
  * 2. `enhanceForOcr` — ridimensiona, passa in scala di grigi e stira il
  *    contrasto, così Tesseract legge meglio testo stampato su libro/quaderno
  *    (luci irregolari, pagina gialla, ombre). L'ingrandimento avviene A PASSI
@@ -30,18 +31,37 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number)
   });
 }
 
-/** Foto "dritta" in JPEG, pronta da mostrare nel ritaglio. */
+/* Le foto più grandi di così vengono ridotte prima del ritaglio: il lato
+   corto resta ampiamente sufficiente per una riga di equazione */
+const MAX_PHOTO_EDGE = 2600;
+
+/**
+ * Foto "dritta" (orientamento EXIF corretto) in PNG lossless, pronta da
+ * mostrare nel ritaglio. NIENTE JPEG: i blocchi DCT, dopo l'ingrandimento
+ * per l'OCR, diventano rumore che affoga Tesseract (sonde A/B). Le foto
+ * enormi vengono ridotte per contenere tempi e memoria.
+ */
 export async function normalizePhoto(file: File): Promise<File> {
   const bmp = await bitmapFromBlob(file);
   try {
+    let w = bmp.width;
+    let h = bmp.height;
+    const maxEdge = Math.max(w, h);
+    if (maxEdge > MAX_PHOTO_EDGE) {
+      const s = MAX_PHOTO_EDGE / maxEdge;
+      w = Math.max(1, Math.round(w * s));
+      h = Math.max(1, Math.round(h * s));
+    }
     const canvas = document.createElement("canvas");
-    canvas.width = bmp.width;
-    canvas.height = bmp.height;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("canvas non disponibile");
-    ctx.drawImage(bmp, 0, 0);
-    const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
-    return new File([blob], "foto.jpg", { type: "image/jpeg" });
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bmp, 0, 0, w, h);
+    const blob = await canvasToBlob(canvas, "image/png");
+    return new File([blob], "foto.png", { type: "image/png" });
   } finally {
     bmp.close();
   }

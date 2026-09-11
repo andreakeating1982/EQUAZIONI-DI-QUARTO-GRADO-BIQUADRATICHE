@@ -155,7 +155,8 @@ export function CropDialog({
         ctx.rotate(-Math.PI / 2);
       }
       ctx.drawImage(img, 0, 0);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+      /* PNG lossless anche qui: la ruotata diventa la sorgente del ritaglio */
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("impossibile ruotare");
       const url = URL.createObjectURL(blob);
       extraUrls.current.push(url);
