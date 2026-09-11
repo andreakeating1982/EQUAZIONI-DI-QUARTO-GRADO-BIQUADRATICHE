@@ -168,11 +168,15 @@ function drawScaled(
 export async function enhanceForOcr(file: Blob): Promise<Blob> {
   const bmp = await bitmapFromBlob(file);
   try {
-    let scale = 1;
+    /* Rispetta ENTRAMBI i limiti: mai oltre MAX_EDGE e, quando possibile,
+       mai sotto MIN_EDGE (in conflitto vince la riduzione: un'immagine
+       larga non deve sforare il tetto di 2200 px) */
+    let scale = Infinity;
     const maxEdge = Math.max(bmp.width, bmp.height);
     const minEdge = Math.min(bmp.width, bmp.height);
     if (maxEdge > MAX_EDGE) scale = MAX_EDGE / maxEdge;
-    else if (minEdge < MIN_EDGE) scale = MIN_EDGE / minEdge;
+    if (minEdge < MIN_EDGE) scale = Math.min(scale, MIN_EDGE / minEdge);
+    if (!Number.isFinite(scale)) scale = 1;
     const cw = Math.max(1, Math.round(bmp.width * scale));
     const ch = Math.max(1, Math.round(bmp.height * scale));
     const upscaled = scale > 1.05;

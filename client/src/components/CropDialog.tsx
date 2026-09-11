@@ -185,19 +185,32 @@ export function CropDialog({
       const sw = (nw * box.w) / 100;
       const sh = (nh * box.h) / 100;
       if (sw < 8 || sh < 8) throw new Error("ritaglio troppo piccolo");
+      /* Il ritaglio va all'OCR in PNG lossless: il JPEG (blocchi DCT), dopo
+         l'ingrandimento per l'OCR, si trasforma in rumore che affoga
+         Tesseract (verificato con sonde A/B). Lato massimo 2200 px:
+         abbastanza per gli apici, file leggero. */
+      const MAX_CROP_EDGE = 2200;
+      let cw = Math.max(1, Math.round(sw));
+      let ch = Math.max(1, Math.round(sh));
+      const cropMax = Math.max(cw, ch);
+      if (cropMax > MAX_CROP_EDGE) {
+        const s = MAX_CROP_EDGE / cropMax;
+        cw = Math.max(1, Math.round(cw * s));
+        ch = Math.max(1, Math.round(ch * s));
+      }
       const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(sw));
-      canvas.height = Math.max(1, Math.round(sh));
+      canvas.width = cw;
+      canvas.height = ch;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("canvas non disponibile");
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("impossibile generare il file");
       extraUrls.current.forEach((u) => URL.revokeObjectURL(u));
       extraUrls.current = [];
-      onConfirm(new File([blob], "foto_ritagliata.jpg", { type: "image/jpeg" }));
+      onConfirm(new File([blob], "foto_ritagliata.png", { type: "image/png" }));
     } catch {
       toast.error("Non sono riuscito a ritagliare la foto: allarga un po' la finestra e riprova.");
     } finally {
