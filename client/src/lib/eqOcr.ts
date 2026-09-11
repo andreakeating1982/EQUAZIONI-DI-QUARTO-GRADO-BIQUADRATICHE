@@ -50,16 +50,23 @@ function preprocess(raw: string): string {
     .replace(/[−–—―‒]/g, "-")
     .replace(/[，,]/g, ".")
     .replace(/＝/g, "=")
-    .replace(/X/g, "x");
+    .replace(/X/g, "x")
+    /* O/Q spurie tra cifra e x («5Ox2» letto al posto di «5x2») */
+    .replace(/([0-9.])[OoQ](?=x)/g, "$1");
 }
 
 /** Coefficiente valido: numero, frazione semplice, con o senza segno. */
 const COEFF_RE = /^[+-]?(\d+(\.\d+)?|\.\d+)(\/\d+(\.\d+)?)?$/;
 
 /**
- * Ricostruisce la trinomia se nel testo ci sono ESATTAMENTE due termini in x
- * (più un'eventuale costante). Restituisce null quando la struttura non è
- * ricostruibile con certezza (troppi termini in x, RHS ≠ 0, niente «=»…).
+ * Ricostruisce la trinomia se nel testo ci sono ESATTAMENTE due «x»
+ * (più un'eventuale costante). SCAN-BASED: non conto i token separati da
+ * +/− (l'OCR li fonde in un blocco unico, es. «2x243x»), ma cerco ogni
+ * «x»: il coefficiente è l'eventuale numero con segno attaccato PRIMA,
+ * tutto ciò che segue la x fino al prossimo segno/x è l'esponente
+ * illeggibile e viene scartato, i numeri rimanenti sono le costanti.
+ * Restituisce null quando la struttura non è ricostruibile (≠ 2 x,
+ * RHS ≠ 0, niente «=»…).
  */
 function tryRebuildTrinomial(pre: string): { equation: string; fuzzy: boolean } | null {
   const eqIdx = pre.lastIndexOf("=");
@@ -71,48 +78,54 @@ function tryRebuildTrinomial(pre: string): { equation: string; fuzzy: boolean } 
   if (rhs && !/^0+(\.0+)?$/.test(rhs)) return null;
   if (!lhs) return null;
 
-  const tokens = lhs.split(/(?=[+-])/).filter((t) => t && !/^[+=]+$/.test(t));
-  const parts: (string | null)[] = [null, null];
-  let xCount = 0;
+  /* O/Q spurie tra cifra e x («5Ox2» per «5x2»), se il pre non l'ha già fatto */
+  const clean = lhs.replace(/([0-9.])[OoQ](?=x)/g, "$1");
+
+  const xRe = /([+-]?(?:\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?)?)x/g;
+  const coeffs: string[] = [];
+  const chunks: string[] = [];
+  const beforeX: string[] = [];
+  let prevEnd = 0;
+  let m: RegExpExecArray | null;
+  while ((m = xRe.exec(clean)) !== null) {
+    const before = clean.slice(prevEnd, m.index);
+    chunks.push(before);
+    beforeX.push(before);
+    coeffs.push(m[1]);
+    /* Spazzatura d'esponente: tutto fino al prossimo segno o x
+       (cifre, lettere, *, ?, ", ^, pedici unicode…) */
+    let end = xRe.lastIndex;
+    while (end < clean.length && !/[+\-x×]/.test(clean[end])) end++;
+    prevEnd = end;
+    xRe.lastIndex = end;
+  }
+  chunks.push(clean.slice(prevEnd));
+
+  /* La trinomia biquadratica ha ESATTAMENTE due termini in x */
+  if (coeffs.length !== 2) return null;
+
   let fuzzy = false;
   let constant: string | null = null;
-
-  for (const tok of tokens) {
-    const xi = tok.indexOf("x");
-    if (xi >= 0) {
-      /* Terzo termine in x: la struttura posizionale non regge più → fallback */
-      if (xCount >= 2) return null;
-      const coeff = tok.slice(0, xi).replace(/,/g, ".");
-      /* Il coefficiente vuoto è legittimo (x⁴, x²…): esponente implicito 1 */
-      const valid = coeff === "" || coeff === "+" || coeff === "-" || COEFF_RE.test(coeff);
-      if (!valid) fuzzy = true;
-      parts[xCount] = valid
-        ? coeff === "" || coeff === "+"
-          ? "1"
-          : coeff === "-"
-            ? "-1"
-            : coeff
-        : coeff.startsWith("-")
-          ? "-1"
-          : "1";
-      xCount++;
-    } else {
-      const body = tok.replace(/^[+-]/, "");
-      const digits = body.replace(/[^0-9.]/g, "");
-      if (body && digits && /^[0-9.]+$/.test(digits)) {
-        /* L'ultimo numero fuori dalle x è la costante c (i falsi «+4+1»
-           generati dall'OCR vengono scavalcati) */
-        constant = digits;
-      } else if (body.replace(/[0-9.]/g, "") !== "") {
-        fuzzy = true;
-      }
+  for (const chunk of chunks) {
+    if (/[a-zA-Z]/.test(chunk)) fuzzy = true; // coefficiente illeggibile («Dbx2»)
+    /* L'ultimo numero fuori dalle x è la costante c (i falsi «+4+1»
+       generati dall'OCR vengono scavalcati) */
+    const runRe = /([+-]?)(\d+(?:\.\d+)?)/g;
+    let r: RegExpExecArray | null;
+    while ((r = runRe.exec(chunk)) !== null) {
+      constant = (r[1] === "-" ? "-" : "") + r[2];
     }
   }
 
-  if (xCount !== 2) return null;
-
-  const aStr = parts[0] ?? "1";
-  const bStr = parts[1] ?? "1";
+  /* Se il coefficiente non è stato catturato (lettere spazzina tra segno e x,
+     es. «-Dbx2») il segno si recupera dal blocco subito prima della x */
+  const norm = (c: string, before: string): string => {
+    if (c === "" || c === "+") return before.includes("-") ? "-1" : "1";
+    if (c === "-") return "-1";
+    return c;
+  };
+  const aStr = norm(coeffs[0], beforeX[0] ?? "");
+  const bStr = norm(coeffs[1], beforeX[1] ?? "");
   const aPart = aStr === "1" ? "" : aStr === "-1" ? "-" : aStr;
   const bPart =
     bStr === "1" ? "+x^2" : bStr === "-1" ? "-x^2" : (bStr.startsWith("-") ? "" : "+") + bStr + "x^2";
