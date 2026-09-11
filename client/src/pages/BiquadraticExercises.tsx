@@ -1177,14 +1177,18 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
               </div>
             )}
 
-            {/* Confirm button — shown when expression was parsed successfully */}
+            {/* Confirm button — shown when expression was parsed successfully.
+                Stesso stile giallo del tasto SCARICA PDF (terza schermata),
+                ma più stretto: larghezza dal contenuto, centrato. */}
             {parsedEq && !parseError && (
-              <button
-                onClick={handleConfirmExpression}
-                className="max-w-2xl mx-auto w-full py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base tracking-widest transition-all duration-200 shadow-md animate-pop-in"
-              >
-                ✅ CONFERMA E CALCOLA
-              </button>
+              <div className="flex justify-center">
+                <button
+                  onClick={handleConfirmExpression}
+                  className="px-6 py-3 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold text-base tracking-widest transition-all duration-200 shadow-sm animate-pop-in"
+                >
+                  ✅ CONFERMA E CALCOLA
+                </button>
+              </div>
             )}
           </div>
         )}
