@@ -1100,10 +1100,7 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
                 </div>
               ) : (
                 <>
-                  <p className="text-center text-[13px] sm:text-sm text-muted-foreground tracking-wider font-medium">
-                    OPPURE SCATTA UNA FOTO DELL'EQUAZIONE
-                  </p>
-                  <div className="mt-3 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center sm:gap-3">
+                  <div className="flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <button
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
@@ -1115,15 +1112,14 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
                     <button
                       type="button"
                       onClick={() => photoFileInputRef.current?.click()}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 px-4 text-sm font-bold tracking-widest text-foreground shadow-sm transition-all hover:bg-secondary/80 sm:flex-none"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 px-4 text-sm font-bold tracking-widest text-primary-foreground shadow-sm transition-all hover:bg-primary/90 sm:flex-none"
                     >
                       <ImageIcon className="h-4 w-4" aria-hidden="true" />
                       CARICA IMMAGINE
                     </button>
                   </div>
                   <p className="mt-2 text-center text-xs text-muted-foreground">
-                    Inquadra l'equazione da vicino e dritta: prima del riconoscimento potrai
-                    ritagliare i margini e ruotare la foto. Oppure trascina qui un'immagine o premi Ctrl+V.
+                    Trascina qui un'immagine o premi Ctrl+V.
                   </p>
                 </>
               )}
