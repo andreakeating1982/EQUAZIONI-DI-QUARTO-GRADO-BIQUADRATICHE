@@ -168,15 +168,15 @@ function drawScaled(
 export async function enhanceForOcr(file: Blob): Promise<Blob> {
   const bmp = await bitmapFromBlob(file);
   try {
-    /* Rispetta ENTRAMBI i limiti: mai oltre MAX_EDGE e, quando possibile,
-       mai sotto MIN_EDGE (in conflitto vince la riduzione: un'immagine
-       larga non deve sforare il tetto di 2200 px) */
-    let scale = Infinity;
+    /* Priorità: se l'immagine è grande si riduce sotto MAX_EDGE; se è piccola
+       si ingrandisce fino a MIN_EDGE anche oltre MAX_EDGE — gli apici ⁴ ²
+       devono restare leggibili a Tesseract (verificato con sonde A/B: a
+       ×1,8 perde i coefficienti, a ×3,2 li legge) */
+    let scale = 1;
     const maxEdge = Math.max(bmp.width, bmp.height);
     const minEdge = Math.min(bmp.width, bmp.height);
     if (maxEdge > MAX_EDGE) scale = MAX_EDGE / maxEdge;
-    if (minEdge < MIN_EDGE) scale = Math.min(scale, MIN_EDGE / minEdge);
-    if (!Number.isFinite(scale)) scale = 1;
+    else if (minEdge < MIN_EDGE) scale = MIN_EDGE / minEdge;
     const cw = Math.max(1, Math.round(bmp.width * scale));
     const ch = Math.max(1, Math.round(bmp.height * scale));
     const upscaled = scale > 1.05;
