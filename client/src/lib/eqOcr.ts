@@ -45,8 +45,8 @@ export function normalizeEquationOcr(raw: string): string {
   if (!s.includes("=")) s = s + "=0";
 
   /* togli tutto ciò che non può stare in un'equazione biquadratica
-     (etichette, lettere residue, punteggiatura) */
-  s = s.replace(/[^x^0-9+\-=.()⁰¹²³⁴⁵⁶⁷⁸⁹]/g, "");
+     (etichette, lettere residue, punteggiatura, parentesi spurie ai bordi) */
+  s = s.replace(/[^x^0-9+\-=.⁰¹²³⁴⁵⁶⁷⁸⁹]/g, "");
   s = s.replace(/^\./, "");
 
   return s;
