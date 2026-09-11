@@ -404,28 +404,20 @@ export default function BiquadraticExercises() {
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrError, setOcrError] = useState<string | null>(null);
-  const [ocrWarn, setOcrWarn] = useState<string | null>(null);
   const MAX_OCR_BYTES = 18 * 1024 * 1024;
 
   /** Riconoscimento OCR vero e proprio (sul ritaglio confermato) */
   const runOcr = async (file: File) => {
     setOcrBusy(true);
     setOcrError(null);
-    setOcrWarn(null);
     setOcrProgress(0);
     try {
       const raw = await ocrImage(file, setOcrProgress);
-      const { equation: eq, fuzzy } = normalizeEquationOcrDetailed(raw);
+      const { equation: eq } = normalizeEquationOcrDetailed(raw);
       if (!eq || !/[xX]/.test(eq)) throw new Error("nessuna equazione riconosciuta");
       setIsEditingExpr(true);
       setEditExprString(eq);
-      if (fuzzy) {
-        setOcrWarn("Forse ho letto male qualche numero o esponente: controlla il testo qui sotto (ci deve essere x⁴) e correggilo prima di premere OK.");
-        toast.warning("Trascrizione incerta: controlla gli esponenti prima di confermare.");
-      } else {
-        setOcrWarn(null);
-        toast.success("Equazione riconosciuta dalla foto: controlla il testo e premi OK.");
-      }
+      toast.success("Equazione riconosciuta dalla foto: controlla il testo e premi OK.");
     } catch {
       setOcrError("Non sono riuscito a leggere l'equazione. Riprova con una foto più nitida e dritta, oppure digita l'equazione a mano.");
       toast.error("Foto non leggibile: riprova o digita l'equazione a mano.");
@@ -1135,9 +1127,6 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
               )}
               {ocrError && !ocrBusy && (
                 <p className="mt-2 text-center text-sm text-destructive" role="alert">{ocrError}</p>
-              )}
-              {ocrWarn && !ocrBusy && !ocrError && (
-                <p className="mt-2 text-center text-sm font-semibold text-amber-600" role="status">{ocrWarn}</p>
               )}
               <input
                 ref={cameraInputRef}

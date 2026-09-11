@@ -142,6 +142,8 @@ function legacyNormalize(pre: string): string {
   /* assicura la forma «…=0» */
   s = s.replace(/=+$/, "=0");
   if (!s.includes("=")) s = s + "=0";
+  /* RHS con cifre di troppo («=06», «=00»): la foto di un trinomio è sempre …=0 */
+  s = s.replace(/=0\d+$/, "=0");
 
   /* togli tutto ciò che non può stare in un'equazione biquadratica
      (etichette, lettere residue, punteggiatura, parentesi spurie ai bordi) */
@@ -160,7 +162,14 @@ export function normalizeEquationOcrDetailed(raw: string): { equation: string; f
   const rebuilt = tryRebuildTrinomial(pre);
   if (rebuilt) return rebuilt;
   const eq = legacyNormalize(pre);
-  /* Incerto se il risultato non mostra una vera x di quarto grado */
+  /* SECONDA CHANCE: se il fallback non mostra una vera x di quarto grado
+     (es. «=0» tagliato dal ritaglio o letto male, così la prima ricostruzione
+     non scatta e la x⁴ resta confusa con la x²), si riprova la ricostruzione
+     posizionale sul testo già normalizzato. */
+  if (!/x\^4|x⁴/.test(eq)) {
+    const retry = tryRebuildTrinomial(eq);
+    if (retry) return retry;
+  }
   return { equation: eq, fuzzy: !/x\^4|x⁴/.test(eq) };
 }
 
