@@ -8,8 +8,14 @@
  *
  * Struttura (come nella mappa allegata di riferimento):
  *  - PARTE A — mappa SVOLTA: box colorati a flusso verticale (passi 1-7)
- *  - PARTE B — mappa DA COMPLETARE ("LIVELLO 3 – Supporto minimo") con
- *    gli stessi passi dell'equazione dello studente ma i valori in bianco.
+ *  - PARTE B — mappa DA COMPLETARE: stessa equazione dell'utente, titoli
+ *    «MAPPA CONCETTUALE» centrato, valori in bianco da compilare.
+ *
+ * NUMERI DI PAGINA: ogni parte è una sequenza di pagine A4 esplicite
+ * (`.page` con piè di pagina «Pagina N di M»). I numeri RIPARTONO DA 1
+ * all'inizio di ogni mappa diversa per tipologia (Parte A = 1..n,
+ * Parte B = 1..m), perché i browser non permettono di gestire il
+ * contatore di pagina via CSS @page.
  *
  * Convenzioni della famiglia (repo MAPPE-CONCETTUALI-MATEMATICHE /
  * Widget Matematico): OpenDyslexic, regole per BES/DSA, interi senza
@@ -253,65 +259,112 @@ function formuleBox(): string {
   </div>`;
 }
 
-// ─── PARTE A: mappa svolta (dinamica) ─────────────────────────────
+// ─── Paginazione esplicita (numeri di pagina per tipologia) ───────
+// I browser non supportano i margin-box CSS @page, quindi ogni parte
+// della mappa viene spezzata in pagine A4 esplicite: il piè di pagina
+// «Pagina N di M» è dentro ogni pagina e RIPARTE DA 1 per ogni parte
+// (mappa diversa per tipologia). PAGE_BUDGET è l'altezza massima (px)
+// di contenuti assegnata a una pagina: il contenuto reale resta sotto
+// l'altezza stampabile (~1039 px a 96 dpi con margini 1,1 cm, zoom 0.95).
 
-function buildSvolta(d: MappaPdfData): string {
-  let html = "";
+const PAGE_BUDGET = 1000;
+
+/** Stima prudenziale dell'altezza di un box dal suo HTML */
+function estimateHeight(html: string): number {
+  const displays = (html.match(/class="katex-display"/g) || []).length;
+  const fracs = (html.match(/class="mfrac"/g) || []).length;
+  const paras = (html.match(/<p[\s>]/g) || []).length;
+  return 60 + displays * 60 + Math.min(fracs, 8) * 16 + paras * 22;
+}
+
+/** Raggruppa i box in pagine da non superare PAGE_BUDGET (ordine invariato) */
+function paginate(items: string[]): string[][] {
+  const pages: string[][] = [];
+  let cur: string[] = [];
+  let curH = 0;
+  for (const it of items) {
+    const h = estimateHeight(it);
+    if (cur.length > 0 && curH + h > PAGE_BUDGET) {
+      pages.push(cur);
+      cur = [];
+      curH = 0;
+    }
+    cur.push(it);
+    curH += h;
+  }
+  if (cur.length > 0) pages.push(cur);
+  return pages;
+}
+
+/** Renderizza le pagine di una mappa: «Pagina N di M» riparte da 1 */
+function renderPages(pages: string[][], isLastPart: boolean): string {
+  return pages
+    .map((items, i) => {
+      const isLast = isLastPart && i === pages.length - 1;
+      return `<div class="page${isLast ? " page--last" : ""}">${items.join("")}<div class="page-foot">Pagina ${i + 1} di ${pages.length}</div></div>`;
+    })
+    .join("");
+}
+
+// ─── PARTE A: mappa svolta (dinamica) → lista di box ──────────────
+
+function buildSvolta(d: MappaPdfData): string[] {
+  const items: string[] = [];
 
   // Titolo
-  html += solidBox(
+  items.push(solidBox(
     `MAPPA · LE REGOLE PER RISOLVERE UN'EQUAZIONE BIQUADRATICA`,
     C.title,
     "title-box"
-  );
-  html += `<div class="eq-banner">La mappa è costruita sulla TUA equazione:${katexBlock(d.eqLatex)}</div>`;
+  ));
+  items.push(`<div class="eq-banner">La mappa è costruita sulla TUA equazione:${katexBlock(d.eqLatex)}</div>`);
 
   // Definizione
-  html += stepBox(
+  items.push(stepBox(
     "CHE COS'È UN'EQUAZIONE BIQUADRATICA?",
     `${katexBlock("a\\cdot x^{4}+b\\cdot x^{2}+c = 0")}
      <p class="note">Ha <b>TRE TERMINI</b> con la x: <b>x⁴</b>, <b>x²</b> e il numero da solo.</p>`,
     C.passo1
-  );
+  ));
 
   // RICORDA
-  html += solidBox(
+  items.push(solidBox(
     `RICORDA: metto <b>t</b> al posto di <b>x²</b> (così x⁴ diventa t²), poi uso le formule di t.`,
     C.ricorda
-  );
+  ));
 
   // PASSO 1
-  html += stepBox(
+  items.push(stepBox(
     "📎 PASSO 1 · RICONOSCO L'EQUAZIONE",
     `<p>Trovo i tre numeri:</p>
      ${katexBlock(`a = ${numberToLatex(d.a)} \\qquad b = ${numberToLatex(d.b)} \\qquad c = ${numberToLatex(d.c)}`)}`,
     C.passo1
-  );
+  ));
 
   // PASSO 2
-  html += stepBox(
+  items.push(stepBox(
     "↔ PASSO 2 · SOSTITUISCO: t = x²",
     `${katexBlock("x^{2} = t \\qquad x^{4} = t^{2}")}
      <p>→ l'equazione diventa:</p>
      ${katexBlock(d.tEqLatex)}`,
     C.passo2
-  );
+  ));
 
   // PASSO 3 — formula letteraria sopra, sostituzione numerica sotto
-  html += stepBox(
+  items.push(stepBox(
     "Δ PASSO 3 · CALCOLO Δ (DELTA)",
     `${katexBlock(deltaFormulaLatex())}
      ${katexBlock(deltaNumericLatex(d))}`,
     C.passo3
-  );
+  ));
 
   if (d.deltaNegative) {
     // Δ < 0 → niente passi 4-7: attenzione + risultato
-    html += `<div class="attenzione">
+    items.push(`<div class="attenzione">
       <p class="attenzione-title">⚠ ATTENZIONE!</p>
       ${katexBlock(`\\Delta = ${numberToLatex(d.delta)} \\; < \\; 0`)}
       <p>Δ è <b>NEGATIVO</b> → l'equazione <b>NON ha soluzioni reali</b>.</p>
-    </div>`;
+    </div>`);
   } else {
     const t1 = d.t1;
     const t2 = d.t2;
@@ -322,7 +375,7 @@ function buildSvolta(d: MappaPdfData): string {
       t1Body += katexBlock(`t_{1} = ${tValueLatex(d, t1)}`);
       if (d.hasDoubleRoot) t1Body += `<p class="note">(t₁ e t₂ sono uguali perché Δ = 0)</p>`;
       if (t1 < -EPS) t1Body += `<p class="skip">t₁ è NEGATIVO → salto questa soluzione</p>`;
-      html += stepBox("＋ PASSO 4 · TROVO t₁", t1Body, C.passo4);
+      items.push(stepBox("＋ PASSO 4 · TROVO t₁", t1Body, C.passo4));
     }
 
     // PASSO 5
@@ -330,7 +383,7 @@ function buildSvolta(d: MappaPdfData): string {
       let t2Body = katexBlock(`t_{2} = \\dfrac{-b-\\sqrt{\\Delta}}{2\\cdot a} = ${tChainLatex(d, "-")}`);
       t2Body += katexBlock(`t_{2} = ${tValueLatex(d, t2)}`);
       if (t2 < -EPS) t2Body += `<p class="skip">t₂ è NEGATIVO → salto questa soluzione</p>`;
-      html += stepBox("－ PASSO 5 · TROVO t₂", t2Body, C.passo5);
+      items.push(stepBox("－ PASSO 5 · TROVO t₂", t2Body, C.passo5));
     }
 
     // PASSO 6
@@ -339,31 +392,31 @@ function buildSvolta(d: MappaPdfData): string {
     if (t2 !== null && !d.hasDoubleRoot && Math.abs(t2 - (t1 ?? 0)) > 1e-9) {
       rootLines.push(rootLineForT(d, t2, "t₂"));
     }
-    html += stepBox(
+    items.push(stepBox(
       "√ PASSO 6 · TORNO A x",
       rootLines.length > 0 ? rootLines.join("") : `<p>Nessuna t da riportare a x.</p>`,
       C.passo6
-    );
+    ));
 
     // PASSO 7
     if (d.hasRealSolutions) {
-      html += stepBox(
+      items.push(stepBox(
         "✓ PASSO 7 · SCRIVO LE SOLUZIONI",
         `${katexBlock(`x = ${solutionsLatex(d)}`)}
          <p class="note">(conto bene: sono <b>${d.xValues.length}</b>!)</p>`,
         C.passo7
-      );
+      ));
     } else {
-      html += stepBox(
+      items.push(stepBox(
         "✓ PASSO 7 · SCRIVO LE SOLUZIONI",
         `<p class="skip">Nessuna t da riportare a x → <b>NESSUNA SOLUZIONE REALE</b></p>`,
         C.passo7
-      );
+      ));
     }
   }
 
   // Formule di servizio
-  html += formuleBox();
+  items.push(formuleBox());
 
   // ATTENZIONE (regole, con nota dinamica)
   let attenzioneBody = "";
@@ -372,130 +425,136 @@ function buildSvolta(d: MappaPdfData): string {
   } else if (!d.hasRealSolutions) {
     attenzioneBody = `<p>In questa equazione Δ è positivo ma tutte le t sono negative → nessuna soluzione reale.</p>`;
   }
-  html += `<div class="attenzione">
+  items.push(`<div class="attenzione">
     <p class="attenzione-title">⚠ ATTENZIONE!</p>
     ${attenzioneBody}
     <p>Se <b>t è NEGATIVO</b> → salto quella soluzione. Se <b>Δ è NEGATIVO</b> → nessuna soluzione reale.</p>
     <p>Prima di scrivere le soluzioni guarda sempre il <b>segno</b> di Δ e delle t!</p>
-  </div>`;
+  </div>`);
 
   // RISULTATO
-  html += d.hasRealSolutions
+  items.push(d.hasRealSolutions
     ? solidBox(`<span class="risultato-label">RISULTATO:</span> ${katexInline(`x = ${solutionsLatex(d)}`)}`, C.title)
-    : solidBox(`<span class="risultato-label">RISULTATO:</span> NESSUNA SOLUZIONE REALE`, C.title);
+    : solidBox(`<span class="risultato-label">RISULTATO:</span> NESSUNA SOLUZIONE REALE`, C.title));
 
   // Controllo
-  html += solidBox(`✓ HO CONTROLLATO — ho rifatto i calcoli in ordine: Δ → t₁ e t₂ → √t → soluzioni.`, C.controllo);
+  items.push(solidBox(`✓ HO CONTROLLATO — ho rifatto i calcoli in ordine: Δ → t₁ e t₂ → √t → soluzioni.`, C.controllo));
 
-  return html;
+  return items;
 }
 
-// ─── PARTE B: mappa da completare (supporto minimo) ───────────────
+// ─── PARTE B: mappa da completare (solo i passi effettivi) ────────
 
-function buildDaCompletare(d: MappaPdfData): string {
-  let html = "";
+function buildDaCompletare(d: MappaPdfData): string[] {
+  const items: string[] = [];
 
-  html += solidBox(
-    `MAPPA CONCETTUALE · <span class="livello">MAPPA LIVELLO 3 – Supporto minimo</span>`,
-    C.title,
-    "title-box"
-  );
-  html += `<div class="eq-banner">L'equazione da risolvere:${katexBlock(d.eqLatex)}</div>`;
+  // Titolo: solo «MAPPA CONCETTUALE», centrato
+  items.push(solidBox(`MAPPA CONCETTUALE`, C.title, "title-box"));
+  items.push(`<div class="eq-banner">L'equazione da risolvere:${katexBlock(d.eqLatex)}</div>`);
 
   // RICORDA (formule visibili come riferimento)
-  html += solidBox(
+  items.push(solidBox(
     `RICORDA: metto <b>t</b> al posto di <b>x²</b> (così x⁴ diventa t²), poi uso le formule di t.`,
     C.ricorda
-  );
+  ));
 
-  html += stepBox(
+  items.push(stepBox(
     "📎 PASSO 1 · RICONOSCO L'EQUAZIONE",
     katexBlock(`a = \\dots \\qquad b = \\dots \\qquad c = \\dots`),
     C.passo1
-  );
+  ));
 
-  html += stepBox(
+  items.push(stepBox(
     "↔ PASSO 2 · SOSTITUISCO: t = x²",
     `${katexBlock("x^{2} = t \\qquad x^{4} = t^{2} \\;\\rightarrow\\; \\dots t^{2} + \\dots t + \\dots = 0")}`,
     C.passo2
-  );
+  ));
 
   // PASSO 3 — come nella mappa svolta: formula letteraria (visibile) sopra,
   // sostituzione numerica da completare sotto
-  html += stepBox(
+  items.push(stepBox(
     "Δ PASSO 3 · CALCOLO Δ (DELTA)",
     `${katexBlock(deltaFormulaLatex())}
      ${katexBlock("\\Delta = (\\dots)^{2} - 4\\cdot(\\dots)\\cdot(\\dots) = \\dots")}`,
     C.passo3
-  );
+  ));
 
   if (d.deltaNegative) {
     // Δ < 0 → l'equazione si sviluppa SOLO su 3 passi: nessuna soluzione reale
-    html += `<div class="attenzione">
+    items.push(`<div class="attenzione">
       <p class="attenzione-title">⚠ ATTENZIONE!</p>
       ${katexBlock(`\\Delta = ${numberToLatex(d.delta)} \\; < \\; 0`)}
       <p>Δ è <b>NEGATIVO</b> → l'equazione <b>NON ha soluzioni reali</b>: i passi si fermano qui.</p>
-    </div>`;
-    html += formuleBox();
-    html += `<div class="risultato-blank"></div>`;
-    return html;
+    </div>`);
+    items.push(formuleBox());
+    items.push(`<div class="risultato-blank"></div>`);
+    return items;
   }
 
-  html += stepBox(
+  items.push(stepBox(
     "＋ PASSO 4 · TROVO t₁",
     katexBlock("t_{1} = \\dfrac{\\dots + \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots") +
       (d.hasDoubleRoot ? `<p class="note">(t₁ e t₂ sono uguali perché Δ = 0)</p>` : ""),
     C.passo4
-  );
+  ));
 
   if (!d.hasDoubleRoot) {
-    html += stepBox(
+    items.push(stepBox(
       "－ PASSO 5 · TROVO t₂",
       katexBlock("t_{2} = \\dfrac{\\dots - \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots"),
       C.passo5
-    );
+    ));
   }
 
   // PASSO 6 — una sola riga se Δ = 0 (t₁ = t₂)
-  html += stepBox(
+  items.push(stepBox(
     "√ PASSO 6 · TORNO A x",
     `<p class="root-line"><b>ORA RISCRIVO QUI T₁</b> → ${katexInline("x_{1} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>` +
       (d.hasDoubleRoot
         ? ""
         : `<p class="root-line"><b>ORA RISCRIVO QUI T₂</b> → ${katexInline("x_{2} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>`),
     C.passo6
-  );
+  ));
 
-  html += stepBox(
+  items.push(stepBox(
     "✓ PASSO 7 · SCRIVO LE SOLUZIONI",
     katexBlock("x = \\dots, \\; \\dots, \\; \\dots, \\; \\dots"),
     C.passo7
-  );
+  ));
 
   // Formule di riferimento (visibili)
-  html += formuleBox();
+  items.push(formuleBox());
 
-  html += `<div class="attenzione">
+  items.push(`<div class="attenzione">
     <p class="attenzione-title">⚠ ATTENZIONE!</p>
     <p>Se <b>t è NEGATIVO</b> → salto quella soluzione. Se <b>Δ è NEGATIVO</b> → nessuna soluzione reale.</p>
-  </div>`;
+  </div>`);
 
-  html += `<div class="risultato-blank"></div>`;
+  items.push(`<div class="risultato-blank"></div>`);
 
-  return html;
+  return items;
 }
 
 // ─── Documento completo ───────────────────────────────────────────
 
 export function buildMappaHtml(d: MappaPdfData): string {
-  // Header studente (come nel quaderno)
-  let studentHeader = "";
+  // Header studente (come nel quaderno) — prima pagina della PARTE A
+  const itemsA: string[] = [];
   if (d.studentLabel) {
-    studentHeader = `<div class="student">Studente: <b>${d.studentLabel}</b></div>`;
+    itemsA.push(`<div class="student">Studente: <b>${d.studentLabel}</b></div>`);
   }
+  itemsA.push(`<div class="part-label">PARTE A · MAPPA SVOLTA</div>`);
+  itemsA.push(...buildSvolta(d));
 
-  const parteA = buildSvolta(d);
-  const parteB = buildDaCompletare(d);
+  const itemsB: string[] = [];
+  itemsB.push(`<div class="part-label">PARTE B · MAPPA DA COMPLETARE</div>`);
+  itemsB.push(...buildDaCompletare(d));
+
+  // Ogni mappa ha la sua numerazione: «Pagina N di M» riparte da 1
+  const pagesA = paginate(itemsA);
+  const pagesB = paginate(itemsB);
+  const htmlA = renderPages(pagesA, false);
+  const htmlB = renderPages(pagesB, true);
 
   return `<!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8"><base href="${typeof window !== "undefined" ? window.location.origin : ""}/">
@@ -506,11 +565,15 @@ export function buildMappaHtml(d: MappaPdfData): string {
 @font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:14px 16px;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
+.page{position:relative;min-height:1005px;padding-bottom:44px;page-break-after:always;break-after:page}
+.page--last{page-break-after:auto;break-after:auto}
+.page-foot{position:absolute;left:0;right:0;bottom:6px;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
+@media screen{.page{outline:1px dashed #ddd;margin-bottom:14px}}
 .solid{color:#fff;font-weight:bold;padding:10px 14px;border-radius:12px;font-size:14.5px;letter-spacing:.4px;margin:0 auto 10px;max-width:720px;line-height:1.5}
 .title-box{font-size:15.5px;padding:12px 14px}
-.livello{font-weight:normal;font-size:12.5px;opacity:.92}
 .student{max-width:720px;margin:0 auto 10px;padding:7px 10px;border-bottom:1px solid #e5e0d8;color:#2B2421;font-size:13px;text-align:center}
 .eq-banner{max-width:720px;margin:0 auto 10px;padding:8px 10px;border:2px dashed #5C35A6;border-radius:12px;background:#faf7ff}
+.part-label{max-width:720px;margin:14px auto 8px;color:#6b7280;font-size:11.5px;text-align:left;letter-spacing:1px;font-weight:bold}
 .box{max-width:720px;margin:0 auto 10px;page-break-inside:avoid;break-inside:avoid}
 .step-title{color:#fff;font-weight:bold;font-size:13.5px;padding:7px 12px;border-radius:12px 12px 0 0;letter-spacing:.4px;text-align:left}
 .step-body{border:2.5px solid;border-top:none;border-radius:0 0 12px 12px;padding:8px 12px;background:#fff;text-align:center}
@@ -528,17 +591,11 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;backg
 .risultato-blank{max-width:720px;margin:0 auto 10px;border:2.5px dashed #5C35A6;border-radius:12px;height:56px;page-break-inside:avoid;break-inside:avoid}
 .katex-display{margin:6px 0}
 .katex{font-size:1.06em}
-.part-label{max-width:720px;margin:14px auto 8px;color:#6b7280;font-size:11.5px;text-align:left;letter-spacing:1px;font-weight:bold}
-.pagebreak{page-break-before:always;break-before:page}
 @media print{body{padding:0;zoom:0.95}@page{size:A4;margin:1.1cm}}
 </style></head>
 <body>
-${studentHeader}
-<div class="part-label">PARTE A · MAPPA SVOLTA</div>
-${parteA}
-<div class="pagebreak"></div>
-<div class="part-label">PARTE B · MAPPA DA COMPLETARE</div>
-${parteB}
+${htmlA}
+${htmlB}
 <script>window.onload=function(){window.print()}</script>
 </body></html>`;
 }
