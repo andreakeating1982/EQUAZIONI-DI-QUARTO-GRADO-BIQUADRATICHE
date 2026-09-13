@@ -444,27 +444,35 @@ Per i dettagli completi (Schermo intero, stato, ping, mobile, accessibilità) le
 
 Il pulsante nella seconda pagina scarica il quaderno inclusivo **«Matematica
 Facile — Il quaderno di matematica e geometria (liceo linguistico, obiettivi
-minimi)»**: 66 pagine A4 PDF/UA-1, copertina, indice con numeri di pagina
-automatici, un capitolo per anno con box TRUCCO/ATTENZIONE/ESEMPIO e mappa
-finale. File: `client/public/quaderno-matematica-facile-v4.pdf`; integrazione in
+minimi)»**: 53 pagine A4 PDF/UA-1 in **flusso continuo** (i temi scorrono senza
+forzare nuove pagine; la banner colorata è il separatore), riempimento medio 87%,
+32 pagine oltre il 90%. Copertina, indice con numeri di pagina automatici, un
+capitolo per anno con box TRUCCO/ATTENZIONE/ESEMPIO e mappa finale. File:
+`client/public/quaderno-matematica-facile-v4.pdf`; integrazione in
 `BiquadraticExercises.tsx` (riga con `href="/quaderno-matematica-facile-v4.pdf"`).
 
-I **sorgenti completi** (8 sezioni HTML + `styles.css` + `build.py` +
-bilanciatori) sono in **[`docs/quaderno-matematica/`](docs/quaderno-matematica/README-QUADERNO.md)**
-con il manuale di ricostruzione, le regole di impaginazione v4 e l'adattamento a
+I **sorgenti completi** (8 sezioni HTML + `styles.css` + `build.py`;
+bilanciatori DEPRECATI con guardia) sono in
+**[`docs/quaderno-matematica/`](docs/quaderno-matematica/README-QUADERNO.md)**
+con il manuale di ricostruzione, le regole di impaginazione e l'adattamento a
 nuovi contenuti:
 
 ```bash
 cd docs/quaderno-matematica && pip install weasyprint pymupdf && python3 build.py
 ```
 
-**Regole non negoziabili del quaderno (v4):** nessun box spezzato tra due pagine
-(`break-inside: avoid` su tutti i box); numero di pagina nel margine, sollevato
-con `padding-bottom: 6mm` (assente in copertina); layout arioso (riempimento
-medio ~75%, nessuna pagina soffocata); pagine di continuazione mai sotto il
-~45% — ribilanciare con `fix_fill.py`, attento al bug «salto in catena»
-(documentato nel README; la versione pacchettizzata include la guardia
-anti-catena).
+**Regole non negoziabili del quaderno (flusso continuo):** nessun box spezzato
+tra due pagine (`break-inside: avoid` su tutti i box, INCLUSI `.mappa-griglia` e
+`.mappa-box` che sono `display:table` e non sono coperti dal selettore `table`);
+banner di tema mai orfane a fondo pagina (`.page-head { break-after: avoid }`);
+numero di pagina nel margine, sollevato con `padding-bottom: 6mm` (assente in
+copertina); nuove pagine solo per copertina, indice e divisori d'anno
+(`.divider`); MAI `.salto` nei temi e MAI `ristretta` (pagine nominate =
+interruzioni forzate): i bilanciatori `fix_fill.py`/`autobalance.py`/
+`collapse.py` sono deprecati e si bloccano da soli; MAI `display:flex` (testo
+tagliato a destra) — usare `display:table/table-cell` o `inline-block`;
+riempimento medio ≥85%: se una pagina resta spoglia è un fine-sezione naturale,
+non va «riempita» a forza.
 
 ---
 

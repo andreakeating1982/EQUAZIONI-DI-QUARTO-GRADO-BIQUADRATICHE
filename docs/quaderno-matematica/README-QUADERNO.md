@@ -1,4 +1,4 @@
-# Quaderno «Matematica Facile» — sorgenti (PDF/UA-1, 66 pagine)
+# Quaderno «Matematica Facile» — sorgenti (PDF/UA-1, 53 pagine, flusso continuo)
 
 Sorgenti completi del quaderno inclusivo **«Matematica Facile — Il quaderno di
 matematica e geometria (liceo linguistico, obiettivi minimi)»**, il PDF di
@@ -11,12 +11,12 @@ matematica e geometria (liceo linguistico, obiettivi minimi)»**, il PDF di
 ```bash
 pip install weasyprint pymupdf          # dipendenze
 python3 build.py                        # → quaderno-matematica-facile.pdf (A4, PDF/UA-1)
-python3 fix_fill.py                     # opzionale: ribilancia le pagine di continuazione
 ```
 
 `build.py` concatena le 8 sezioni HTML (00-copertina → 07-anno5) con `styles.css`
 e genera il PDF con WeasyPrint. Font OpenDyslexic: installarlo di sistema
-(`~/.fonts`) o adattare il `@font-face` in `styles.css`.
+(`~/.fonts`) o adattare il `@font-face` in `styles.css` (gli URL puntano a
+`client/public/fonts/` dell'app).
 
 ## Struttura
 
@@ -25,51 +25,68 @@ e genera il PDF con WeasyPrint. Font OpenDyslexic: installarlo di sistema
 | `00-copertina.html` | Copertina (nessun numero di pagina) |
 | `01-indice.html` | Indice con numeri di pagina automatici (`target-counter`) |
 | `02-anno1a.html` … `07-anno5.html` | Un file per anno (anno 1 in due parti) |
-| `styles.css` | Impaginazione: `@page`, box, accessibilità |
+| `styles.css` | Impaginazione: `@page`, box, accessibilità, flusso continuo |
 | `build.py` | Assemblaggio + generazione PDF/UA-1 |
-| `autobalance.py` | Bilanciamento per caratteri (versione semplice) |
-| `fix_fill.py` | Bilanciamento per riempimento reale (PyMuPDF, versione forte) |
+| `autobalance.py`, `fix_fill.py`, `collapse.py` | DEPRECATI (hanno una guardia: escono subito) |
 
-## Regole di impaginazione (v4) — NON arretrare
+## Paradigma di impaginazione: FLUSSO CONTINUO (v5)
 
-1. **Nessun box spezzato tra due pagine**: tutti i box hanno
-   `break-inside: avoid` (`.box, .trucco, .attenzione, .formula-box, .esempio,
-   .insintesi, .mettiti, .domanda, .soluzioni, .inquesta, figure.diagramma,
-   table, .mappa-q, .page-head, .legenda`). Un tema non finisce MAI con un box
-   troncato a metà.
-2. **Numero di pagina più in alto**: `@bottom-center` con
-   `padding-bottom: 6mm` → il numero sta nel margine bianco, sollevato dal
-   fondo, mai nel flusso del contenuto. Copertina senza numero (`@page :first`).
-3. **Layout arioso**: interlinea e spaziature rilassate; nessuna pagina
-   «soffocata». Riempimento medio ~75%.
-4. **Pagine di continuazione mai spoglie**: ogni pagina che continua un tema
-   deve riempire almeno il ~45% (misura con PyMuPDF su content-bottom 842−57 pt).
-   `fix_fill.py` sposta il salto di pagina di 1 box prima quando la
-   continuazione è <45% e l'origine >60%.
-5. **Salti di pagina**: classe `.salto` (`break-before: page`) sugli elementi;
-   `.ristretta` (page: stretta, margini 13/15/17 mm) e `.compact` solo dove
-   serve.
+I temi **non** forzano più una nuova pagina: scorrono uno dopo l'altro e la
+banner colorata del tema (`.page-head`) è il separatore visivo. Nuove pagine solo
+per copertina, indice e divisori d'anno (`.divider { break-before/after: page }`).
+Risultato: 53 pagine, riempimento medio 87%, 32 pagine oltre il 90%, nessuna
+pagina di coda spoglia (solo i naturali fini d'anno e l'ultima).
 
-## ⚠️ Lezione appresa (bug «salto in catena»)
+Regole NON negoziabili:
 
-Nelle versioni precedenti `fix_fill.py`, rieseguito su pagine ancora spoglie,
-aggiungeva un `.salto` a un elemento che ne aveva già uno ricevuto in passata
-precedente → **catena di salti** → 2 pagine di continuazione quasi vuote invece
-di una. La versione attuale include la guardia **anti-catena**: quando aggiunge
-un nuovo salto all'elemento *t*, rimuove i salti ridondanti sugli elementi
-successivi della stessa sezione (rimozione da destra per mantenere validi gli
-offset). Se si modifica il bilanciatore, verificare SEMPRE dopo ogni passata
-che il numero di pagine non aumenti e che nessuna continuazione scenda sotto
-il 42%.
+1. **Nessun box spezzato tra due pagine**: `break-inside: avoid` su tutti i box
+   (`.box, .trucco, .attenzione, .formula-box, .esempio, .insintesi, .mettiti,
+   .domanda, .soluzioni, .inquesta, figure.diagramma, table, .mappa-q,
+   .mappa-griglia, .mappa-box, .page-head, .legenda`). Attenzione a
+   `.mappa-griglia`/`.mappa-box`: sono `display:table/table-cell`, il selettore
+   `table` NON li copre — vanno elencati esplicitamente.
+2. **Banner mai orfane a fondo pagina**: `.page-head { break-after: avoid;
+   break-inside: avoid }` — se il primo box del tema non entra, la banner scende
+   alla pagina successiva insieme a esso.
+3. **Titoli mai orfani**: `h3.titoletto { break-after: avoid }`.
+4. **Numero di pagina** nel margine, sollevato (`@bottom-center` +
+   `padding-bottom: 6mm`); assente in copertina (`@page :first`).
+5. **Spaziatura tra temi**: `.page { margin-top: 3.5mm }` — i margini adiacenti
+   a un'interruzione di pagina naturale sono troncati da WeasyPrint, quindi la
+   spaziatura compare solo quando un tema inizia a metà pagina.
+6. **NIENTE salti forzati nei temi**: la classe `.salto` resta definita nel CSS
+   ma non va usata; i bilanciatori (`fix_fill.py`, `autobalance.py`,
+   `collapse.py`) sono DEPRECATI e hanno una guardia che impedisce l'uso (i
+   `ristretta` creerebbero pagine nominate = interruzioni forzate).
+7. **NIENTE `display:flex`** nel quaderno: il testo dei flex item non va a capo e
+   viene tagliato a destra — usare `display:table/table-cell` o `inline-block`.
+8. **Font ×1.4 (corpo 14 pt)** per la leggibilità DSA: la densità si regola con
+   interlinea (1.29), padding e margini, mai con il corpo del testo.
 
 ## Adattamenti (ADATTARE)
 
-- **Contenuto/anno**: ogni anno è un file HTML autonomo con struttura fissa:
+- **Contenuto/anno**: ogni anno è un file HTML autonomo; struttura dei temi:
   `header.page-head` (h2 + filo), box `CHE COSA…`, tabelle, `trucco`,
   `attenzione`, `esempio`, `mettiti alla prova`. Testi semplici, frasi brevi,
   lessico trasparente per obiettivi minimi.
+- **Nuovo tema**: aggiungere una `<section class="page" id="...">` con lo stesso
+  schema di blocchi — si inserisce da sola nel flusso; l'indice usa
+  `target-counter` quindi i numeri di pagina si aggiornano da soli.
+- **Tema troppo lungo**: se un tema supera ~2,5 pagine valutare di spezzarlo in
+  due sezioni con due banner; NON aggiungere `.salto`.
 - **Altro indirizzo/lingua**: cambiare solo i testi degli HTML; la CSS non va
   toccata.
-- **Nuovo tema**: aggiungere una `<section class="page" id="...">` con lo stesso
-  schema di blocchi; l'indice usa `target-counter` quindi i numeri di pagina si
-  aggiornano da soli.
+
+## ⚠️ Lezioni apprese
+
+- **«Salto in catena»**: nell'era del bilanciamento, rieseguire `fix_fill.py` su
+  pagine spoglie aggiungeva salti in catena → 2 pagine quasi vuote invece di 1.
+  La guardia anti-catena è nel codice, ma l'intera strategia è stata superata
+  dal flusso continuo.
+- **La compattazione da sola non riempie le code**: ridurre interlinea e padding
+  accorcia i temi ma le code restano mezze vuote finché «un tema = una pagina».
+  Con temi da 1,1–1,6 pagine la sola via d'uscita è il flusso continuo.
+- **Verificare sempre con montaggi**: `pdftoppm -r 40` + griglia di miniature
+  (5×3) permette di controllare tutte le pagine in 4 immagini; i controlli
+  automatici (riempimento, banner orfane) vanno comunque confermati a vista su
+  un campione ad alta risoluzione.

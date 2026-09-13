@@ -5,6 +5,16 @@
   (margini geometrici più stretti: l'elemento grande può rientrare)."""
 import re, subprocess, pymupdf
 
+# ── GUARDIA: il quaderno usa il FLUSSO CONTINUO (nessun salto forzato tra temi) ──
+import os as _os, sys as _sys
+_css_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "styles.css")
+if _os.path.exists(_css_path) and "break-after: auto" in open(_css_path, encoding="utf-8").read():
+    print("DEPRECATO: il quaderno ora usa il FLUSSO CONTINUO (i temi scorrono, banner break-after: avoid).")
+    print("Questo script serve solo per la vecchia impaginazione 'un tema = una pagina': NON eseguirlo,")
+    print("i salti/ristrette che aggiunge romperebbero il flusso (pagine nominate = interruzioni forzate).")
+    _sys.exit(0)
+
+
 D = "/home/user/quaderno-matematica/"
 FILES = ["00-copertina.html", "01-indice.html", "02-anno1a.html", "03-anno1b.html",
          "04-anno2.html", "05-anno3.html", "06-anno4.html", "07-anno5.html"]
@@ -102,7 +112,7 @@ for it in range(1, 4):
         while j > 1 and not is_head(pages[j - 1], j, fd):
             j -= 1
         fo, fc = fl[j], fl[i]
-        if fc < 45 and fo > 60:
+        if fc < 55 and fo > 65:
             acts.append(("salto", i, j, fo, fc))
         elif fo < 45:
             acts.append(("ristretta", i, j, fo, fc))
