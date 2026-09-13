@@ -994,7 +994,7 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
         {/* Quaderno scaricabile (come nell'app Latino Facile): pill nell'header della seconda pagina */}
         <div className="mt-2 text-center">
           <a
-            href="/quaderno-matematica-facile-v3.pdf"
+            href="/quaderno-matematica-facile-v4.pdf"
             target="_blank"
             rel="noreferrer"
             aria-label="Apri il quaderno di matematica e geometria in PDF (5 anni, obiettivi minimi)"
