@@ -331,10 +331,14 @@ const MARGIN_ITEM = 10;  // margin-bottom di ogni box (margin:0 auto 10px)
 const heightCache = new Map<string, number>();
 let measureWrap: HTMLDivElement | null = null;
 
-/** CSS della mappa ristretto al solo contenitore di misura */
+/** CSS della mappa ristretto al solo contenitore di misura.
+ * NB: il selettore universale va scoppato con :where(), che ha
+ * specificità ZERO come l'asterisco originale: usare "#id *" darebbe
+ * specificità (1,0,1) e sconfiggerebbe i padding/margini delle classi,
+ * producendo misure sbagliate (box senza padding → pagine sovraccariche). */
 const MAPPA_CSS_MEASURE = MAPPA_CSS
   .replace(/\bbody\{/g, "#mappa-measure-wrap{")
-  .replace(/\*\{/g, "#mappa-measure-wrap *{");
+  .replace(/\*\{/g, ":where(#mappa-measure-wrap) *{");
 
 function getMeasureWrap(): HTMLDivElement {
   if (measureWrap) return measureWrap;
