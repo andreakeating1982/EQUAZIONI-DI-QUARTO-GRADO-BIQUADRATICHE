@@ -29,6 +29,7 @@ https://equazioni-biquadratiche.easy-peasy.site
 | **[`REBUILD.md`](REBUILD.md)** | **Ricostruire** l'app identica dal repository GitHub |
 | **[`ADATTARE.md`](ADATTARE.md)** | **Creare varianti**: grado, disequazioni, fratte, lingua, quiz |
 | **[`GUIDA-IA.md`](GUIDA-IA.md)** | **Guida per l'IA** completa (architettura, file critici, regole d'oro) |
+| **[`IMPLEMENTAZIONE-IA.md`](IMPLEMENTAZIONE-IA.md)** | 🧭 **Sezione IA dedicata**: foto/ritaglio/riconoscimento/trascrizione (OCR), produzione di mappe concettuali specifiche, debug del «tremolio» |
 | **[`RENDER.md`](RENDER.md)** | Trasferire l'app su **Render** via GitHub |
 | **[`ACCESSIBILITA.md`](ACCESSIBILITA.md)** | ♿ **Sezione ACCESSIBILITÀ** — tutte le misure BES/DSA, portabili su altre app |
 | [`docs/grado.md`](docs/grado.md) | Mappa del codice per **cambiare il grado** |

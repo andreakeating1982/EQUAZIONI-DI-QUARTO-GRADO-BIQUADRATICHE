@@ -32,6 +32,7 @@
 11. [ACCESSIBILITÀ (sezione portabile)](#11-accessibilità-sezione-portabile)
 12. [Regole d'oro](#12-regole-doro)
 13. [Cornice dinamica (embed per il blog)](#13-cornice-dinamica-embed-per-il-blog)
+14. [Sezione IA dedicata — foto, mappe concettuali, tremolio](#14-sezione-ia-dedicata--foto-mappe-concettuali-tremolio)
 
 ---
 
@@ -355,6 +356,7 @@ verifica rapida).
    **NON** su `.katex` (le formule restano in KaTeX).
 10. **Prima del deploy produzione**: sempre `webdev_save_checkpoint` con descrizione.
 11. **`currentHeight()` (heightSync.ts) usa l'altezza REALE del contenuto**: `Math.max(body.scrollHeight, body.offsetHeight, documentElement.offsetHeight)` + `documentElement.scrollHeight` SOLO se supera `window.innerHeight`. **NON** usare `documentElement.scrollHeight` come riferimento assoluto: dentro l'iframe resta gonfiato all'altezza del viewport e la cornice non si restringe MAI, lasciando un grande vuoto sotto la card (bug corretto in produzione).
+12. **Anti-tremolio**: l'invio dell'altezza è stabilizzato (ceil su misura frazionaria, isteresi 3 px, silenzio post-invio 400 ms con salto libero ≥ 30 px, coalescenza rAF, ping sempre risposto) e le cornici NON devono avere `transition: height` né applicare l'altezza senza debounce. MAI rimuovere queste protezioni: senza, l'app vibra nel blog (58 messaggi/82 s misurati). Diagnosi e strumento di misura: [`IMPLEMENTAZIONE-IA.md`](IMPLEMENTAZIONE-IA.md), Area 3.
 
 ## 13. Cornice dinamica (embed per il blog)
 
@@ -391,6 +393,15 @@ autonomo da incollare su Blogger (o qualsiasi sito) che mostra l'app in un ifram
   `Math.max(body.scrollHeight, body.offsetHeight, documentElement.offsetHeight)` e
   aggiungi `documentElement.scrollHeight` SOLO se supera `window.innerHeight`
   (vedi `client/src/lib/heightSync.ts`).
+- **Anti-tremolio (Settembre 2026)**: l'app stabilizza l'invio dell'altezza (ceil su
+  misura frazionaria + isteresi 3 px + silenzio post-invio 400 ms con salto libero
+  ≥ 30 px + coalescenza rAF + ping sempre risposto) e le cornici applicano l'altezza
+  SOLO con debounce, senza `transition: height` (lite/base64/universale corrette;
+  dedicata con silenzio post-applicazione 300 ms). Test riproducibile:
+  `client/public/test-tremolio.html?mode=bad` (cornice vecchia) o `?mode=v3`, report
+  con `window.__report()`. Prima del fix: 58 messaggi/82 s con crescendo continuo;
+  dopo: silenzio a pagina ferma e cambiamenti veri seguiti subito. Dettagli completi:
+  [`IMPLEMENTAZIONE-IA.md`](IMPLEMENTAZIONE-IA.md), Area 3.
 
 ### Adattare la cornice a un'altra app
 
@@ -401,6 +412,30 @@ autonomo da incollare su Blogger (o qualsiasi sito) che mostra l'app in un ifram
 
 Per i dettagli completi (Schermo intero, stato, ping, mobile, accessibilità) leggi
 `cornice-dinamica/README.md`.
+
+---
+
+## 14. Sezione IA dedicata — foto, mappe concettuali, tremolio
+
+> 🧭 **SEZIONE APPOSITA PER IMPLEMENTARE MEDIANTE IA** — le tre aree chiave richieste
+> sono documentate in dettaglio operativo in **[`IMPLEMENTAZIONE-IA.md`](IMPLEMENTAZIONE-IA.md)**:
+>
+> 1. **Scattare foto / ritaglio foto / riconoscimento / trascrizione** — la pipeline
+>    completa (SCATTA UNA FOTO / CARICA / drag&drop / Ctrl+V → `normalizePhoto` →
+>    `CropDialog` → `enhanceForOcr` → `ocrImage` (Tesseract self-hosted) →
+>    `normalizeEquationOcrDetailed` → campo equazione), i dettagli critici (PNG
+>    lossless, upscale a passi, COOP/COEP, ricostruzione trinomia v3) e la checklist
+>    per estenderla.
+> 2. **Produzione di mappe concettuali specifiche** — `MappaPdfData`, `buildMappaHtml`,
+>    `openMappaPdf`: come generare la mappa PDF di QUALSIASI trinomia (con esempio
+>    completo), la struttura Parte A/Parte B, le formule letterarie sopra quelle
+>    numeriche nei passi 3-4-5 e la paginazione a misurazione DOM.
+> 3. **Debug del "tremolio"** — sintomo, cause misurate, strumento
+>    `client/public/test-tremolio.html?mode=bad|v3` con `window.__report()`, le 5
+>    contromisure lato app + quelle lato cornice, la procedura diagnostica passo-passo
+>    e come portare l'anti-tremolio su altre app.
+>
+> Le **regole non negoziabili** di queste tre aree sono in coda allo stesso documento.
 
 ---
 
