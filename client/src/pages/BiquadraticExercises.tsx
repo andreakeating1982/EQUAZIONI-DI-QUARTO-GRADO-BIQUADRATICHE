@@ -6,7 +6,7 @@ import { useMathRecognition } from "@/hooks/useMathRecognition";
 import { cn } from "@/lib/utils";
 import katex from "katex";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Loader2, ScrollText } from "lucide-react";
 import { CropDialog } from "@/components/CropDialog";
 import { ocrImage } from "@/lib/ocr";
 import { normalizePhoto } from "@/lib/imagePrep";
@@ -991,6 +991,19 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
         <h1 className="text-sm sm:text-base font-bold leading-tight text-foreground text-center">
           EQUAZIONI DI QUARTO GRADO &nbsp;·&nbsp; TRINOMIE BIQUADRATICHE
         </h1>
+        {/* Quaderno scaricabile (come nell'app Latino Facile): pill nell'header della seconda pagina */}
+        <div className="mt-2 text-center">
+          <a
+            href="/quaderno-matematica-facile.pdf"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Apri il quaderno di matematica e geometria in PDF (5 anni, obiettivi minimi)"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs sm:text-sm font-bold uppercase text-primary-foreground shadow-[2px_3px_0_rgba(46,32,24,0.35)] hover:shadow-[1px_2px_0_rgba(46,32,24,0.35)] hover:translate-y-[1px] active:translate-y-[2px] active:shadow-none transition-all bg-primary hover:bg-primary/90"
+          >
+            <ScrollText className="h-3.5 w-3.5" aria-hidden="true" />
+            IL QUADERNO PDF
+          </a>
+        </div>
         {studentLabel && (
           <p className="text-center text-sm text-muted-foreground mt-2">
             <span className="font-medium text-foreground">{studentLabel}</span>
