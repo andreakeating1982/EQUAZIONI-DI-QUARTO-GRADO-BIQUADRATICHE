@@ -166,17 +166,22 @@ function tValueLatex(d: MappaPdfData, t: number): string {
   return `\\approx ${decimalComma(t)}`;
 }
 
-/** Δ = b² − 4·a·c con la catena numerica completa (se coefficienti interi) */
-function deltaChainLatex(d: MappaPdfData): string {
+/** Formula LETTERARIA di Δ (riga sopra, fissa) */
+function deltaFormulaLatex(): string {
+  return "\\Delta = b^{2} - 4\\cdot a\\cdot c";
+}
+
+/** Sostituzione NUMERICA di Δ con i numeri veri (riga sotto) */
+function deltaNumericLatex(d: MappaPdfData): string {
   const { a, b, c, delta } = d;
   const allInt = Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(c);
-  const gen = `\\Delta = b^{2}-4\\cdot a\\cdot c = ${formatCoeffWithParens(b)}^{2}-4\\cdot ${formatCoeffWithParens(a)}\\cdot ${formatCoeffWithParens(c)}`;
+  const sub = `${formatCoeffWithParens(b)}^{2} - 4\\cdot ${formatCoeffWithParens(a)}\\cdot ${formatCoeffWithParens(c)}`;
   if (allInt) {
     const q = 4 * a * c;
     const mid = q >= 0 ? `${b * b} - ${q}` : `${b * b} - (-${Math.abs(q)})`;
-    return `${gen} = ${mid} = ${numberToLatex(delta)}`;
+    return `\\Delta = ${sub} = ${mid} = ${numberToLatex(delta)}`;
   }
-  return `${gen} = ${numberToLatex(delta)}`;
+  return `\\Delta = ${sub} = ${numberToLatex(delta)}`;
 }
 
 /** Riga del PASSO 6 per una t: "da t₁ = 4 → x = ±√4 = ±2" / salto se negativa */
@@ -239,6 +244,15 @@ function solidBox(text: string, color: string, extraClass = ""): string {
   return `<div class="solid ${extraClass}" style="background:${color}">${text}</div>`;
 }
 
+/** Box «RICORDA LE FORMULE» (condiviso tra le due parti della mappa) */
+function formuleBox(): string {
+  return `<div class="formule">
+    <p class="formule-title">RICORDA LE FORMULE</p>
+    ${katexBlock("\\Delta = b^{2}-4\\cdot a\\cdot c \\qquad t = \\dfrac{-b \\pm \\sqrt{\\Delta}}{2\\cdot a} \\qquad x = \\pm\\sqrt{t}")}
+    <p class="note">(x = ±√t solo se t ≥ 0; se t è negativo salto)</p>
+  </div>`;
+}
+
 // ─── PARTE A: mappa svolta (dinamica) ─────────────────────────────
 
 function buildSvolta(d: MappaPdfData): string {
@@ -283,10 +297,11 @@ function buildSvolta(d: MappaPdfData): string {
     C.passo2
   );
 
-  // PASSO 3
+  // PASSO 3 — formula letteraria sopra, sostituzione numerica sotto
   html += stepBox(
     "Δ PASSO 3 · CALCOLO Δ (DELTA)",
-    katexBlock(deltaChainLatex(d)),
+    `${katexBlock(deltaFormulaLatex())}
+     ${katexBlock(deltaNumericLatex(d))}`,
     C.passo3
   );
 
@@ -348,11 +363,7 @@ function buildSvolta(d: MappaPdfData): string {
   }
 
   // Formule di servizio
-  html += `<div class="formule">
-    <p class="formule-title">RICORDA LE FORMULE</p>
-    ${katexBlock("\\Delta = b^{2}-4\\cdot a\\cdot c \\qquad t = \\dfrac{-b \\pm \\sqrt{\\Delta}}{2\\cdot a} \\qquad x = \\pm\\sqrt{t}")}
-    <p class="note">(x = ±√t solo se t ≥ 0; se t è negativo salto)</p>
-  </div>`;
+  html += formuleBox();
 
   // ATTENZIONE (regole, con nota dinamica)
   let attenzioneBody = "";
@@ -409,28 +420,49 @@ function buildDaCompletare(d: MappaPdfData): string {
     C.passo2
   );
 
+  // PASSO 3 — come nella mappa svolta: formula letteraria (visibile) sopra,
+  // sostituzione numerica da completare sotto
   html += stepBox(
     "Δ PASSO 3 · CALCOLO Δ (DELTA)",
-    katexBlock("\\Delta = (\\dots)^{2} - 4\\cdot(\\dots)\\cdot(\\dots) = \\dots"),
+    `${katexBlock(deltaFormulaLatex())}
+     ${katexBlock("\\Delta = (\\dots)^{2} - 4\\cdot(\\dots)\\cdot(\\dots) = \\dots")}`,
     C.passo3
   );
 
+  if (d.deltaNegative) {
+    // Δ < 0 → l'equazione si sviluppa SOLO su 3 passi: nessuna soluzione reale
+    html += `<div class="attenzione">
+      <p class="attenzione-title">⚠ ATTENZIONE!</p>
+      ${katexBlock(`\\Delta = ${numberToLatex(d.delta)} \\; < \\; 0`)}
+      <p>Δ è <b>NEGATIVO</b> → l'equazione <b>NON ha soluzioni reali</b>: i passi si fermano qui.</p>
+    </div>`;
+    html += formuleBox();
+    html += `<div class="risultato-blank"></div>`;
+    return html;
+  }
+
   html += stepBox(
     "＋ PASSO 4 · TROVO t₁",
-    katexBlock("t_{1} = \\dfrac{\\dots + \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots"),
+    katexBlock("t_{1} = \\dfrac{\\dots + \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots") +
+      (d.hasDoubleRoot ? `<p class="note">(t₁ e t₂ sono uguali perché Δ = 0)</p>` : ""),
     C.passo4
   );
 
-  html += stepBox(
-    "－ PASSO 5 · TROVO t₂",
-    katexBlock("t_{2} = \\dfrac{\\dots - \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots"),
-    C.passo5
-  );
+  if (!d.hasDoubleRoot) {
+    html += stepBox(
+      "－ PASSO 5 · TROVO t₂",
+      katexBlock("t_{2} = \\dfrac{\\dots - \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots"),
+      C.passo5
+    );
+  }
 
+  // PASSO 6 — una sola riga se Δ = 0 (t₁ = t₂)
   html += stepBox(
     "√ PASSO 6 · TORNO A x",
-    `<p class="root-line"><b>ORA RISCRIVO QUI T₁</b> → ${katexInline("x_{1} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>
-     <p class="root-line"><b>ORA RISCRIVO QUI T₂</b> → ${katexInline("x_{2} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>`,
+    `<p class="root-line"><b>ORA RISCRIVO QUI T₁</b> → ${katexInline("x_{1} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>` +
+      (d.hasDoubleRoot
+        ? ""
+        : `<p class="root-line"><b>ORA RISCRIVO QUI T₂</b> → ${katexInline("x_{2} = \\pm\\sqrt{\\dots} = \\pm\\dots")}</p>`),
     C.passo6
   );
 
@@ -441,11 +473,7 @@ function buildDaCompletare(d: MappaPdfData): string {
   );
 
   // Formule di riferimento (visibili)
-  html += `<div class="formule">
-    <p class="formule-title">RICORDA LE FORMULE</p>
-    ${katexBlock("\\Delta = b^{2}-4\\cdot a\\cdot c \\qquad t = \\dfrac{-b \\pm \\sqrt{\\Delta}}{2\\cdot a} \\qquad x = \\pm\\sqrt{t}")}
-    <p class="note">(x = ±√t solo se t ≥ 0; se t è negativo salto)</p>
-  </div>`;
+  html += formuleBox();
 
   html += `<div class="attenzione">
     <p class="attenzione-title">⚠ ATTENZIONE!</p>
