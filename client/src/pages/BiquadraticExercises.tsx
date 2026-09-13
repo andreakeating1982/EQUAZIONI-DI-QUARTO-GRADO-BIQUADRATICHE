@@ -11,6 +11,7 @@ import { CropDialog } from "@/components/CropDialog";
 import { ocrImage } from "@/lib/ocr";
 import { normalizePhoto } from "@/lib/imagePrep";
 import { normalizeEquationOcrDetailed } from "@/lib/eqOcr";
+import { openMappaPdf } from "@/lib/mappaPdf";
 
 // ─── Math utilities ───────────────────────────────────────────────
 function gcd(a: number, b: number): number {
@@ -854,6 +855,32 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
     }, 300);
   }, []);
 
+  // ─── Mappa concettuale PDF (rielaborata sull'equazione dell'utente) ──
+  // Ogni volta che lo studente preme il tasto, la mappa viene RICOSTRUITA
+  // sull'equazione effettiva della seconda pagina: coefficienti a, b, c,
+  // Δ, t₁, t₂ e radici. Convenzioni famiglia Widget Matematico
+  // (repo MAPPE-CONCETTUALI-MATEMATICHE): t = x², x = ±√t solo se t ≥ 0.
+  const handleMappaPdf = () => {
+    if (!computed) return;
+    openMappaPdf({
+      studentLabel,
+      eqLatex: buildEquationLatex(),
+      tEqLatex: buildTEquationLatex(),
+      a: computed.a,
+      b: computed.b,
+      c: computed.c,
+      delta: computed.delta,
+      isDeltaPerfectSquare: computed.isDeltaPerfectSquare,
+      hasDoubleRoot: computed.hasOneDoubleSolution,
+      deltaNegative: computed.solutionType === "delta_negative",
+      t1: computed.t1,
+      t2: computed.t2,
+      xValues: computed.xValues,
+      hasRealSolutions: computed.hasRealSolutions,
+      rootEntries: computed.positiveRootEntries,
+    });
+  };
+
   // ─── Verification checks ────────────────────────────────────────
   const deltaCorrect = computed && deltaUtente !== null &&
     areNumbersApproximatelyEqual(deltaUtente, computed.delta, EPSILON * 100);
@@ -1195,8 +1222,18 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
 
         {/* Exercise phase */}
         {phase === "exercise" && submitted && computed && (
-          <BiquadraticExercise
-            computed={computed}
+          <>
+            {/* MAPPA CONCETTUALE — all'inizio della terza pagina, giallo come SCARICA PDF */}
+            <div className="flex justify-center pb-2 animate-pop-in">
+              <button
+                onClick={handleMappaPdf}
+                className="px-6 py-3 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold text-base tracking-widest transition-all shadow-sm"
+              >
+                🗺️ MAPPA CONCETTUALE (PDF)
+              </button>
+            </div>
+            <BiquadraticExercise
+              computed={computed}
             deltaUtente={deltaUtente}
             setDeltaUtente={setDeltaUtente}
             t1Utente={t1Utente}
@@ -1211,9 +1248,10 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;paddi
             setFeedbackFinale={setFeedbackFinale}
             onNew={handleNewExercise}
             generatingPdf={generatingPdf}
-            equationDisplay={katexHtml(buildEquationLatex())}
-            tEquationDisplay={katexHtml(buildTEquationLatex())}
-          />
+              equationDisplay={katexHtml(buildEquationLatex())}
+              tEquationDisplay={katexHtml(buildTEquationLatex())}
+            />
+          </>
         )}
 
         {/* SCARICA PDF button */}
