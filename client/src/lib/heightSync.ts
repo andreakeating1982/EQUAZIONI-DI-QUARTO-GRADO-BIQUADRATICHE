@@ -7,9 +7,42 @@
  *
  * Il parent ascolta messaggi del tipo:
  *   { type: "labvisivo:height", height: <numero> }
+ *
+ * ─── STABILITÀ ANTI-TREMOLIO (fix «l'app trema nel blog») ───────────────
+ * Riprodotto e misurato in laboratorio (test-tremolio.html): l'app
+ * rinviava l'altezza a OGNI tick (ResizeObserver + resize + risposta al
+ * ping) e le cornici con `transition: height` applicavano subito anche le
+ * misure intermedie → ciclo di ricrescita continua (+1…+6 px a manovra) =
+ * tremolio costante. Contromisure, in ordine di importanza:
+ *
+ * 1. ARROTONDAMENTO PER ECCESSO su misura frazionaria (ceil): dopo
+ *    l'applicazione il contenuto non sconfinerà MAI dall'iframe → niente
+ *    barra di scorrimento → nessun reflow → la rimisura è identica → il
+ *    ciclo non riparte.
+ * 2. ISTERESI (3 px): variazioni più piccole non vengono inviate
+ *    (invisibili all'occhio, ma bastavano a rimettere in moto il ciclo).
+ * 3. SILENZIO POST-INVIO (400 ms): per ~0,4 s dopo ogni invio le
+ *    rimisurazioni intermedie vengono scartate — copre la durata della
+ *    transizione CSS (~250 ms) delle cornici animate. Un cambiamento VERO
+ *    (≥ 30 px, es. cambio passo) passa comunque subito.
+ * 4. COALESCENZA rAF: le raffiche del ResizeObserver producono al massimo
+ *    un invio per frame, poi il trailing settle conferma il valore finale.
+ *
+ * Il PING della cornice risponde SEMPRE (bypass isteresi e silenzio): è
+ * una richiesta esplicita, serve alle cornici (ri)caricate per conoscere
+ * l'altezza corrente anche se identica all'ultimo valore inviato.
  */
 
-function currentHeight(): number {
+const ISTERESI_PX = 3;
+const SILENZIO_MS = 400;
+const SALTO_LIBERO_PX = 30;
+
+let lastSent = 0;
+let lastSentAt = 0;
+let rafId: number | null = null;
+let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+function measureHeight(): number {
   const docEl = document.documentElement;
   const body = document.body;
   /* IMPORTANTE: NON usare documentElement.scrollHeight come riferimento
@@ -17,19 +50,35 @@ function currentHeight(): number {
      del documento resta "gonfiato" all'altezza del viewport dell'iframe
      (mai meno), quindi la cornice dinamica non potrebbe MAI restringersi
      e la prima pagina mostrerebbe un grande vuoto sotto la card. Usiamo
-     invece l'altezza reale del contenuto (body + offsetHeight del documento)
-     e aggiungiamo documentElement.scrollHeight SOLO quando il contenuto
-     supera davvero il viewport. */
+     l'altezza reale del contenuto e aggiungiamo documentElement.scrollHeight
+     SOLO quando il contenuto supera davvero il viewport.
+
+     Le altezze via getBoundingClientRect() sono FRAZIONARIE: incluse nel
+     massimo così il ceil finale copre anche il contenuto "mezzo pixel più
+     alto" (zoom / devicePixelRatio frazionari) che con i soliti interi
+     (scrollHeight/offsetHeight arrotondati) sconfinava dall'iframe e
+     faceva comparire/sparire la barra di scorrimento (reflow → tremolio). */
+  let h = 0;
+  if (body) {
+    h = Math.max(
+      h,
+      body.getBoundingClientRect().height,
+      body.scrollHeight,
+      body.offsetHeight
+    );
+  }
+  if (docEl) {
+    h = Math.max(
+      h,
+      docEl.getBoundingClientRect().height,
+      docEl.offsetHeight
+    );
+  }
   const viewportH = window.innerHeight || (docEl ? docEl.clientHeight : 0);
-  let h = Math.max(
-    body ? body.scrollHeight : 0,
-    body ? body.offsetHeight : 0,
-    docEl ? docEl.offsetHeight : 0
-  );
   if (docEl && docEl.scrollHeight > viewportH) {
     h = Math.max(h, docEl.scrollHeight);
   }
-  return h;
+  return Math.ceil(h);
 }
 
 function getCorniceToken(): string | null {
@@ -43,15 +92,48 @@ function getCorniceToken(): string | null {
   }
 }
 
-function sendHeight(token: string | null = getCorniceToken()): void {
+function pushHeight(opts: { force?: boolean } = {}): void {
   // Attivo solo quando siamo dentro un iframe (non come pagina principale)
   if (window.self === window.top) return;
-  const height = currentHeight();
-  if (height > 100) {
-    const msg: Record<string, unknown> = { type: "labvisivo:height", height };
-    if (token) msg.cornice = token;
-    window.parent.postMessage(msg, "*");
+  const height = measureHeight();
+  if (height <= 100 || height > 15000) return;
+  const ora = Date.now();
+  if (!opts.force) {
+    // Isteresi: differenze impercettibili non vengono inviate
+    if (lastSent > 0 && Math.abs(height - lastSent) < ISTERESI_PX) return;
+    // Silenzio post-invio: smorza le misure intermedie (transizioni CSS
+    // della cornice, reflow di stabilizzazione). Un salto vero passa.
+    if (
+      lastSentAt > 0 &&
+      ora - lastSentAt < SILENZIO_MS &&
+      Math.abs(height - lastSent) < SALTO_LIBERO_PX
+    ) {
+      return;
+    }
   }
+  lastSent = height;
+  lastSentAt = ora;
+  const msg: Record<string, unknown> = { type: "labvisivo:height", height };
+  const token = getCorniceToken();
+  if (token) msg.cornice = token;
+  window.parent.postMessage(msg, "*");
+}
+
+function scheduleSend(): void {
+  // Coalescenza: al massimo un invio per frame anche se il ResizeObserver
+  // scatta a raffica; il trailing settle conferma poi il valore stabile.
+  if (rafId === null) {
+    if (typeof requestAnimationFrame === "function") {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        pushHeight();
+      });
+    } else {
+      pushHeight();
+    }
+  }
+  if (settleTimer) clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => pushHeight(), SILENZIO_MS + 60);
 }
 
 export function initHeightSync(): void {
@@ -65,31 +147,31 @@ export function initHeightSync(): void {
   }
 
   // Risponde al "ping" della cornice dinamica (embed Blogger): la cornice
-  // può richiedere l'altezza in ogni momento con { type: "labvisivo:ping" }
+  // può richiedere l'altezza in ogni momento con { type: "labvisivo:ping" }.
+  // Risposta SEMPRE forzata: è una richiesta esplicita, non un evento.
   window.addEventListener("message", (e) => {
     if (e.data && e.data.type === "labvisivo:ping") {
-      sendHeight(
-        typeof e.data.cornice === "string" ? e.data.cornice : getCorniceToken()
-      );
+      pushHeight({ force: true });
     }
   });
 
   // Invia subito (prima del rendering completo) e a caricamento avvenuto
-  sendHeight();
-  window.addEventListener("load", () => sendHeight());
-  window.addEventListener("resize", () => sendHeight());
+  scheduleSend();
+  window.addEventListener("load", () => scheduleSend());
+  window.addEventListener("resize", () => scheduleSend());
 
   // Osserva i cambi di layout (es. caricamento del modello ONNX, dialoghi,
   // cambio passo dell'esercizio…)
   if (typeof ResizeObserver !== "undefined") {
-    const ro = new ResizeObserver(() => sendHeight());
+    const ro = new ResizeObserver(() => scheduleSend());
     if (document.documentElement) ro.observe(document.documentElement);
     if (document.body) ro.observe(document.body);
-    setTimeout(() => sendHeight(), 250);
+    setTimeout(() => scheduleSend(), 250);
   }
 
   // Retry: font, modello OCR e contenuti asincroni possono cambiare
   // l'altezza dopo l'evento "load"
-  setTimeout(sendHeight, 500);
-  setTimeout(sendHeight, 1500);
+  setTimeout(() => scheduleSend(), 500);
+  setTimeout(() => scheduleSend(), 1500);
+  setTimeout(() => scheduleSend(), 3000);
 }

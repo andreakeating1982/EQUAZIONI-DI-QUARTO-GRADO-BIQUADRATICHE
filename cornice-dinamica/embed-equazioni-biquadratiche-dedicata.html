@@ -336,10 +336,19 @@
     var ultimoValore = 0;         // ultimo valore RICEVUTO dall'app
     var cresciteConsecutive = 0;  // conteggio crescite consecutive (anti-loop graduale)
     var congelatoFino = 0;        // timestamp: finché ora < congelatoFino le crescite sono ignorate
+    var ultimaApplicazione = 0;   // timestamp: inizio del silenzio post-applicazione (anti-tremolio)
 
     function applicaAltezza(h) {
       if (typeof h !== 'number' || h < 100 || h > 15000) return;   // sanity assoluta
       var ora = Date.now();
+
+      // --- SILENZIO POST-APPLICAZIONE (anti-tremolio): nei 300 ms dopo
+      // aver applicato un'altezza ignoriamo le rimisure ravvicinate: sono
+      // le misure intermedie di transizioni/reflow di stabilizzazione e
+      // alimentavano un ciclo continuo di ±pochi pixel. Un cambiamento
+      // VERO (≥ 30 px, es. cambio passo dell'esercizio) passa comunque. ---
+      if (ultimaApplicazione > 0 && ora - ultimaApplicazione < 300 && Math.abs(h - altezzaApplicata) < 30) return;
+
       var crescente = h > ultimoValore + 2;
 
       // --- Anti-loop graduale: 3 crescite consecutive → congela 5 s ---
@@ -383,6 +392,7 @@
       timerSettle = setTimeout(function () {
         if (Math.abs(h - altezzaApplicata) < 2) return;   // già applicato
         altezzaApplicata = h;
+        ultimaApplicazione = Date.now();
         iframe.style.height = h + 'px';
         if (!appViva) segnaOnline();
       }, 200);
@@ -413,7 +423,9 @@
       } catch (err) { /* app non ancora pronta: si riprova al prossimo tick */ }
     }
     ping();
-    setInterval(ping, 3000);
+    // Ogni 6 s: il ping è una rete di sicurezza (l'app notifica da sola ogni
+    // cambiamento via ResizeObserver); meno ping = meno traffico inutile.
+    setInterval(ping, 6000);
 
     /* Alla finestra che cambia larghezza l'app può cambiare altezza: la richiediamo */
     window.addEventListener('resize', function () { ping(); });

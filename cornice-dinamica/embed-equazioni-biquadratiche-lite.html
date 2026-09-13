@@ -64,7 +64,10 @@
     display: block;
     height: 640px;
     min-width: 100%;
-    transition: height 0.25s ease;
+    /* ⛔ NESSUNA transizione sull'altezza: durante l'animazione l'app misura
+       e rinviare altezze intermedie → ciclo continuo di ±pochi pixel
+       (tremolio costante). L'altezza è applicata solo a layout stabilizzato
+       (debounce JS qui sotto). */
     width: 1px;
   }
   @media (max-width: 480px) {
@@ -118,10 +121,24 @@
       iframe.title = APP_TITLE + ' — app in cornice';
     }
 
-    /* 4) Altezza dinamica: l'app risponde al ping con { type: "labvisivo:height" } */
+    /* 4) Altezza dinamica: l'app risponde al ping con { type: "labvisivo:height" }.
+       ANTI-TREMOLIO: applicazione con DEBOUNCE ~200 ms (layout stabilizzato)
+       e filtro ±2 px — le versioni precedenti applicavano ogni messaggio
+       subito, incluso le misure intermedie che alimentavano il tremolio. */
+    var timerH = null;
+    var hApplicata = 0;
+    function applicaAltezza(h) {
+      if (typeof h !== 'number' || h < 100 || h > 15000) return;
+      clearTimeout(timerH);
+      timerH = setTimeout(function () {
+        if (Math.abs(h - hApplicata) < 2) return;
+        hApplicata = h;
+        iframe.style.height = h + 'px';
+      }, 200);
+    }
     window.addEventListener('message', function (e) {
       if (e.data && e.data.type === 'labvisivo:height' && typeof e.data.height === 'number') {
-        if (e.data.height > 100) iframe.style.height = e.data.height + 'px';
+        applicaAltezza(e.data.height);
       }
     });
     setTimeout(function () {
