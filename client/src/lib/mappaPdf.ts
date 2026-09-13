@@ -12,10 +12,13 @@
  *    «MAPPA CONCETTUALE» centrato, valori in bianco da compilare.
  *
  * NUMERI DI PAGINA: ogni parte è una sequenza di pagine A4 esplicite
- * (`.page` con piè di pagina «Pagina N di M»). I numeri RIPARTONO DA 1
- * all'inizio di ogni mappa diversa per tipologia (Parte A = 1..n,
- * Parte B = 1..m), perché i browser non permettono di gestire il
- * contatore di pagina via CSS @page.
+ * (`.page` con piè di pagina «Pagina N di M» POSIZIONATO NEL MARGINE
+ * INFERIORE, sotto la linea dei 2,5 cm standard: @page margin 2,5 cm ai
+ * lati e in alto, 1 cm in basso per lasciare spazio al numero, che resta
+ * così ~1,2-1,5 cm dal bordo pagina come nei documenti Word). I numeri
+ * RIPARTONO DA 1 all'inizio di ogni mappa diversa per tipologia
+ * (Parte A = 1..n, Parte B = 1..m), perché i browser non permettono di
+ * gestire il contatore di pagina via CSS @page.
  *
  * Convenzioni della famiglia (repo MAPPE-CONCETTUALI-MATEMATICHE /
  * Widget Matematico): OpenDyslexic, regole per BES/DSA, interi senza
@@ -265,9 +268,10 @@ function formuleBox(): string {
 // «Pagina N di M» è dentro ogni pagina e RIPARTE DA 1 per ogni parte
 // (mappa diversa per tipologia). PAGE_BUDGET è l'altezza massima (px)
 // di contenuti assegnata a una pagina: il contenuto reale resta sotto
-// l'altezza stampabile (~1039 px a 96 dpi con margini 1,1 cm, zoom 0.95).
+// l'area dei box (27,5 cm CSS − 1,8 cm di padding-bottom ≈ 971 px layout,
+// zoom 0.95, margini standard 2,5 cm).
 
-const PAGE_BUDGET = 1000;
+const PAGE_BUDGET = 900;
 
 /** Stima prudenziale dell'altezza di un box dal suo HTML */
 function estimateHeight(html: string): number {
@@ -565,9 +569,9 @@ export function buildMappaHtml(d: MappaPdfData): string {
 @font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:14px 16px;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
-.page{position:relative;min-height:1005px;padding-bottom:44px;page-break-after:always;break-after:page}
+.page{position:relative;height:27.5cm;padding-bottom:1.8cm;page-break-after:always;break-after:page}
 .page--last{page-break-after:auto;break-after:auto}
-.page-foot{position:absolute;left:0;right:0;bottom:6px;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
+.page-foot{position:absolute;left:0;right:0;bottom:0.2cm;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
 @media screen{.page{outline:1px dashed #ddd;margin-bottom:14px}}
 .solid{color:#fff;font-weight:bold;padding:10px 14px;border-radius:12px;font-size:14.5px;letter-spacing:.4px;margin:0 auto 10px;max-width:720px;line-height:1.5}
 .title-box{font-size:15.5px;padding:12px 14px}
@@ -591,7 +595,7 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;backg
 .risultato-blank{max-width:720px;margin:0 auto 10px;border:2.5px dashed #5C35A6;border-radius:12px;height:56px;page-break-inside:avoid;break-inside:avoid}
 .katex-display{margin:6px 0}
 .katex{font-size:1.06em}
-@media print{body{padding:0;zoom:0.95}@page{size:A4;margin:1.1cm}}
+@media print{body{padding:0;zoom:0.95}@page{size:A4;margin:2.5cm 2.5cm 1cm 2.5cm}}
 </style></head>
 <body>
 ${htmlA}
