@@ -262,15 +262,49 @@ function formuleBox(): string {
   </div>`;
 }
 
+// ─── CSS della mappa (condiviso tra documento stampato e misurazione) ──
+const MAPPA_CSS = `@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Regular.ttf') format('truetype');font-weight:400;font-style:normal}
+@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:0;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
+.page{position:relative;height:27cm;padding-bottom:1.5cm;page-break-after:always;break-after:page}
+.page--last{page-break-after:auto;break-after:auto}
+.page-foot{position:absolute;left:0;right:0;bottom:0.15cm;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
+@media screen{body{padding:14px 16px}.page{outline:1px dashed #ddd;margin-bottom:14px}}
+.solid{color:#fff;font-weight:bold;padding:10px 14px;border-radius:12px;font-size:14.5px;letter-spacing:.4px;margin:0 auto 10px;max-width:720px;line-height:1.5}
+.title-box{font-size:15.5px;padding:12px 14px}
+.student{max-width:720px;margin:0 auto 10px;padding:7px 10px;border-bottom:1px solid #e5e0d8;color:#2B2421;font-size:13px;text-align:center}
+.eq-banner{max-width:720px;margin:0 auto 10px;padding:8px 10px;border:2px dashed #5C35A6;border-radius:12px;background:#faf7ff}
+.part-label{max-width:720px;margin:14px auto 8px;color:#6b7280;font-size:11.5px;text-align:left;letter-spacing:1px;font-weight:bold}
+.box{max-width:720px;margin:0 auto 10px;page-break-inside:avoid;break-inside:avoid}
+.step-title{color:#fff;font-weight:bold;font-size:13.5px;padding:7px 12px;border-radius:12px 12px 0 0;letter-spacing:.4px;text-align:left}
+.step-body{border:2.5px solid;border-top:none;border-radius:0 0 12px 12px;padding:8px 12px;background:#fff;text-align:center}
+.note{font-size:12.5px;color:#444;margin-top:2px}
+.skip{color:#B91C1C;font-weight:bold}
+.root-line{margin:5px 0;font-size:13.5px}
+.attenzione{max-width:720px;margin:0 auto 10px;border:2.5px solid #DC2626;border-radius:12px;padding:8px 12px;background:#fef2f2;page-break-inside:avoid;break-inside:avoid}
+.attenzione-title{color:#DC2626;font-weight:bold;font-size:14px;margin-bottom:3px}
+.attenzione p{margin:3px 0}
+.formule{max-width:720px;margin:0 auto 10px;border:2.5px solid #0E7490;border-radius:12px;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
+.formule-title{background:#0E7490;color:#fff;font-weight:bold;padding:7px 12px;font-size:13.5px;letter-spacing:.4px}
+.formule .katex-display{margin:8px 0 4px}
+.formule .note{padding-bottom:8px}
+.risultato-label{letter-spacing:.5px}
+.risultato-blank{max-width:720px;margin:0 auto 10px;border:2.5px dashed #5C35A6;border-radius:12px;height:56px;page-break-inside:avoid;break-inside:avoid}
+.katex-display{margin:6px 0}
+.katex{font-size:1.06em}
+@media print{body{zoom:0.95}@page{size:A4;margin:2.5cm 2.5cm 1cm 2.5cm}}`;
+
 // ─── Paginazione esplicita (numeri di pagina per tipologia) ───────
 // I browser non supportano i margin-box CSS @page, quindi ogni parte
 // della mappa viene spezzata in pagine A4 esplicite: il piè di pagina
 // «Pagina N di M» è dentro ogni pagina e RIPARTE DA 1 per ogni parte
-// (mappa diversa per tipologia). PAGE_BUDGET è l'altezza massima (px)
-// di contenuti assegnata a una pagina: il contenuto reale resta sotto
-// l'area dei box (27 cm CSS − 1,5 cm di padding-bottom ≈ 964 px layout,
-// zoom 0.95, margini standard 2,5 cm). Il margine di ~8-15 px tra budget
-// e area assorbe l'arrotondamento/zoom di Chrome evitando sforamenti.
+// (mappa diversa per tipologia). PAGE_BUDGET è l'altezza massima (px
+// VISUALI, cioè come appariranno in stampa) dei box assegnati a una
+// pagina. Le altezze sono MISURATE REALMENTE nel DOM (vedi «Misurazione
+// reale» sotto) con fallback alla stima prudenziale. L'area box di una
+// pagina è 25,65 cm visuali − 1,43 cm di padding ≈ 915,6 px: il budget
+// 900 la riempie al ~98% lasciando ~15 px di sicurezza.
 
 const PAGE_BUDGET = 900;
 
@@ -282,13 +316,100 @@ function estimateHeight(html: string): number {
   return 60 + displays * 60 + Math.min(fracs, 8) * 16 + paras * 22;
 }
 
+// ─── Misurazione reale dei box (pagine piene) ─────────────────
+// La stima prudenziale sopravvaluta i box (~30-35%): le pagine restavano
+// mezza vuote. Qui ogni box viene renderizzato in un contenitore nascosto
+// con le STESSE condizioni proporzionali della stampa (larghezza 636,5 px
+// specificata = 604,7 px visuali con zoom 0.95, font OpenDyslexic, KaTeX)
+// e ne leggiamo l'altezza VISUALE reale con getBoundingClientRect (unica
+// API non ambigua rispetto alla semantica di zoom). Il CSS della mappa
+// (MAPPA_CSS) viene iniettato SOLO durante la misura — creato e rimosso
+// nella stessa operazione sincrona, quindi senza nessun repaint — con i
+// selettori body/* ristretti al contenitore, così l'app non subisce effetti.
+const MEASURE_W = 636.5; // larghezza specificata → 604,7 px visuali (area 16 cm)
+const MARGIN_ITEM = 10;  // margin-bottom di ogni box (margin:0 auto 10px)
+const heightCache = new Map<string, number>();
+let measureWrap: HTMLDivElement | null = null;
+
+/** CSS della mappa ristretto al solo contenitore di misura */
+const MAPPA_CSS_MEASURE = MAPPA_CSS
+  .replace(/\bbody\{/g, "#mappa-measure-wrap{")
+  .replace(/\*\{/g, "#mappa-measure-wrap *{");
+
+function getMeasureWrap(): HTMLDivElement {
+  if (measureWrap) return measureWrap;
+  const wrap = document.createElement("div");
+  wrap.id = "mappa-measure-wrap";
+  wrap.setAttribute("aria-hidden", "true");
+  wrap.style.cssText =
+    `position:absolute;left:-99999px;top:0;width:${MEASURE_W}px;zoom:0.95;` +
+    "padding:0;margin:0;max-width:none;visibility:hidden";
+  document.body.appendChild(wrap);
+  measureWrap = wrap;
+  return wrap;
+}
+
+/** Altezza VISUALE reale di un box (px come in stampa) + suo margine */
+function measureItem(html: string): number {
+  const cached = heightCache.get(html);
+  if (cached !== undefined) return cached;
+  const host = document.createElement("div");
+  host.innerHTML = html.trim();
+  const el = host.firstElementChild as HTMLElement | null;
+  if (!el) {
+    heightCache.set(html, 0);
+    return 0;
+  }
+  const wrap = getMeasureWrap();
+  wrap.appendChild(el);
+  const h = el.getBoundingClientRect().height + MARGIN_ITEM;
+  wrap.removeChild(el);
+  heightCache.set(html, h);
+  return h;
+}
+
+/** Carica i font usati dalla mappa PRIMA di misurare (fallback: timeout) */
+async function ensureMeasureFonts(): Promise<void> {
+  const f = (document as any).fonts;
+  if (!f) return;
+  const specs = [
+    "13.5px OpenDyslexic",
+    "700 13.5px OpenDyslexic",
+    "20px KaTeX_Main",
+    "italic 20px KaTeX_Math",
+    "20px KaTeX_Size2",
+  ];
+  const jobs = specs.map((s) => f.load(s).catch(() => undefined));
+  await Promise.race([
+    Promise.allSettled(jobs),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]);
+  try {
+    await Promise.race([f.ready, new Promise((r) => setTimeout(r, 800))]);
+  } catch {
+    /* font non disponibili: si misura con i fallback */
+  }
+}
+
+/** Esegue fn con il CSS della mappa attivo solo per la durata della chiamata */
+function withMeasureStyles<T>(fn: () => T): T {
+  const style = document.createElement("style");
+  style.textContent = MAPPA_CSS_MEASURE;
+  document.head.appendChild(style);
+  try {
+    return fn();
+  } finally {
+    style.remove();
+  }
+}
+
 /** Raggruppa i box in pagine da non superare PAGE_BUDGET (ordine invariato) */
-function paginate(items: string[]): string[][] {
+function paginate(items: string[], hFn: (html: string) => number): string[][] {
   const pages: string[][] = [];
   let cur: string[] = [];
   let curH = 0;
   for (const it of items) {
-    const h = estimateHeight(it);
+    const h = hFn(it);
     if (cur.length > 0 && curH + h > PAGE_BUDGET) {
       pages.push(cur);
       cur = [];
@@ -298,6 +419,16 @@ function paginate(items: string[]): string[][] {
     curH += h;
   }
   if (cur.length > 0) pages.push(cur);
+  // Se l'ultima pagina resta quasi vuota, sposta in avanti gli ultimi box
+  // della pagina precedente finché non contiene contenuti dignitosi
+  // (l'ordine resta invariato e le pagine precedenti restano piene).
+  while (pages.length >= 2) {
+    const lastPg = pages[pages.length - 1];
+    const prevPg = pages[pages.length - 2];
+    const lastH = lastPg.reduce((s, it) => s + hFn(it), 0);
+    if (lastH >= 320 || prevPg.length <= 1) break;
+    lastPg.unshift(prevPg.pop() as string);
+  }
   return pages;
 }
 
@@ -542,7 +673,10 @@ function buildDaCompletare(d: MappaPdfData): string[] {
 
 // ─── Documento completo ───────────────────────────────────────────
 
-export function buildMappaHtml(d: MappaPdfData): string {
+export function buildMappaHtml(
+  d: MappaPdfData,
+  mode?: "estimate" | "measure"
+): string {
   // Header studente (come nel quaderno) — prima pagina della PARTE A
   const itemsA: string[] = [];
   if (d.studentLabel) {
@@ -556,8 +690,22 @@ export function buildMappaHtml(d: MappaPdfData): string {
   itemsB.push(...buildDaCompletare(d));
 
   // Ogni mappa ha la sua numerazione: «Pagina N di M» riparte da 1
-  const pagesA = paginate(itemsA);
-  const pagesB = paginate(itemsB);
+  // mode="measure": altezze reali misurate nel DOM (pagine piene);
+  // altrimenti stima prudenziale convertita in px visuali (×0.95).
+  const hFn =
+    mode === "measure" && typeof document !== "undefined"
+      ? (html: string): number => {
+          try {
+            const m = measureItem(html);
+            if (m > 0) return m;
+          } catch {
+            /* misura non disponibile: resta la stima */
+          }
+          return estimateHeight(html) * 0.95;
+        }
+      : (html: string): number => estimateHeight(html) * 0.95;
+  const pagesA = paginate(itemsA, hFn);
+  const pagesB = paginate(itemsB, hFn);
   const htmlA = renderPages(pagesA, false);
   const htmlB = renderPages(pagesB, true);
 
@@ -566,37 +714,7 @@ export function buildMappaHtml(d: MappaPdfData): string {
 <title>Mappa Concettuale — Equazioni Biquadratiche</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
-@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Regular.ttf') format('truetype');font-weight:400;font-style:normal}
-@font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:0;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
-.page{position:relative;height:27cm;padding-bottom:1.5cm;page-break-after:always;break-after:page}
-.page--last{page-break-after:auto;break-after:auto}
-.page-foot{position:absolute;left:0;right:0;bottom:0.15cm;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
-@media screen{body{padding:14px 16px}.page{outline:1px dashed #ddd;margin-bottom:14px}}
-.solid{color:#fff;font-weight:bold;padding:10px 14px;border-radius:12px;font-size:14.5px;letter-spacing:.4px;margin:0 auto 10px;max-width:720px;line-height:1.5}
-.title-box{font-size:15.5px;padding:12px 14px}
-.student{max-width:720px;margin:0 auto 10px;padding:7px 10px;border-bottom:1px solid #e5e0d8;color:#2B2421;font-size:13px;text-align:center}
-.eq-banner{max-width:720px;margin:0 auto 10px;padding:8px 10px;border:2px dashed #5C35A6;border-radius:12px;background:#faf7ff}
-.part-label{max-width:720px;margin:14px auto 8px;color:#6b7280;font-size:11.5px;text-align:left;letter-spacing:1px;font-weight:bold}
-.box{max-width:720px;margin:0 auto 10px;page-break-inside:avoid;break-inside:avoid}
-.step-title{color:#fff;font-weight:bold;font-size:13.5px;padding:7px 12px;border-radius:12px 12px 0 0;letter-spacing:.4px;text-align:left}
-.step-body{border:2.5px solid;border-top:none;border-radius:0 0 12px 12px;padding:8px 12px;background:#fff;text-align:center}
-.note{font-size:12.5px;color:#444;margin-top:2px}
-.skip{color:#B91C1C;font-weight:bold}
-.root-line{margin:5px 0;font-size:13.5px}
-.attenzione{max-width:720px;margin:0 auto 10px;border:2.5px solid #DC2626;border-radius:12px;padding:8px 12px;background:#fef2f2;page-break-inside:avoid;break-inside:avoid}
-.attenzione-title{color:#DC2626;font-weight:bold;font-size:14px;margin-bottom:3px}
-.attenzione p{margin:3px 0}
-.formule{max-width:720px;margin:0 auto 10px;border:2.5px solid #0E7490;border-radius:12px;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
-.formule-title{background:#0E7490;color:#fff;font-weight:bold;padding:7px 12px;font-size:13.5px;letter-spacing:.4px}
-.formule .katex-display{margin:8px 0 4px}
-.formule .note{padding-bottom:8px}
-.risultato-label{letter-spacing:.5px}
-.risultato-blank{max-width:720px;margin:0 auto 10px;border:2.5px dashed #5C35A6;border-radius:12px;height:56px;page-break-inside:avoid;break-inside:avoid}
-.katex-display{margin:6px 0}
-.katex{font-size:1.06em}
-@media print{body{zoom:0.95}@page{size:A4;margin:2.5cm 2.5cm 1cm 2.5cm}}
+${MAPPA_CSS}
 </style></head>
 <body>
 ${htmlA}
@@ -605,12 +723,40 @@ ${htmlB}
 </body></html>`;
 }
 
-/** Apre la finestra di stampa con la mappa (stesso flusso del quaderno PDF) */
+/** Apre la finestra di stampa con la mappa (stesso flusso del quaderno PDF).
+ * La finestra vuota viene aperta SUBITO nel gesto utente (niente popup-blocker);
+ * poi i box vengono MISURATI realmente nel DOM e il documento viene scritto
+ * con le pagine PIENE. Se la misura fallisce si ricade sulla stima prudenziale. */
 export function openMappaPdf(d: MappaPdfData): void {
-  const html = buildMappaHtml(d);
-  const w = window.open("", "_blank");
-  if (w) {
-    w.document.write(html);
-    w.document.close();
+  let w: Window | null = null;
+  try {
+    w = window.open("", "_blank");
+  } catch {
+    w = null;
   }
+  const write = (html: string) => {
+    let target = w && !w.closed ? w : null;
+    if (!target) {
+      try {
+        target = window.open("", "_blank");
+      } catch {
+        target = null;
+      }
+    }
+    if (target) {
+      target.document.write(html);
+      target.document.close();
+    }
+  };
+  const go = async () => {
+    let html: string;
+    try {
+      await ensureMeasureFonts();
+      html = withMeasureStyles(() => buildMappaHtml(d, "measure"));
+    } catch {
+      html = buildMappaHtml(d);
+    }
+    write(html);
+  };
+  void go();
 }
