@@ -66,7 +66,6 @@ TEMPLATE = """<!-- ============================================================
     display: block;
     height: 600px;
     min-width: 100%;
-    transition: height 0.25s ease;
     width: 1px;
   }
 </style>
@@ -75,7 +74,7 @@ TEMPLATE = """<!-- ============================================================
   <div id="eqEmbedHead">
     <div id="eqEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
   </div>
-  <iframe id="eqIframe" loading="lazy" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
+  <iframe id="eqIframe" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
 </div>
 
 <script>

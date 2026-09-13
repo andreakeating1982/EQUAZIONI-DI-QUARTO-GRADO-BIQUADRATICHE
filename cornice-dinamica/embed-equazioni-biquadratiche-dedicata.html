@@ -1,5 +1,5 @@
 <!-- ============================================================
-     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v3 impermeabile + anti-loop)
+     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v4 impermeabile + anti-loop + anti-tremolio)
      ------------------------------------------------------------
      ⭐ Versione DEDICATA: serve SOLO «Equazioni di quarto grado biquadratiche».
         Nessun parametro, nessun riuso per altre app: URL, colori,
@@ -248,7 +248,7 @@
     <button class="lf-retry" type="button" hidden>Riprova</button>
   </div>
 
-  <iframe class="lf-iframe" loading="lazy" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
+  <iframe class="lf-iframe" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
 </div>
 
 <script>
@@ -340,6 +340,7 @@
 
     function applicaAltezza(h) {
       if (typeof h !== 'number' || h < 100 || h > 15000) return;   // sanity assoluta
+      if (!appViva) segnaOnline();   // FIX v3.1: prova di vita = messaggio valido, anche se l'altezza non cambia
       var ora = Date.now();
 
       // --- SILENZIO POST-APPLICAZIONE (anti-tremolio): nei 300 ms dopo
@@ -394,7 +395,6 @@
         altezzaApplicata = h;
         ultimaApplicazione = Date.now();
         iframe.style.height = h + 'px';
-        if (!appViva) segnaOnline();
       }, 200);
     }
 
@@ -439,7 +439,7 @@
       clearTimeout(timerErrore);
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'App online — buon lavoro!';
+      statoT.textContent = 'App online \u2014 buon lavoro!'   // FIX v3.2: escape unicode = immune all'encoding dell'editor;
       stato.classList.add('visibile');
       setTimeout(function () { stato.classList.remove('visibile'); }, 3000);
     }
@@ -448,15 +448,17 @@
       if (appViva) return;
       stato.classList.add('errore');
       retry.hidden = false;
-      statoT.textContent = 'L\'app non è raggiungibile. Controlla la connessione e riprova.';
+      statoT.textContent = 'L\'app non \u00E8 raggiungibile. Controlla la connessione e riprova.';
       stato.classList.add('visibile');
     }
 
     function ricarica() {
       appViva = false;
+      altezzaApplicata = 0; ultimoValore = 0; hCandidata = 0; cresciteConsecutive = 0; congelatoFino = 0;  // FIX v3.1: riparti pulito
+      if (timerSettle) { clearTimeout(timerSettle); timerSettle = null; }  // FIX v3.1: nessun debounce in sospeso
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'Caricamento…';
+      statoT.textContent = 'Caricamento\u2026';
       stato.classList.add('visibile');
       iframe.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 'cornice=' + token;
       clearTimeout(timerErrore);

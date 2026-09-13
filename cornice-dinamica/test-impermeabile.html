@@ -19,7 +19,7 @@
   <h2>📄 Post 1 — cornice Equazioni Biquadratiche (istanza A)</h2>
   <!-- ===== CORNICE A (v3 impermeabile) ===== -->
 <!-- ============================================================
-     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v3 impermeabile + anti-loop)
+     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v4 impermeabile + anti-loop + anti-tremolio)
      ------------------------------------------------------------
      ⭐ Versione DEDICATA: serve SOLO «Equazioni di quarto grado biquadratiche».
         Nessun parametro, nessun riuso per altre app: URL, colori,
@@ -268,7 +268,7 @@
     <button class="lf-retry" type="button" hidden>Riprova</button>
   </div>
 
-  <iframe class="lf-iframe" loading="lazy" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
+  <iframe class="lf-iframe" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
 </div>
 
 <script>
@@ -356,10 +356,19 @@
     var ultimoValore = 0;         // ultimo valore RICEVUTO dall'app
     var cresciteConsecutive = 0;  // conteggio crescite consecutive (anti-loop graduale)
     var congelatoFino = 0;        // timestamp: finché ora < congelatoFino le crescite sono ignorate
+    var ultimaApplicazione = 0;   // timestamp: inizio del silenzio post-applicazione (anti-tremolio)
 
     function applicaAltezza(h) {
       if (typeof h !== 'number' || h < 100 || h > 15000) return;   // sanity assoluta
+      if (!appViva) segnaOnline();   // FIX v3.1: prova di vita = messaggio valido, anche se l'altezza non cambia
       var ora = Date.now();
+
+        // --- SILENZIO POST-APPLICAZIONE (anti-tremolio): nei 300 ms dopo
+        // aver applicato un'altezza ignoriamo le rimisure ravvicinate: sono
+        // le misure intermedie di transizioni/reflow di stabilizzazione e
+        // alimentavano un ciclo continuo di ±pochi pixel. Un cambiamento
+        // VERO (≥ 30 px, es. cambio passo dell'esercizio) passa comunque. ---
+        if (ultimaApplicazione > 0 && ora - ultimaApplicazione < 300 && Math.abs(h - altezzaApplicata) < 30) return;
       var crescente = h > ultimoValore + 2;
 
       // --- Anti-loop graduale: 3 crescite consecutive → congela 5 s ---
@@ -403,8 +412,8 @@
       timerSettle = setTimeout(function () {
         if (Math.abs(h - altezzaApplicata) < 2) return;   // già applicato
         altezzaApplicata = h;
+        ultimaApplicazione = Date.now();
         iframe.style.height = h + 'px';
-        if (!appViva) segnaOnline();
       }, 200);
     }
 
@@ -433,6 +442,11 @@
       } catch (err) { /* app non ancora pronta: si riprova al prossimo tick */ }
     }
     ping();
+    // Ogni 3 s: il ping è la RETE DI RECOVERY — se un messaggio di altezza
+    // cade nella finestra di silenzio post-applicazione o si perde, il ping
+    // forza l'app a rinviare il valore corrente (l'app risponde sempre ai
+    // ping; i valori identici vengono scartati dal filtro ±2 px, quindi il
+    // ping non produce mai movimento visivo).
     setInterval(ping, 3000);
 
     /* Alla finestra che cambia larghezza l'app può cambiare altezza: la richiediamo */
@@ -444,7 +458,7 @@
       clearTimeout(timerErrore);
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'App online — buon lavoro!';
+      statoT.textContent = 'App online \u2014 buon lavoro!'   // FIX v3.2: escape unicode = immune all'encoding dell'editor;
       stato.classList.add('visibile');
       setTimeout(function () { stato.classList.remove('visibile'); }, 3000);
     }
@@ -453,15 +467,17 @@
       if (appViva) return;
       stato.classList.add('errore');
       retry.hidden = false;
-      statoT.textContent = 'L\'app non è raggiungibile. Controlla la connessione e riprova.';
+      statoT.textContent = 'L\'app non \u00E8 raggiungibile. Controlla la connessione e riprova.';
       stato.classList.add('visibile');
     }
 
     function ricarica() {
       appViva = false;
+      altezzaApplicata = 0; ultimoValore = 0; hCandidata = 0; cresciteConsecutive = 0; congelatoFino = 0;  // FIX v3.1: riparti pulito
+      if (timerSettle) { clearTimeout(timerSettle); timerSettle = null; }  // FIX v3.1: nessun debounce in sospeso
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'Caricamento…';
+      statoT.textContent = 'Caricamento\u2026';
       stato.classList.add('visibile');
       iframe.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 'cornice=' + token;
       clearTimeout(timerErrore);
@@ -502,7 +518,7 @@
   <h2>📄 Post 2 — cornice Equazioni Biquadratiche (istanza B)</h2>
   <!-- ===== CORNICE B (v3 impermeabile) ===== -->
 <!-- ============================================================
-     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v3 impermeabile + anti-loop)
+     CORNICE DINAMICA — EQUAZIONI DI QUARTO GRADO BIQUADRATICHE (embed DEDICATO · v4 impermeabile + anti-loop + anti-tremolio)
      ------------------------------------------------------------
      ⭐ Versione DEDICATA: serve SOLO «Equazioni di quarto grado biquadratiche».
         Nessun parametro, nessun riuso per altre app: URL, colori,
@@ -751,7 +767,7 @@
     <button class="lf-retry" type="button" hidden>Riprova</button>
   </div>
 
-  <iframe class="lf-iframe" loading="lazy" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
+  <iframe class="lf-iframe" title="Equazioni di quarto grado biquadratiche — app in cornice" src="about:blank"></iframe>
 </div>
 
 <script>
@@ -927,7 +943,7 @@
       clearTimeout(timerErrore);
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'App online — buon lavoro!';
+      statoT.textContent = 'App online \u2014 buon lavoro!'   // FIX v3.2: escape unicode = immune all'encoding dell'editor;
       stato.classList.add('visibile');
       setTimeout(function () { stato.classList.remove('visibile'); }, 3000);
     }
@@ -936,7 +952,7 @@
       if (appViva) return;
       stato.classList.add('errore');
       retry.hidden = false;
-      statoT.textContent = 'L\'app non è raggiungibile. Controlla la connessione e riprova.';
+      statoT.textContent = 'L\'app non \u00E8 raggiungibile. Controlla la connessione e riprova.';
       stato.classList.add('visibile');
     }
 
@@ -944,7 +960,7 @@
       appViva = false;
       stato.classList.remove('errore');
       retry.hidden = true;
-      statoT.textContent = 'Caricamento…';
+      statoT.textContent = 'Caricamento\u2026';
       stato.classList.add('visibile');
       iframe.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 'cornice=' + token;
       clearTimeout(timerErrore);
