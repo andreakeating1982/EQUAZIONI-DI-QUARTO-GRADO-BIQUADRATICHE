@@ -268,8 +268,9 @@ function formuleBox(): string {
 // «Pagina N di M» è dentro ogni pagina e RIPARTE DA 1 per ogni parte
 // (mappa diversa per tipologia). PAGE_BUDGET è l'altezza massima (px)
 // di contenuti assegnata a una pagina: il contenuto reale resta sotto
-// l'area dei box (27,5 cm CSS − 1,8 cm di padding-bottom ≈ 971 px layout,
-// zoom 0.95, margini standard 2,5 cm).
+// l'area dei box (27 cm CSS − 1,5 cm di padding-bottom ≈ 964 px layout,
+// zoom 0.95, margini standard 2,5 cm). Il margine di ~8-15 px tra budget
+// e area assorbe l'arrotondamento/zoom di Chrome evitando sforamenti.
 
 const PAGE_BUDGET = 900;
 
@@ -568,11 +569,11 @@ export function buildMappaHtml(d: MappaPdfData): string {
 @font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Regular.ttf') format('truetype');font-weight:400;font-style:normal}
 @font-face{font-family:'OpenDyslexic';src:url('fonts/OpenDyslexic-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:14px 16px;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
-.page{position:relative;height:27.5cm;padding-bottom:1.8cm;page-break-after:always;break-after:page}
+body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;background:#fff;padding:0;max-width:780px;margin:0 auto;text-align:center;line-height:1.55;font-size:13.5px}
+.page{position:relative;height:27cm;padding-bottom:1.5cm;page-break-after:always;break-after:page}
 .page--last{page-break-after:auto;break-after:auto}
-.page-foot{position:absolute;left:0;right:0;bottom:0.2cm;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
-@media screen{.page{outline:1px dashed #ddd;margin-bottom:14px}}
+.page-foot{position:absolute;left:0;right:0;bottom:0.15cm;color:#6b7280;font-size:11.5px;letter-spacing:.5px;text-align:center}
+@media screen{body{padding:14px 16px}.page{outline:1px dashed #ddd;margin-bottom:14px}}
 .solid{color:#fff;font-weight:bold;padding:10px 14px;border-radius:12px;font-size:14.5px;letter-spacing:.4px;margin:0 auto 10px;max-width:720px;line-height:1.5}
 .title-box{font-size:15.5px;padding:12px 14px}
 .student{max-width:720px;margin:0 auto 10px;padding:7px 10px;border-bottom:1px solid #e5e0d8;color:#2B2421;font-size:13px;text-align:center}
@@ -595,7 +596,7 @@ body{font-family:'OpenDyslexic','Cambria Math',Cambria,serif;color:#1a1a1a;backg
 .risultato-blank{max-width:720px;margin:0 auto 10px;border:2.5px dashed #5C35A6;border-radius:12px;height:56px;page-break-inside:avoid;break-inside:avoid}
 .katex-display{margin:6px 0}
 .katex{font-size:1.06em}
-@media print{body{padding:0;zoom:0.95}@page{size:A4;margin:2.5cm 2.5cm 1cm 2.5cm}}
+@media print{body{zoom:0.95}@page{size:A4;margin:2.5cm 2.5cm 1cm 2.5cm}}
 </style></head>
 <body>
 ${htmlA}
