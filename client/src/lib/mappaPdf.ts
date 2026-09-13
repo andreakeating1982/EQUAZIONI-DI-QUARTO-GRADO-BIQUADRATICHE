@@ -332,12 +332,17 @@ const heightCache = new Map<string, number>();
 let measureWrap: HTMLDivElement | null = null;
 
 /** CSS della mappa ristretto al solo contenitore di misura.
- * NB: il selettore universale va scoppato con :where(), che ha
- * specificità ZERO come l'asterisco originale: usare "#id *" darebbe
- * specificità (1,0,1) e sconfiggerebbe i padding/margini delle classi,
- * producendo misure sbagliate (box senza padding → pagine sovraccariche). */
+ * NB due insidie di scoping verificate sul campo:
+ * 1) il selettore universale va scoppato con :where(), specificità ZERO
+ *    come l'asterisco originale: "#id *" avrebbe specificità (1,0,1) e
+ *    annullerebbe padding/margini delle classi;
+ * 2) "body{" va sostituito SOLO come selettore completo: "\\bbody\\{"
+ *    combaciava anche con ".step-body{" (il trattino crea un word
+ *    boundary), generava un selettore invalido e faceva SCARTARE la
+ *    regola dal parser CSS → box misurati senza padding/bordo.
+ * La regex accetta solo body{ preceduto da }, {, ; o spazio. */
 const MAPPA_CSS_MEASURE = MAPPA_CSS
-  .replace(/\bbody\{/g, "#mappa-measure-wrap{")
+  .replace(/([{};\s])body\{/g, "$1#mappa-measure-wrap{")
   .replace(/\*\{/g, ":where(#mappa-measure-wrap) *{");
 
 function getMeasureWrap(): HTMLDivElement {
