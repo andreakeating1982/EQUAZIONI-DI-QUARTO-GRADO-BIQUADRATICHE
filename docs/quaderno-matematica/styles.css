@@ -1,0 +1,243 @@
+/* ═══ MATEMATICA FACILE · quaderno inclusivo — foglio di stile ═══ */
+@font-face { font-family: "OpenDyslexic"; src: url("file:///home/user/equazioni-biquadratiche/client/public/fonts/OpenDyslexic-Regular.ttf"); font-weight: 400; font-style: normal; }
+@font-face { font-family: "OpenDyslexic"; src: url("file:///home/user/equazioni-biquadratiche/client/public/fonts/OpenDyslexic-Bold.ttf"); font-weight: 700; font-style: normal; }
+@font-face { font-family: "OpenDyslexic"; src: url("file:///home/user/equazioni-biquadratiche/client/public/fonts/OpenDyslexic-Italic.otf"); font-weight: 400; font-style: italic; }
+
+:root {
+  --crema: #FBF6EC;
+  --inchiostro: #2E2018;
+  --marrone: #A0563B;
+  --rosso: #C0392B;
+  --verde: #1E8449;
+  --blu: #2E5FA3;
+  --arancio: #D35400;
+  --giallo: #EFA90E;
+  --teal: #16A085;
+  --grigio: #5D6D7E;
+}
+
+@page {
+  size: A4;
+  margin: 16mm 15mm 20mm 15mm;
+  background: var(--crema);
+  @bottom-center { content: counter(page); font-family: "OpenDyslexic"; font-weight: 700; font-size: 15.4pt; color: #2E2018; vertical-align: middle; padding-bottom: 6mm; }
+}
+@page :first { @bottom-center { content: none; } }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: "OpenDyslexic", sans-serif; color: var(--inchiostro); font-size: 14pt; line-height: 1.36; background: var(--crema); }
+
+.page { break-after: page; }
+.page:last-child { break-after: auto; }
+
+/* ─── Copertina ─── */
+.cover { text-align: center; padding-top: 2mm; }
+.cover h1 { font-size: 47.6pt; font-weight: 700; letter-spacing: 1px; margin: 0; color: var(--inchiostro); text-transform: uppercase; line-height: 1.05; }
+.cover .sottotitolo { font-size: 20.3pt; font-weight: 700; color: var(--marrone); margin-top: 3mm; }
+.cover img { display: block; width: auto; max-width: 100%; max-height: 58mm; margin: 3mm auto; border-radius: 14px; border: 2px solid rgba(46,32,24,.14); }
+.cover .desc { font-size: 14.7pt; margin: 0 auto 4mm; max-width: 158mm; text-align: center; }
+.legenda { text-align: center; }
+.legenda .pill { display: inline-block; border-radius: 999px; padding: 1.6mm 4.5mm; font-size: 11.9pt; font-weight: 700; color: #fff; letter-spacing: .4px; margin: 1.4mm 1mm; }
+.legenda .pill b { font-weight: 700; }
+
+/* ─── Indice ─── */
+.indice h1 { font-size: 26.6pt; margin: 0 0 2mm; text-transform: uppercase; letter-spacing: .5px; }
+.indice .intro { margin: 0 0 5mm; }
+.toc-anno { font-size: 15pt; font-weight: 700; color: #fff; background: var(--inchiostro); display: block; border-radius: 999px; padding: 1.2mm 6mm; margin: 2.6mm 0 1.4mm; text-transform: uppercase; }
+.toc { list-style: none; margin: 0 0 2mm; padding: 0 0 0 2mm; }
+.toc li { margin: 1mm 0; font-size: 13pt; border-bottom: 1.2px dotted rgba(46,32,24,.35); padding-bottom: .6mm; }
+.toc a { text-decoration: none; color: var(--inchiostro); font-weight: 700; }
+.pg::after { content: target-counter(attr(href url), page); }
+.toc .pageref { display: table; width: 100%; }
+.toc .pageref a { display: table-cell; }
+.toc .pg { display: table-cell; text-align: right; width: 14mm; font-weight: 700; color: var(--inchiostro); padding-left: 4mm; }
+.toc .desc { font-weight: 400; color: rgba(46,32,24,.75); font-size: 12.6pt; margin-left: 2mm; }
+
+/* ─── Divisori d'anno ─── */
+.divider { text-align: center; padding-top: 4mm; }
+.divider .anno-titolo { color: #fff; font-size: 42pt; font-weight: 700; text-transform: uppercase; display: block; border-radius: 16px; padding: 4mm 6mm 3mm; letter-spacing: 1px; line-height: 1.05; }
+.divider .anno-sotto { font-size: 17.5pt; font-weight: 700; margin: 3mm auto 0; max-width: 160mm; }
+.divider img { display: block; width: auto; max-width: 100%; max-height: 58mm; margin: 3mm auto; border-radius: 14px; border: 2px solid rgba(46,32,24,.14); }
+.inquesta { border: 2px solid var(--inchiostro); background: #fff; border-radius: 12px; padding: 3.5mm 5.5mm; text-align: left; }
+.inquesta h3 { margin: 0 0 2.2mm; font-size: 15.4pt; text-transform: uppercase; letter-spacing: .6px; }
+.inquesta ul { margin: 0; padding-left: 5mm; font-size: 14pt; }
+.inquesta li { margin: 1mm 0; }
+
+/* ─── Intestazioni pagina argomento ─── */
+.page-head { border-radius: 12px; padding: 2.6mm 5mm 2.2mm; margin-bottom: 3.2mm; color: #fff; }
+.page-head h2 { margin: 0; font-size: 18.9pt; text-transform: uppercase; letter-spacing: .4px; line-height: 1.2; }
+.page-head .filo { font-size: 11.9pt; font-weight: 700; letter-spacing: 1px; opacity: .92; margin-top: .6mm; text-transform: uppercase; }
+
+h3.titoletto { font-size: 14.7pt; text-transform: uppercase; letter-spacing: .5px; margin: 2.8mm 0 1.5mm; color: var(--inchiostro); border-left: 3.5mm solid var(--marrone); padding-left: 2.5mm; }
+p { margin: 1.2mm 0; }
+
+/* ─── Box ─── */
+.box { background: #fff; border: 1.6px solid var(--inchiostro); border-radius: 11px; padding: 2.4mm 4.5mm; margin: 2.2mm 0; }
+.box.etichetta { font-weight: 700; text-transform: uppercase; font-size: 12.6pt; letter-spacing: .5px; margin-bottom: 1.5mm; }
+.trucco { background: #FDF3D7; border: 1.6px solid var(--giallo); border-radius: 11px; padding: 2.2mm 4.5mm; margin: 2.2mm 0; }
+.trucco .lab { font-weight: 700; color: #8a5a00; text-transform: uppercase; font-size: 12.6pt; letter-spacing: .5px; }
+.attenzione { background: #FBEAE8; border: 1.6px solid var(--rosso); border-radius: 11px; padding: 2.2mm 4.5mm; margin: 2.2mm 0; }
+.attenzione .lab { font-weight: 700; color: var(--rosso); text-transform: uppercase; font-size: 12.6pt; letter-spacing: .5px; }
+
+/* ─── Tabelle ─── */
+table { border-collapse: collapse; width: 100%; margin: 2.2mm 0; background: #fff; }
+th, td { border: 1.3px solid var(--inchiostro); padding: 1.3mm 2.4mm; text-align: left; vertical-align: middle; font-size: 12.9pt; line-height: 1.24; }
+th { font-weight: 700; text-transform: uppercase; font-size: 12.3pt; letter-spacing: .3px; color: #fff; }
+td.center, th.center { text-align: center; }
+td b { font-weight: 700; }
+tr:nth-child(even) td { background: #FDF8EE; }
+
+/* ─── Matematica ─── */
+.f { display: inline-block; text-align: center; vertical-align: middle; margin: 0 .6mm; }
+.f .nu { display: block; padding: 0 1mm; }
+.f .de { display: block; border-top: 1.4px solid var(--inchiostro); padding: 0 1mm; }
+.formula-box { background: #FDF3D7; border: 1.6px solid var(--giallo); border-radius: 11px; padding: 2.2mm 4.5mm; margin: 2.2mm 0; text-align: center; font-size: 15.4pt; }
+.formula-box .lab { display: block; font-size: 11.9pt; font-weight: 700; letter-spacing: .6px; color: #8a5a00; margin-bottom: 1mm; text-transform: uppercase; }
+.esempio { background: #EDF4FB; border: 1.6px solid var(--blu); border-radius: 11px; padding: 2.2mm 4.5mm; margin: 2.2mm 0; }
+.esempio .lab { font-weight: 700; color: var(--blu); text-transform: uppercase; font-size: 12.6pt; letter-spacing: .5px; }
+sup, sub { line-height: 0; }
+
+/* ─── Verifiche ─── */
+.insintesi { background: #fff; border: 1.6px solid var(--inchiostro); border-radius: 12px; overflow: hidden; margin: 2.2mm 0; }
+.insintesi .r { display: table; width: 100%; table-layout: fixed; border-bottom: 1.2px solid rgba(46,32,24,.25); }
+.insintesi .r:last-child { border-bottom: none; }
+.insintesi .k { display: table-cell; width: 42mm; padding: 2.2mm 3mm; font-weight: 700; color: #fff; font-size: 12.6pt; text-transform: uppercase; }
+.insintesi .v { display: table-cell; padding: 2.2mm 3.5mm; font-size: 13.4pt; }
+.mettiti { background: #fff; border: 1.6px solid var(--inchiostro); border-radius: 12px; padding: 2.6mm 4.5mm; margin-top: 2.4mm; }
+.mettiti h3 { margin: 0 0 1mm; font-size: 14.7pt; text-transform: uppercase; letter-spacing: .5px; }
+.mettiti .nota { font-size: 12.6pt; margin: 0 0 1.8mm; }
+.domanda { margin: 1.9mm 0 1.1mm; font-weight: 700; font-size: 13.4pt; }
+.opzioni { font-size: 13.2pt; }
+.opzioni span { display: inline-block; background: #FDF8EE; border: 1.2px solid rgba(46,32,24,.4); border-radius: 8px; padding: .8mm 2.8mm; margin: .8mm 2.4mm .8mm 0; }
+.soluzioni { margin-top: 2.4mm; font-weight: 700; color: #fff; background: var(--inchiostro); border-radius: 999px; padding: 1.4mm 5mm; display: inline-block; font-size: 13.3pt; letter-spacing: .5px; }
+
+/* ─── Mappa finale ─── */
+.mappa-q { font-size: 16.8pt; font-weight: 700; color: #fff; display: block; border-radius: 999px; padding: 1.8mm 6mm; margin: 2.4mm 0 1.8mm; text-transform: uppercase; }
+.mappa-griglia { display: table; width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2.5mm 0; }
+.mappa-box { display: table-cell; background: #fff; border: 1.6px solid var(--inchiostro); border-radius: 11px; padding: 2mm 2.2mm; text-align: center; }
+.mappa-box .n { display: inline-block; width: 9mm; height: 9mm; line-height: 9mm; border-radius: 50%; color: #fff; font-weight: 700; font-size: 14pt; margin-bottom: 1mm; }
+.mappa-box .t { font-weight: 700; font-size: 12.6pt; text-transform: uppercase; letter-spacing: .3px; }
+.mappa-box .d { font-size: 11.8pt; line-height: 1.4; margin-top: .8mm; }
+
+/* ─── SVG diagrammi ─── */
+figure.diagramma { margin: 2mm 0; text-align: center; }
+figure.diagramma svg { background: #fff; border: 1.4px solid rgba(46,32,24,.45); border-radius: 11px; }
+figcaption { font-size: 11.9pt; color: rgba(46,32,24,.8); margin-top: .8mm; }
+
+/* colori per anno */
+.c-marrone { background: var(--marrone); }
+.c-rosso { background: var(--rosso); }
+.c-verde { background: var(--verde); }
+.c-blu { background: var(--blu); }
+.c-arancio { background: var(--arancio); }
+.c-giallo { background: var(--giallo); }
+.c-teal { background: var(--teal); }
+.c-grigio { background: var(--grigio); }
+.bordo-verde { border-color: var(--verde); }
+.titoletto.t-verde { border-left-color: var(--verde); }
+.titoletto.t-rosso { border-left-color: var(--rosso); }
+.titoletto.t-blu { border-left-color: var(--blu); }
+.titoletto.t-marrone { border-left-color: var(--marrone); }
+.titoletto.t-teal { border-left-color: var(--teal); }
+.titoletto.t-arancio { border-left-color: var(--arancio); }
+th.verde { background: var(--verde); }
+th.rosso { background: var(--rosso); }
+th.blu { background: var(--blu); }
+th.marrone { background: var(--marrone); }
+th.teal { background: var(--teal); }
+th.arancio { background: var(--arancio); }
+th.grigio { background: var(--grigio); }
+th.giallo { background: var(--giallo); color: #2E2018; }
+
+/* ─── pagine compatte: spaziature più strette SOLO sulle pagine che altrimenti sforano ─── */
+.compact { line-height: 1.27; }
+.compact p { margin: .9mm 0; }
+.compact h3.titoletto { margin: 1.6mm 0 .9mm; }
+.compact .box, .compact .trucco, .compact .attenzione, .compact .formula-box, .compact .esempio { margin: 1.2mm 0; padding: 1.6mm 3.6mm; }
+.compact .insintesi { margin: 1.4mm 0; }
+.compact .insintesi .k, .compact .insintesi .v { padding: 1.4mm 3mm; }
+.compact .mettiti { padding: 1.8mm 3.6mm; margin-top: 1.6mm; }
+.compact .mettiti h3 { margin: 0 0 1mm; }
+.compact .mettiti .nota { margin: 0 0 1.4mm; }
+.compact .domanda { margin: 1.2mm 0 .7mm; }
+.compact .opzioni span { padding: .5mm 2.4mm; margin: .5mm 2mm .5mm 0; }
+.compact .soluzioni { margin-top: 1.6mm; }
+.compact table { margin: 1.4mm 0; }
+.compact th, .compact td { padding: .9mm 2mm; }
+.compact figure.diagramma { margin: 1mm 0; }
+.compact .page-head { margin-bottom: 2mm; padding: 2mm 5mm 1.7mm; }
+.compact .inquesta { padding: 2.4mm 4.5mm; }
+.compact .inquesta h3 { margin: 0 0 1.4mm; }
+.compact .inquesta li { margin: .4mm 0; }
+.compact.tight { line-height: 1.22; }
+.compact.tight p { margin: .7mm 0; }
+.compact.tight .box, .compact.tight .trucco, .compact.tight .attenzione, .compact.tight .formula-box, .compact.tight .esempio { margin: 1mm 0; padding: 1.4mm 3.2mm; }
+
+/* ─── livello tight potenziato: seconda gerarchia tipografica dentro le pagine lunghe ─── */
+.compact.tight { line-height: 1.21; }
+.compact.tight .domanda { font-size: 12.4pt; }
+.compact.tight .opzioni { font-size: 12pt; }
+.compact.tight .opzioni span { padding: .5mm 2.2mm; margin: .5mm 1.8mm .5mm 0; }
+.compact.tight .soluzioni { font-size: 11.6pt; }
+.compact.tight .insintesi .v { font-size: 12.6pt; }
+.compact.tight .insintesi .k { font-size: 11.8pt; }
+.compact.tight .formula-box { font-size: 14pt; }
+.compact.tight .page-head h2 { font-size: 17.5pt; }
+.compact.tight .page-head .filo { font-size: 11pt; }
+.compact.tight .mettiti h3 { font-size: 13.5pt; }
+.compact.tight .mettiti .nota { font-size: 11.8pt; }
+.compact.tight .attenzione .lab, .compact.tight .trucco .lab, .compact.tight .esempio .lab, .compact.tight .box.etichetta { font-size: 11.8pt; }
+
+/* ─── livello extra: ultima riserva per le pagine più dense ─── */
+.compact.tight.extra { line-height: 1.19; }
+.compact.tight.extra p { margin: .6mm 0; }
+.compact.tight.extra .domanda { font-size: 12pt; margin: 1mm 0 .6mm; }
+.compact.tight.extra .opzioni { font-size: 11.6pt; }
+.compact.tight.extra .soluzioni { font-size: 11.2pt; margin-top: 1.3mm; }
+.compact.tight.extra .insintesi .v { font-size: 12.2pt; }
+.compact.tight.extra .insintesi .k { font-size: 11.4pt; }
+.compact.tight.extra .mettiti { padding: 1.6mm 3.2mm; margin-top: 1.4mm; }
+.compact.tight.extra .mettiti .nota { font-size: 11.4pt; }
+.compact.tight.extra th, .compact.tight.extra td { padding: .8mm 1.8mm; }
+
+/* ─── pagina LE FRAZIONI (#t-frac): stack di frazione, schema SVG e tabella più compatti ─── */
+.compact #t-frac .f { font-size: 12pt; }
+.compact #t-frac .f .nu, .compact #t-frac .f .de { line-height: 1.08; }
+.compact #t-frac svg { width: 340px; height: 56px; }
+.compact #t-frac figure.diagramma { margin: 1mm 0; }
+.compact #t-frac figcaption { margin-top: .4mm; }
+.compact #t-frac table { margin: 1.2mm 0; }
+.compact #t-frac th, .compact #t-frac td { padding: .8mm 1.8mm; font-size: 12.2pt; }
+
+/* ─── LE FRAZIONI: seconda mancata — colonna più larga, schema minore, tabella densa ─── */
+.compact.tight.extra#t-frac { line-height: 1.17; margin-left: -6mm; margin-right: -6mm; }
+.compact.tight.extra#t-frac .box, .compact.tight.extra#t-frac .trucco, .compact.tight.extra#t-frac .attenzione { padding: 1.2mm 3.2mm; margin: 1mm 0; }
+.compact.tight.extra#t-frac svg { width: 300px; height: 49px; }
+.compact.tight.extra#t-frac figcaption { font-size: 10.5pt; margin-top: .3mm; }
+.compact.tight.extra#t-frac figure.diagramma { margin: .8mm 0; }
+.compact.tight.extra#t-frac th, .compact.tight.extra#t-frac td { padding: .7mm 1.6mm; font-size: 11.8pt; }
+.compact.tight.extra#t-frac .f { font-size: 11.5pt; }
+.compact.tight.extra#t-frac .f .nu, .compact.tight.extra#t-frac .f .de { line-height: 1.05; }
+.compact.tight.extra#t-frac h3.titoletto { margin: 1.3mm 0 .7mm; }
+.compact.tight.extra#t-frac .page-head { margin-bottom: 1.6mm; }
+
+/* ═══ salto di pagina esplicito per bilanciare i temi su due pagine ═══ */
+.salto { break-before: page; }
+
+/* ═══ MAI spezzare i box tra una pagina e l'altra ═══ */
+.box, .trucco, .attenzione, .formula-box, .esempio, .insintesi, .mettiti, .domanda, .soluzioni, .inquesta, figure.diagramma, table, .mappa-q, .page-head, .legenda { break-inside: avoid; }
+
+/* ═══ pagina geometricamente più stretta (solo dove serve per rientrare): resta ariosa dentro ═══ */
+.ristretta { page: stretta; }
+@page stretta {
+  margin: 13mm 15mm 17mm 15mm;
+  @bottom-center { content: counter(page); font-family: "OpenDyslexic"; font-weight: 700; font-size: 15.4pt; color: #2E2018; vertical-align: middle; padding-bottom: 6mm; }
+}
+
+/* ═══ indice: interruzione di pagina logica prima di ANNO 3 (pagine bilanciate) ═══ */
+.toc-anno.break-here { break-before: page; }
+
+/* ═══ tabelle nelle sezioni compatte: leggermente più dense per rientrare nella pagina d'origine ═══ */
+.compact table { font-size: 12.5pt; }
+.compact table th, .compact table td { padding: .8mm 1.6mm; line-height: 1.22; }
