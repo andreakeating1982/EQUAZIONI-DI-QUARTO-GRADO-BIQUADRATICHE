@@ -423,9 +423,12 @@
       } catch (err) { /* app non ancora pronta: si riprova al prossimo tick */ }
     }
     ping();
-    // Ogni 6 s: il ping è una rete di sicurezza (l'app notifica da sola ogni
-    // cambiamento via ResizeObserver); meno ping = meno traffico inutile.
-    setInterval(ping, 6000);
+    // Ogni 3 s: il ping è la RETE DI RECOVERY — se un messaggio di altezza
+    // cade nella finestra di silenzio post-applicazione o si perde, il ping
+    // forza l'app a rinviare il valore corrente (l'app risponde sempre ai
+    // ping; i valori identici vengono scartati dal filtro ±2 px, quindi il
+    // ping non produce mai movimento visivo).
+    setInterval(ping, 3000);
 
     /* Alla finestra che cambia larghezza l'app può cambiare altezza: la richiediamo */
     window.addEventListener('resize', function () { ping(); });
