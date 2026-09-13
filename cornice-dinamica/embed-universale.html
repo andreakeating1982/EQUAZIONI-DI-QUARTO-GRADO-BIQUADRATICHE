@@ -82,7 +82,7 @@
     <div id="lfEmbedTitle">LA TUA APP</div>
     <a id="lfEmbedOpen" href="#" target="_blank" rel="noopener">Apri ↗</a>
   </div>
-  <iframe id="lfFrame" loading="lazy" title="App in cornice" src="about:blank"></iframe>
+  <iframe id="lfFrame" title="App in cornice" src="about:blank"></iframe>
 </div>
 
 <script>
@@ -126,13 +126,20 @@
        e filtro ±2 px — le versioni precedenti applicavano ogni messaggio
        subito, incluso le misure intermedie che alimentavano il tremolio. */
     var timerH = null;
+    var ultimaApplicazione = 0;   // timestamp: inizio del silenzio post-applicazione (anti-tremolio)
     var hApplicata = 0;
     function applicaAltezza(h) {
       if (typeof h !== 'number' || h < 100 || h > 15000) return;
-      clearTimeout(timerH);
+
+          // --- SILENZIO POST-APPLICAZIONE (anti-tremolio): nei 300 ms dopo
+          // aver applicato un'altezza ignoriamo le rimisure ravvicinate (±30 px):
+          // sono le misure intermedie di stabilizzazione. Un cambiamento VERO
+          // (≥ 30 px) passa comunque. ---
+          if (ultimaApplicazione > 0 && Date.now() - ultimaApplicazione < 300 && Math.abs(h - hApplicata) < 30) return;      clearTimeout(timerH);
       timerH = setTimeout(function () {
         if (Math.abs(h - hApplicata) < 2) return;
         hApplicata = h;
+        ultimaApplicazione = Date.now();
         iframe.style.height = h + 'px';
       }, 200);
     }

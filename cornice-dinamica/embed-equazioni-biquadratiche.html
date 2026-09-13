@@ -59,7 +59,7 @@
   <div id="eqEmbedHead">
     <div id="eqEmbedTitle">EQUAZIONI DI QUARTO GRADO BIQUADRATICHE</div>
   </div>
-  <iframe id="eqIframe" loading="lazy" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
+  <iframe id="eqIframe" title="Equazioni biquadratiche — risolvi le equazioni di quarto grado in 7 passi" src="https://equazioni-biquadratiche.easy-peasy.site/"></iframe>
 </div>
 
 <script>
@@ -70,13 +70,20 @@
      e filtro ±2 px — la versione precedente applicava ogni messaggio subito,
      incluse le misure intermedie che alimentavano il tremolio. */
   var timerH = null;
+  var ultimaApplicazione = 0;   // timestamp: inizio del silenzio post-applicazione (anti-tremolio)
   var hApplicata = 0;
   function applicaAltezza(h) {
     if (typeof h !== 'number' || h < 100 || h > 15000) return;
-    clearTimeout(timerH);
+
+        // --- SILENZIO POST-APPLICAZIONE (anti-tremolio): nei 300 ms dopo
+        // aver applicato un'altezza ignoriamo le rimisure ravvicinate (±30 px):
+        // sono le misure intermedie di stabilizzazione. Un cambiamento VERO
+        // (≥ 30 px) passa comunque. ---
+        if (ultimaApplicazione > 0 && Date.now() - ultimaApplicazione < 300 && Math.abs(h - hApplicata) < 30) return;    clearTimeout(timerH);
     timerH = setTimeout(function () {
       if (Math.abs(h - hApplicata) < 2) return;
       hApplicata = h;
+      ultimaApplicazione = Date.now();
       iframe.style.height = h + 'px';
     }, 200);
   }
