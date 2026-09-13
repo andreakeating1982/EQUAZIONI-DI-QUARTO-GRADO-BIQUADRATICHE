@@ -636,17 +636,22 @@ function buildDaCompletare(d: MappaPdfData): string[] {
     return items;
   }
 
+  // PASSO 4 — come per il delta (passo 3): formula letteraria (visibile)
+  // sopra, sostituzione numerica da completare sotto
   items.push(stepBox(
     "＋ PASSO 4 · TROVO t₁",
-    katexBlock("t_{1} = \\dfrac{\\dots + \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots") +
+    `${katexBlock("t_{1} = \\dfrac{-b+\\sqrt{\\Delta}}{2\\cdot a}")}
+     ${katexBlock("t_{1} = \\dfrac{\\dots + \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots")}` +
       (d.hasDoubleRoot ? `<p class="note">(t₁ e t₂ sono uguali perché Δ = 0)</p>` : ""),
     C.passo4
   ));
 
   if (!d.hasDoubleRoot) {
+    // PASSO 5 — formula letteraria sopra, sostituzione da completare sotto
     items.push(stepBox(
       "－ PASSO 5 · TROVO t₂",
-      katexBlock("t_{2} = \\dfrac{\\dots - \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots"),
+      `${katexBlock("t_{2} = \\dfrac{-b-\\sqrt{\\Delta}}{2\\cdot a}")}
+       ${katexBlock("t_{2} = \\dfrac{\\dots - \\sqrt{\\dots}}{2\\cdot \\dots} = \\dots")}`,
       C.passo5
     ));
   }
